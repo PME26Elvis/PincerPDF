@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection clean
+.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection fixtures-pdf probe-pdf-engines clean
 
 help:
 	@printf '%s\n' \
@@ -13,7 +13,9 @@ help:
 	  '  make test               Run workspace tests' \
 	  '  make check-fast         Format check + Clippy + tests' \
 	  '  make doctor             Run the CLI environment report' \
-	  '  make selection SPEC=1-3,8 TOTAL=10'
+	  '  make selection SPEC=1-3,8 TOTAL=10' \
+	  '  make fixtures-pdf       Generate deterministic PDF engine fixtures' \
+	  '  make probe-pdf-engines  Run QPDF/MuPDF capability measurements'
 
 bootstrap-check:
 	@./scripts/bootstrap-check.sh
@@ -38,6 +40,16 @@ doctor:
 
 selection:
 	@cargo run -q -p pincerpdf-cli -- selection "$(SPEC)" "$(TOTAL)"
+
+fixtures-pdf:
+	@rm -rf .artifacts/pdf-engine-probe/fixtures
+	@python3 tests/fixtures/pdf/generate_fixtures.py .artifacts/pdf-engine-probe/fixtures
+
+probe-pdf-engines: fixtures-pdf
+	@rm -rf .artifacts/pdf-engine-probe/work .artifacts/pdf-engine-probe/render .artifacts/pdf-engine-probe/report.json
+	@python3 scripts/probe-pdf-engines.py \
+	  --fixtures .artifacts/pdf-engine-probe/fixtures \
+	  --output .artifacts/pdf-engine-probe
 
 clean:
 	@cargo clean

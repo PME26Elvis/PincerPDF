@@ -1,0 +1,91 @@
+name: PDF engine capability probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pdf-engine-probe.yml"
+      - ".devcontainer/**"
+      - "scripts/probe-pdf-engines.py"
+      - "tests/fixtures/pdf/**"
+      - "Makefile"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/pdf-engine-probe.yml"
+      - ".devcontainer/**"
+      - "scripts/probe-pdf-engines.py"
+      - "tests/fixtures/pdf/**"
+      - "Makefile"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pdf-engine-probe-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  capability-probe:
+    name: QPDF and MuPDF capability probe
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build cached development image
+        run: |
+          docker buildx build \
+            --pull \
+            --progress=plain \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --load \
+            --file .devcontainer/Dockerfile \
+            --tag pincerpdf-devcontainer:probe \
+            .
+
+      - name: Run deterministic capability probe
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/workspace/PincerPDF" \
+            --workdir /workspace/PincerPDF \
+            pincerpdf-devcontainer:probe \
+            bash -c 'make probe-pdf-engines'
+
+      - name: Validate and summarize report
+        run: |
+          python3 -m json.tool .artifacts/pdf-engine-probe/report.json >/dev/null
+          python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path('.artifacts/pdf-engine-probe/report.json').read_text())
+          summary = report['summary']
+          structure = report['structure']
+          print('## PDF engine capability probe')
+          print()
+          print(f"- Commands passed: {summary['passed']}/{summary['commands']}")
+          print(f"- Source bookmarks detected: {structure['bookmarks_source_has_outlines']}")
+          print(f"- Bookmark subset retained outlines: {structure['bookmarks_subset_has_outlines']}")
+          print(f"- Source AcroForm detected: {structure['form_source_has_acroform']}")
+          print(f"- Form subset retained AcroForm: {structure['form_subset_has_acroform']}")
+          PY
+
+      - name: Upload capability report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-engine-capability-report
+          path: .artifacts/pdf-engine-probe/
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Ensure probe did not modify tracked files
+        run: git diff --exit-code
