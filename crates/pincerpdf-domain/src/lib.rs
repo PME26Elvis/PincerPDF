@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Pure domain values and state machines for PincerPDF.
+//! Pure domain values and state machines for `PincerPDF`.
 
 use std::error::Error;
 use std::fmt;
@@ -27,7 +27,7 @@ pub enum ErrorCode {
     EngineFailure,
     /// A task was cancelled.
     Cancelled,
-    /// An invariant failed inside PincerPDF.
+    /// An invariant failed inside `PincerPDF`.
     Internal,
 }
 
@@ -56,6 +56,10 @@ pub struct PageNumber(NonZeroU32);
 
 impl PageNumber {
     /// Constructs a page number, rejecting zero.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PageNumberError`] when `value` is zero.
     pub fn new(value: u32) -> Result<Self, PageNumberError> {
         NonZeroU32::new(value).map(Self).ok_or(PageNumberError)
     }
@@ -115,6 +119,10 @@ impl PageSelection {
     /// Resolves the expression against a concrete PDF page count.
     ///
     /// Segment order and deliberate duplicates are preserved.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ResolveSelectionError`] when any selected page exceeds `total_pages`.
     pub fn resolve(&self, total_pages: u32) -> Result<Vec<PageNumber>, ResolveSelectionError> {
         let mut pages = Vec::new();
 
@@ -388,6 +396,10 @@ impl TaskState {
     }
 
     /// Validates and returns the next state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidTaskTransition`] when `next` is not a documented lifecycle transition.
     pub fn transition_to(self, next: Self) -> Result<Self, InvalidTaskTransition> {
         if self.can_transition_to(next) {
             Ok(next)
