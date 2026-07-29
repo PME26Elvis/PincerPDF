@@ -1,0 +1,7 @@
+[build]
+jobs = 4
+target-dir = "target"
+
+[term]
+color = "always"
+verbose = false

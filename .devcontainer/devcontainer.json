@@ -1,0 +1,19 @@
+{
+  "name": "PincerPDF Linux Rust",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspace/PincerPDF",
+  "mounts": [
+    "source=pincerpdf-cargo-registry,target=/usr/local/cargo/registry,type=volume",
+    "source=pincerpdf-cargo-git,target=/usr/local/cargo/git,type=volume",
+    "source=pincerpdf-target,target=/workspace/PincerPDF/target,type=volume"
+  ],
+  "containerEnv": {
+    "CARGO_BUILD_JOBS": "4",
+    "RUST_BACKTRACE": "1"
+  },
+  "postCreateCommand": "make bootstrap-check && make verify-structure",
+  "remoteUser": "root"
+}
