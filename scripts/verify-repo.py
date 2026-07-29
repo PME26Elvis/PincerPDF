@@ -111,6 +111,7 @@ def verify_shell_contract() -> None:
     """Verify stable shell, accessibility, motion, and native-host contracts."""
 
     source = (ROOT / "apps/pincerpdf-ui/src/main.rs").read_text(encoding="utf-8")
+    index = (ROOT / "apps/pincerpdf-ui/index.html").read_text(encoding="utf-8")
     styles = (ROOT / "apps/pincerpdf-ui/styles.css").read_text(encoding="utf-8")
     tests = (ROOT / "tests/e2e/application-shell.spec.mjs").read_text(encoding="utf-8")
     config = load_json("apps/pincerpdf-desktop/src-tauri/tauri.conf.json")
@@ -148,6 +149,12 @@ def verify_shell_contract() -> None:
         fail("skip-link accessibility contract is incomplete")
     if 'Array(8).fill("Not implemented")' not in tests:
         fail("E2E must enforce explicit not-implemented states for all tools")
+    if 'data-wasm-opt="0"' not in index:
+        fail("P3 must disable the measured-incompatible Trunk wasm-opt post-link pass")
+    if '"Application shell"</strong><small>"Leptos CSR + Tauri 2 · 5 E2E"' not in source:
+        fail("P3 application-shell readiness evidence is not reflected in the UI")
+    if 'class="readiness-icon is-progress"' in source:
+        fail("completed P3 readiness must not remain visually marked in progress")
 
     windows = config.get("app", {}).get("windows", [])
     if len(windows) != 1 or windows[0].get("label") != "main":
