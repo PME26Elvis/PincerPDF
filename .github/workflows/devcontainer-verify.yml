@@ -1,0 +1,64 @@
+name: Devcontainer verification
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/devcontainer-verify.yml"
+      - ".devcontainer/**"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/devcontainer-verify.yml"
+      - ".devcontainer/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devcontainer-verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test development image
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build pinned development image
+        run: |
+          docker buildx build \
+            --pull \
+            --progress=plain \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --load \
+            --file .devcontainer/Dockerfile \
+            --tag pincerpdf-devcontainer:verify \
+            .
+
+      - name: Verify required tools inside image
+        run: |
+          docker run --rm \
+            pincerpdf-devcontainer:verify \
+            bash -c 'rustc --version && cargo --version && trunk --version && node --version && qpdf --version | head -n 1 && mutool -v'
+
+      - name: Run repository quality gate inside image
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/workspace/PincerPDF" \
+            --workdir /workspace/PincerPDF \
+            pincerpdf-devcontainer:verify \
+            bash -c 'make bootstrap-check && make check-fast'
+
+      - name: Ensure validation did not modify tracked files
+        run: git diff --exit-code
