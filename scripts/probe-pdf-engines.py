@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import shlex
 import subprocess
 import time
@@ -80,7 +81,7 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def qdf_contains(source: Path, token: bytes, work: Path, results: list[CommandResult]) -> bool:
+def make_qdf(source: Path, work: Path, results: list[CommandResult]) -> Path:
     qdf = work / f"{source.stem}.qdf.pdf"
     results.append(
         run(
@@ -88,7 +89,37 @@ def qdf_contains(source: Path, token: bytes, work: Path, results: list[CommandRe
             ["qpdf", "--qdf", "--object-streams=disable", source, qdf],
         )
     )
-    return token in qdf.read_bytes()
+    return qdf
+
+
+def analyze_qdf(qdf: Path) -> dict[str, object]:
+    data = qdf.read_bytes()
+    objects = {
+        int(match.group(1)): match.group(2).strip()
+        for match in re.finditer(rb"(?ms)^(\d+) 0 obj\n(.*?)\nendobj", data)
+    }
+    outline_nodes = 0
+    dangling_outline_destinations = 0
+    for body in objects.values():
+        if b"/Title" not in body:
+            continue
+        outline_nodes += 1
+        destination = re.search(rb"/Dest\s*\[\s*(\d+) 0 R", body)
+        if destination is None:
+            continue
+        target = objects.get(int(destination.group(1)), b"").strip()
+        if target == b"null":
+            dangling_outline_destinations += 1
+
+    return {
+        "has_outlines": b"/Outlines" in data,
+        "outline_nodes": outline_nodes,
+        "dangling_outline_destinations": dangling_outline_destinations,
+        "has_acroform": b"/AcroForm" in data,
+        "field_arrays": len(re.findall(rb"/Fields\s*\[", data)),
+        "widget_annotations": len(re.findall(rb"/Subtype\s*/Widget", data)),
+        "page_objects": len(re.findall(rb"/Type\s*/Page(?!s)\b", data)),
+    }
 
 
 def page_count(source: Path, probe_id: str, results: list[CommandResult]) -> int:
@@ -150,16 +181,18 @@ def main() -> int:
         rendered = sorted(render.glob(f"{name}-*.png"))
         assert_equal(len(rendered), expected_pages[name], f"rendered page count for {name}")
 
-    structure = {
-        "bookmarks_source_has_outlines": qdf_contains(
-            required["bookmarks"], b"/Outlines", work, results
-        ),
-        "form_source_has_acroform": qdf_contains(
-            required["acroform"], b"/AcroForm", work, results
-        ),
-    }
-    assert_equal(structure["bookmarks_source_has_outlines"], True, "bookmark fixture outline")
-    assert_equal(structure["form_source_has_acroform"], True, "form fixture AcroForm")
+    bookmarks_source = analyze_qdf(make_qdf(required["bookmarks"], work, results))
+    form_source = analyze_qdf(make_qdf(required["acroform"], work, results))
+    assert_equal(bookmarks_source["has_outlines"], True, "bookmark fixture outline")
+    assert_equal(bookmarks_source["outline_nodes"], 3, "bookmark fixture node count")
+    assert_equal(
+        bookmarks_source["dangling_outline_destinations"],
+        0,
+        "bookmark fixture dangling destinations",
+    )
+    assert_equal(form_source["has_acroform"], True, "form fixture AcroForm")
+    assert_equal(form_source["field_arrays"], 1, "form fixture field array")
+    assert_equal(form_source["widget_annotations"], 1, "form fixture widget count")
 
     extracted = work / "extracted-page-2.pdf"
     results.append(
@@ -243,7 +276,7 @@ def main() -> int:
             "qpdf.encryption.wrong_password",
             ["qpdf", "--password=wrong", "--show-npages", encrypted],
             expected=range(1, 256),
-            display_command=["qpdf", "--password=<redacted-wrong>", "--show-npages", str(encrypted)],
+            display_command=["qpdf", "--password=<redacted-wronf~", "--show-npages", str(encrypted)],
         )
     )
 
@@ -261,16 +294,31 @@ def main() -> int:
             ["qpdf", required["acroform"], "--pages", ".", "1", "--", form_subset],
         )
     )
-    structure.update(
-        {
-            "bookmarks_subset_has_outlines": qdf_contains(
-                bookmark_subset, b"/Outlines", work, results
-            ),
-            "form_subset_has_acroform": qdf_contains(
-                form_subset, b"/AcroForm", work, results
-            ),
-        }
+    bookmarks_subset = analyze_qdf(make_qdf(bookmark_subset, work, results))
+    form_subset = analyze_qdf(make_qdf(form_subset, work, results))
+    merged_structure = analyze_qdf(make_qdf(merged, work, results))
+
+    # These are deliberately asserted as observed behavior of the pinned engine.
+    # Any future change must trigger an architectural review rather than silently
+    # broadening or narrowing an advertised capability.
+    assert_equal(bookmarks_subset["outline_nodes"], 3, "bookmark subset node count")
+    assert_equal(
+        bookmarks_subset["dangling_outline_destinations"],
+        1,
+        "bookmark subset dangling destinations",
     )
+    assert_equal(merged_structure["has_outlines"], False, "merged outline preservation")
+    assert_equal(form_subset["has_acroform"], True, "form subset AcroForm")
+    assert_equal(form_subset["field_arrays"], 1, "form subset field array")
+    assert_equal(form_subset["widget_annotations"], 1, "form subset widget count")
+
+    structure = {
+        "bookmarks_source": bookmarks_source,
+        "bookmarks_subset": bookmarks_subset,
+        "form_source": form_source,
+        "form_subset": form_subset,
+        "merged": merged_structure,
+    }
 
     report = {
         "schema": 1,

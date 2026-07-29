@@ -73,10 +73,10 @@ jobs:
           print('## PDF engine capability probe')
           print()
           print(f"- Commands passed: {summary['passed']}/{summary['commands']}")
-          print(f"- Source bookmarks detected: {structure['bookmarks_source_has_outlines']}")
-          print(f"- Bookmark subset retained outlines: {structure['bookmarks_subset_has_outlines']}")
-          print(f"- Source AcroForm detected: {structure['form_source_has_acroform']}")
-          print(f"- Form subset retained AcroForm: {structure['form_subset_has_acroform']}")
+          print(f"- Source bookmark nodes: {structure['bookmarks_source']['outline_nodes']}")
+          print(f"- Subset dangling bookmark destinations: {structure['bookmarks_subset']['dangling_outline_destinations']}")
+          print(f"- Merge retained outlines: {structure['merged']['has_outlines']}")
+          print(f"- Form subset widgets: {structure['form_subset']['widget_annotations']}")
           PY
 
       - name: Upload capability report
