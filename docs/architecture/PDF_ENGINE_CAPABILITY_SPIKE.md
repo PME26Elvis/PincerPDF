@@ -1,6 +1,6 @@
 # PDF Engine Capability Spike
 
-Status: **Executing**  
+Status: **Baseline measured**  
 Phase: P2  
 Decision owner: architecture ADR process
 
@@ -21,29 +21,88 @@ The generator writes object offsets, xref tables, trailer references, byte lengt
 
 ## Measured operations
 
-The first probe measures:
+The baseline probe measures:
 
 1. QPDF structural checks and page-count inspection.
 2. MuPDF information inspection and page rendering.
 3. QPDF page extraction.
-4. QPDF multi-source merge.
+4. QPDF multi-source page assembly.
 5. QPDF page rotation followed by structural and rendering checks.
 6. QPDF AES-256 encryption, correct-password access, and wrong-password rejection.
-7. Source and subset detection of outline and `AcroForm` catalog structures through QDF output.
+7. QDF object-graph analysis of outline nodes/destinations and AcroForm field/widget structures before and after page selection.
+8. QDF inspection of page-assembly output for outline preservation.
 
 Every external command records its redacted command line, exit code, duration, bounded stdout/stderr, and pass/fail status in `report.json`.
+
+## Baseline evidence
+
+GitHub Actions run `30427856572` completed successfully in the pinned Linux image. Artifact `8714417168` has digest `sha256:a8b836838b12766bcf946905ae585420685309937a254abdae265aefa0810e6c` and contains the JSON report, deterministic fixtures, derived PDFs and rendered pages.
+
+Environment:
+
+- QPDF `11.3.0`
+- MuPDF tools `1.21.1`
+- pinned PincerPDF Linux development image
+
+Results:
+
+- 32/32 measured commands passed.
+- QPDF validated all deterministic source and derived PDFs.
+- QPDF returned correct page counts for source, extracted, assembled and password-unlocked documents.
+- MuPDF inspected and rendered all source fixtures and the rotated output.
+- QPDF produced page extraction, page assembly, rotation and AES-256 encrypted outputs accepted by the corresponding checks.
+- Correct-password access succeeded; wrong-password access failed with a non-zero exit code while evidence remained redacted.
+- The report contains none of the three configured test password strings.
+
+Deterministic source fixture hashes:
+
+- `plain-three-pages.pdf`: `df84e64a0575b5027b4f40552a3df0a162cb6d8c5eaf38cb29beb0caaa0be4ca`
+- `bookmarks.pdf`: `409bd3157225468eb91fb9474aece1592412e15cf054f9f67ad3712b4202b454`
+- `acroform.pdf`: `aaf80f49c45189d401c8b76a18ae5362943cfccc51c9b48bf1c6ca8e3e4bb58e`
+
+## Semantic observations
+
+- The source bookmark fixture contained three outline nodes and no dangling destinations.
+- Selecting pages 1–2 retained all three outline nodes but changed the removed page destination to `null`; the output therefore contained one dangling outline destination.
+- The measured page assembly contained three page objects but no outline tree.
+- The source AcroForm contained one field array and one widget annotation.
+- Selecting its only page retained the catalog AcroForm, one field array and one widget annotation.
+
+Token presence alone is not accepted as preservation evidence. The outline result demonstrates why object-graph validation is mandatory.
+
+## Architectural result
+
+The baseline supports the responsibility split recorded in `ADR-013`:
+
+- QPDF is the initial structural transformation/encryption candidate behind isolated Rust ports.
+- MuPDF is the initial renderer and visual-verification oracle.
+- PincerPDF owns outline parsing, page-target remapping, pruning and rebuilding.
+- Form preservation remains experimental pending a broader corpus.
+
+No concrete engine is referenced from domain, application or UI code. Capabilities are granted only by contract suites for the exact behavior and engine version measured.
 
 ## Acceptance criteria
 
 - Fixture generation is deterministic and independently parseable.
 - Every source passes QPDF validation and MuPDF inspection/rendering.
-- Derived extraction, merge, rotation, and encryption outputs pass their explicit semantic assertions.
+- Derived extraction, assembly, rotation and encryption outputs pass explicit semantic assertions.
 - Wrong-password access fails without exposing either configured password in the report.
+- Outline and form claims are based on object-graph analysis rather than token presence alone.
 - The report is valid JSON and uploaded as a workflow artifact.
 - Repository files remain unchanged after the probe.
 
-## Decision rule
+All baseline acceptance criteria passed.
 
-A successful command proves only the measured behavior on the fixture corpus. It does not grant a broad capability automatically. Production capability flags require a growing contract suite that includes malformed inputs, Unicode metadata, page boxes, inherited resources, object streams, forms, bookmarks, encryption variants, and differential outputs against the accepted PDFsam baseline.
+## Next corpus expansion
 
-The engine-responsibility ADR remains proposed until the report has been reviewed and preservation gaps are explicitly assigned to an adapter or application-layer reconstruction strategy.
+Before production parity claims, extend the suite with:
+
+- malformed and recoverable PDFs,
+- xref streams and object streams,
+- inherited page boxes and resources,
+- Unicode metadata and outline titles,
+- named destinations and action dictionaries,
+- multi-page/duplicate-name AcroForms and appearance streams,
+- merge collisions and bookmark policies,
+- multiple encryption revisions and permission combinations,
+- PDFsam differential outputs for the accepted baseline.
