@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-07-29
-- Phase: P1 — Reproducible Linux environment (in progress)
+- Phase: P1 — Reproducible Linux environment (compiler gate complete; image build pending)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: trunk-based, atomic checkpoints to `main`
@@ -20,26 +20,41 @@
   - atomic output-path planning,
   - minimal CLI doctor/selection commands.
 - Structural verification can run without Cargo or network access.
+- Narrow Linux GitHub Actions fallback established for relevant source changes and explicit validation PRs.
+- Rust foundation quality gate is green on commit `20380ccfd8b02be68ed5845ec3f4a14cf720cd1e`.
 
-## Current validation lane
+## Validation evidence
 
-The present execution container has no Rust toolchain and cannot download one. A narrowly scoped GitHub Actions Linux quality lane now supplies the missing compiler environment. It runs only for relevant `main` changes or manual dispatch, uses the exact pinned Rust toolchain, and does not introduce a cross-platform matrix. Rust formatting, Clippy, tests and CLI smoke results remain pending until that workflow completes successfully.
+GitHub Actions run `30424532988` (`Linux quality`, Ubuntu 24.04) completed successfully:
 
-## Evidence from this checkpoint
+- pinned `rustc 1.97.1 (8bab26f4f 2026-07-14)`,
+- `cargo fmt --all -- --check`,
+- `cargo clippy --workspace --all-targets --all-features -- -D warnings`,
+- `cargo test --workspace --all-targets`: 13 passed, 0 failed,
+- CLI `doctor` smoke test,
+- CLI page-selection smoke test (`1-3,8` against 10 pages -> `1,2,3,8`),
+- post-validation `git diff --exit-code`,
+- dependency-free structural verification for five workspace members.
 
-- `python3 scripts/verify-repo.py`: required file, TOML, workspace/lint/license/toolchain and source-policy checks.
-- `bash -n scripts/bootstrap-check.sh scripts/check-fast.sh`: shell syntax validation.
-- `python3 -m compileall scripts`: Python verifier syntax validation.
-- Rust tests are included beside their behavior but remain unexecuted until the pinned toolchain is available.
+Local restricted-container checks also passed:
+
+- `python3 scripts/verify-repo.py`,
+- `bash -n scripts/bootstrap-check.sh scripts/check-fast.sh`,
+- `python3 -m compileall scripts`,
+- `git diff --check` for every repair checkpoint.
+
+## Remaining P1 evidence
+
+The exact `.devcontainer/Dockerfile` has not yet completed a full image build. The current ChatGPT execution container cannot download the pinned Rust toolchain or apt dependencies, so this must be validated in the Linux Actions lane before P1 is marked entirely complete. This does not invalidate the green Rust compiler/test evidence above.
 
 ## Exact next actions
 
-1. Run the `Linux quality` GitHub Actions workflow on the current `main` checkpoint.
-2. Fix every formatting, compiler, Clippy, test, lockfile and CLI-smoke finding until the lane is green.
-3. Record the successful run and exact commit here, completing the Rust portion of P1.
-4. Add the Tauri 2 + Leptos shell only after the foundation workspace is green.
-5. Begin P2 with executable QPDF/MuPDF capability fixtures; do not choose a primary PDF engine by assumption.
+1. Squash-integrate PR #1 after this evidence update.
+2. Add a manually triggered, cached devcontainer image-build verification and run it once.
+3. Scaffold the Tauri 2 + Leptos shell behind the existing domain/application boundaries.
+4. Begin P2 with executable QPDF/MuPDF capability fixtures; do not choose a primary PDF engine by assumption.
+5. Keep cross-platform packaging deferred until the Linux release-candidate gate.
 
 ## Completion status
 
-P1 is not complete. A fresh container bootstrap and successful Rust quality gate are still required.
+The Rust foundation portion of P1 is complete and verified. P1 as a whole remains open only for one successful build of the pinned Linux devcontainer image.
