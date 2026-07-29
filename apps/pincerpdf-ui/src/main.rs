@@ -250,8 +250,8 @@ fn readiness_panel() -> impl IntoView {
                     <span><strong>"Linux environment"</strong><small>"Reproducible devcontainer"</small></span>
                 </li>
                 <li>
-                    <span class="readiness-icon is-progress" aria-hidden="true">"·"</span>
-                    <span><strong>"Application shell"</strong><small>"Leptos CSR + Tauri 2"</small></span>
+                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>
+                    <span><strong>"Application shell"</strong><small>"Leptos CSR + Tauri 2 · 5 E2E"</small></span>
                 </li>
             </ul>
         </section>
