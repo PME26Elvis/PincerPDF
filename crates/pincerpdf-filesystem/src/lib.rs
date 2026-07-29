@@ -27,6 +27,11 @@ pub struct OutputPathPlan {
 }
 
 /// Constructs an output path plan without touching the filesystem.
+///
+/// # Errors
+///
+/// Returns [`OutputPlanError`] when the destination lacks a file name, an existing
+/// destination conflicts with `policy`, or `operation_token` is not portable.
 pub fn plan_output_path(
     requested: &Path,
     final_path_exists: bool,
