@@ -1,0 +1,19 @@
+[package]
+name = "pincerpdf-ui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+
+[[bin]]
+name = "pincerpdf-ui"
+path = "src/main.rs"
+
+[dependencies]
+leptos = { version = "=0.8.20", default-features = false, features = ["csr"] }
+
+[lints]
+workspace = true
