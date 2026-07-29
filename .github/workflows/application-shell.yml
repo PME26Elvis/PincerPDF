@@ -1,0 +1,119 @@
+name: Application shell
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/application-shell.yml"
+      - ".devcontainer/**"
+      - "apps/pincerpdf-desktop/**"
+      - "apps/pincerpdf-ui/**"
+      - "tests/e2e/**"
+      - "playwright.config.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/verify-repo.py"
+      - "Makefile"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/application-shell.yml"
+      - ".devcontainer/**"
+      - "apps/pincerpdf-desktop/**"
+      - "apps/pincerpdf-ui/**"
+      - "tests/e2e/**"
+      - "playwright.config.mjs"
+      - "package.json"
+      - "package-lock.json"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "scripts/verify-repo.py"
+      - "Makefile"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: application-shell-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test-capture:
+    name: Build, test and capture Linux shell
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Build cached development image
+        run: |
+          docker buildx build \
+            --pull \
+            --progress=plain \
+            --cache-from type=gha,scope=pincerpdf-devcontainer \
+            --cache-to type=gha,scope=pincerpdf-devcontainer,mode=max \
+            --load \
+            --file .devcontainer/Dockerfile \
+            --tag pincerpdf-devcontainer:shell \
+            .
+
+      - name: Resolve locks and validate shell
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/workspace/PincerPDF" \
+            --workdir /workspace/PincerPDF \
+            --env CI=true \
+            --env PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium \
+            pincerpdf-devcontainer:shell \
+            bash -c '
+              set -euo pipefail
+              cargo generate-lockfile
+              npm install --package-lock-only --ignore-scripts
+              npm ci --ignore-scripts
+              python3 scripts/verify-repo.py
+              cargo fmt --all -- --check
+              cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+              cargo test --workspace --all-targets --locked
+              cargo check --locked -p pincerpdf-desktop
+              cd apps/pincerpdf-ui
+              trunk build --release --dist ../../.artifacts/application-shell/dist
+              cd ../..
+              npm run test:e2e
+              mkdir -p .artifacts/application-shell/locks
+              cp Cargo.lock package-lock.json .artifacts/application-shell/locks/
+            '
+
+      - name: Verify only generated locks changed
+        run: |
+          git diff --exit-code -- . \
+            ':(exclude)Cargo.lock' \
+            ':(exclude)package-lock.json'
+
+      - name: Summarize checkpoint
+        run: |
+          {
+            echo "## PincerPDF application shell"
+            echo
+            echo "- Leptos CSR release build: passed"
+            echo "- Tauri 2 Linux host check: passed"
+            echo "- Workspace format, Clippy and tests: passed"
+            echo "- Browser E2E and keyboard checks: passed"
+            echo "- Desktop and compact screenshots: captured"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload shell evidence and generated locks
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-shell-evidence
+          path: .artifacts/application-shell/
+          if-no-files-found: error
+          retention-days: 14

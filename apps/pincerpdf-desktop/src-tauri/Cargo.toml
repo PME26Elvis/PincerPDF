@@ -1,0 +1,19 @@
+[package]
+name = "pincerpdf-desktop"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish = false
+build = "build.rs"
+
+[dependencies]
+tauri = { version = "=2.11.5" }
+
+[build-dependencies]
+tauri-build = { version = "=2.6.3" }
+
+[lints]
+workspace = true

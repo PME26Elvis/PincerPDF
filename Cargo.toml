@@ -2,6 +2,8 @@
 resolver = "3"
 members = [
   "apps/pincerpdf-cli",
+  "apps/pincerpdf-desktop/src-tauri",
+  "apps/pincerpdf-ui",
   "crates/pincerpdf-application",
   "crates/pincerpdf-domain",
   "crates/pincerpdf-engine-api",
@@ -9,6 +11,8 @@ members = [
 ]
 default-members = [
   "apps/pincerpdf-cli",
+  "apps/pincerpdf-desktop/src-tauri",
+  "apps/pincerpdf-ui",
   "crates/pincerpdf-application",
   "crates/pincerpdf-domain",
   "crates/pincerpdf-engine-api",

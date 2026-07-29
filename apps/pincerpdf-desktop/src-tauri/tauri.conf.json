@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PincerPDF",
+  "version": "0.1.0",
+  "identifier": "dev.pincerpdf.desktop",
+  "build": {
+    "beforeDevCommand": "cd ../../pincerpdf-ui && trunk serve --address 127.0.0.1 --port 1420",
+    "devUrl": "http://127.0.0.1:1420",
+    "beforeBuildCommand": "cd ../../pincerpdf-ui && trunk build --release",
+    "frontendDist": "../../pincerpdf-ui/dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "PincerPDF",
+        "width": 1440,
+        "height": 900,
+        "minWidth": 1024,
+        "minHeight": 720,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "center": true
+      }
+    ],
+    "security": {
+      "capabilities": [
+        "default"
+      ],
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; img-src 'self' data: blob: asset:; style-src 'self' 'unsafe-inline'; script-src 'self' 'wasm-unsafe-eval'"
+    }
+  },
+  "bundle": {
+    "active": false
+  }
+}
