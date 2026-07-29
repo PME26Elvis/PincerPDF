@@ -85,11 +85,12 @@ mod tests {
 
     #[test]
     fn merge_requires_inspection_and_merge() {
-        let available = CapabilitySet::from_capabilities([
-            PdfCapability::Inspect,
-            PdfCapability::Merge,
-        ]);
-        assert_eq!(validate_tool_capabilities(ToolKind::Merge, &available), Ok(()));
+        let available =
+            CapabilitySet::from_capabilities([PdfCapability::Inspect, PdfCapability::Merge]);
+        assert_eq!(
+            validate_tool_capabilities(ToolKind::Merge, &available),
+            Ok(())
+        );
     }
 
     #[test]

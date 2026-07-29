@@ -49,9 +49,7 @@ impl CapabilitySet {
 
     /// Creates a set from an iterator, removing duplicates.
     #[must_use]
-    pub fn from_capabilities(
-        capabilities: impl IntoIterator<Item = PdfCapability>,
-    ) -> Self {
+    pub fn from_capabilities(capabilities: impl IntoIterator<Item = PdfCapability>) -> Self {
         Self(capabilities.into_iter().collect())
     }
 

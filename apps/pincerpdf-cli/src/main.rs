@@ -57,10 +57,8 @@ fn run(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>
 }
 
 fn doctor() {
-    let available = CapabilitySet::from_capabilities([
-        PdfCapability::Inspect,
-        PdfCapability::Merge,
-    ]);
+    let available =
+        CapabilitySet::from_capabilities([PdfCapability::Inspect, PdfCapability::Merge]);
     let merge_ready = validate_tool_capabilities(ToolKind::Merge, &available).is_ok();
     let rotate_ready = validate_tool_capabilities(ToolKind::Rotate, &available).is_ok();
 
