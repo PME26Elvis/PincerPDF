@@ -21,9 +21,9 @@
   - minimal CLI doctor/selection commands.
 - Structural verification can run without Cargo or network access.
 
-## Current environment limitation
+## Current validation lane
 
-The present execution container has no Rust toolchain and outbound package/toolchain downloads are unavailable. Consequently, Rust formatting, Clippy and `cargo test` have **not** yet been executed in this container. This is an infrastructure blocker, not accepted test evidence. The repository records the exact bootstrap image needed to resolve it.
+The present execution container has no Rust toolchain and cannot download one. A narrowly scoped GitHub Actions Linux quality lane now supplies the missing compiler environment. It runs only for relevant `main` changes or manual dispatch, uses the exact pinned Rust toolchain, and does not introduce a cross-platform matrix. Rust formatting, Clippy, tests and CLI smoke results remain pending until that workflow completes successfully.
 
 ## Evidence from this checkpoint
 
@@ -34,10 +34,11 @@ The present execution container has no Rust toolchain and outbound package/toolc
 
 ## Exact next actions
 
-1. Run the pinned devcontainer build in an environment with package access.
-2. Execute `make bootstrap-check` and `make check-fast`; fix every compiler/Clippy/test finding before advancing.
-3. Add the Tauri 2 + Leptos shell only after the foundation workspace is green.
-4. Begin P2 with executable QPDF/MuPDF capability fixtures; do not choose a primary PDF engine by assumption.
+1. Run the `Linux quality` GitHub Actions workflow on the current `main` checkpoint.
+2. Fix every formatting, compiler, Clippy, test, lockfile and CLI-smoke finding until the lane is green.
+3. Record the successful run and exact commit here, completing the Rust portion of P1.
+4. Add the Tauri 2 + Leptos shell only after the foundation workspace is green.
+5. Begin P2 with executable QPDF/MuPDF capability fixtures; do not choose a primary PDF engine by assumption.
 
 ## Completion status
 

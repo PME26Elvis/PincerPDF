@@ -25,3 +25,7 @@ The image pins Rust and Node base images and installs Linux Tauri/WebKitGTK depe
 ## Failure policy
 
 A missing dependency, OOM, inaccessible package registry or unavailable display driver is an infrastructure failure. Record it precisely and repair the environment; never reinterpret it as permission to skip validation.
+
+## Restricted-container fallback
+
+When the active execution container cannot install the pinned Rust toolchain, use `.github/workflows/linux-quality.yml` as the narrow remote compiler lane. It deliberately runs one Ubuntu job, only on relevant `main` changes or manual dispatch. It is not a substitute for later packaged-app or cross-platform validation. A green run may satisfy the compiler/Clippy/test portion of a checkpoint, but local structural verification and durable evidence updates are still required.
