@@ -217,10 +217,7 @@ fn parse_page(index: usize, raw: &str) -> Result<PageNumber, ParseSelectionError
         .map_err(|_| ParseSelectionError::new(index, raw, ParseSelectionErrorKind::ZeroPage))
 }
 
-fn ensure_in_bounds(
-    requested: PageNumber,
-    total_pages: u32,
-) -> Result<(), ResolveSelectionError> {
+fn ensure_in_bounds(requested: PageNumber, total_pages: u32) -> Result<(), ResolveSelectionError> {
     if requested.get() > total_pages {
         Err(ResolveSelectionError {
             requested,
@@ -382,7 +379,10 @@ impl TaskState {
         matches!(
             (self, next),
             (Self::Queued, Self::Running | Self::Cancelled)
-                | (Self::Running, Self::Cancelling | Self::Succeeded | Self::Failed)
+                | (
+                    Self::Running,
+                    Self::Cancelling | Self::Succeeded | Self::Failed
+                )
                 | (Self::Cancelling, Self::Cancelled | Self::Failed)
         )
     }
@@ -392,7 +392,10 @@ impl TaskState {
         if self.can_transition_to(next) {
             Ok(next)
         } else {
-            Err(InvalidTaskTransition { from: self, to: next })
+            Err(InvalidTaskTransition {
+                from: self,
+                to: next,
+            })
         }
     }
 
@@ -491,7 +494,9 @@ mod tests {
     #[test]
     fn selection_rejects_out_of_bounds_pages() {
         let selection: PageSelection = "2-5".parse().expect("valid syntax");
-        let error = selection.resolve(4).expect_err("page five is out of bounds");
+        let error = selection
+            .resolve(4)
+            .expect_err("page five is out of bounds");
         assert_eq!(error.requested().get(), 5);
         assert_eq!(error.total_pages(), 4);
     }
