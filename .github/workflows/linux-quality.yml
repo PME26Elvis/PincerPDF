@@ -45,6 +45,7 @@ env:
   CARGO_TERM_COLOR: always
   CARGO_BUILD_JOBS: "4"
   RUST_BACKTRACE: "1"
+  PINCERPDF_PORTABLE_ONLY: "1"
 
 jobs:
   rust-foundation:
@@ -77,7 +78,7 @@ jobs:
           cargo clippy --version
           cargo fmt --version
 
-      - name: Run Rust quality gate
+      - name: Run portable Rust quality gate
         run: make check-fast
 
       - name: Run CLI smoke tests

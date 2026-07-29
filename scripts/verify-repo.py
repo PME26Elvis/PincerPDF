@@ -28,9 +28,11 @@ REQUIRED_FILES = (
     "apps/pincerpdf-ui/styles.css",
     "apps/pincerpdf-desktop/src-tauri/tauri.conf.json",
     "apps/pincerpdf-desktop/src-tauri/capabilities/default.json",
+    "apps/pincerpdf-desktop/src-tauri/icons/icon.png",
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
     "package.json",
+    "package-lock.json",
     "playwright.config.mjs",
     "tests/e2e/application-shell.spec.mjs",
 )
@@ -82,10 +84,34 @@ def load_json(relative: str) -> dict:
         fail(f"cannot parse {relative}: {error}")
 
 
+def verify_dependency_locks() -> None:
+    """Verify the committed Rust and browser lockfiles cover the P3 applications."""
+
+    cargo_lock = (ROOT / "Cargo.lock").read_text(encoding="utf-8")
+    for package_name in ("pincerpdf-desktop", "pincerpdf-ui", "tauri", "leptos"):
+        if f'name = "{package_name}"' not in cargo_lock:
+            fail(f"Cargo.lock does not contain required P3 package: {package_name}")
+
+    package = load_json("package.json")
+    package_lock = load_json("package-lock.json")
+    if package_lock.get("lockfileVersion") != 3:
+        fail("package-lock.json must use npm lockfileVersion 3")
+
+    root_package = package_lock.get("packages", {}).get("", {})
+    if root_package.get("devDependencies") != package.get("devDependencies"):
+        fail("package-lock root devDependencies must match package.json")
+
+    playwright_version = package.get("devDependencies", {}).get("@playwright/test")
+    locked_playwright = package_lock.get("packages", {}).get("node_modules/@playwright/test", {})
+    if playwright_version != "1.62.0" or locked_playwright.get("version") != playwright_version:
+        fail("Playwright must remain exactly locked to 1.62.0 for P3 evidence")
+
+
 def verify_shell_contract() -> None:
     """Verify stable shell, accessibility, motion, and native-host contracts."""
 
     source = (ROOT / "apps/pincerpdf-ui/src/main.rs").read_text(encoding="utf-8")
+    index = (ROOT / "apps/pincerpdf-ui/index.html").read_text(encoding="utf-8")
     styles = (ROOT / "apps/pincerpdf-ui/styles.css").read_text(encoding="utf-8")
     tests = (ROOT / "tests/e2e/application-shell.spec.mjs").read_text(encoding="utf-8")
     config = load_json("apps/pincerpdf-desktop/src-tauri/tauri.conf.json")
@@ -123,6 +149,12 @@ def verify_shell_contract() -> None:
         fail("skip-link accessibility contract is incomplete")
     if 'Array(8).fill("Not implemented")' not in tests:
         fail("E2E must enforce explicit not-implemented states for all tools")
+    if 'data-wasm-opt="0"' not in index:
+        fail("P3 must disable the measured-incompatible Trunk wasm-opt post-link pass")
+    if '"Application shell"</strong><small>"Leptos CSR + Tauri 2 · 5 E2E"' not in source:
+        fail("P3 application-shell readiness evidence is not reflected in the UI")
+    if 'class="readiness-icon is-progress"' in source:
+        fail("completed P3 readiness must not remain visually marked in progress")
 
     windows = config.get("app", {}).get("windows", [])
     if len(windows) != 1 or windows[0].get("label") != "main":
@@ -130,6 +162,10 @@ def verify_shell_contract() -> None:
     permissions = set(capability.get("permissions", []))
     if permissions != {"core:default"}:
         fail("P3 Tauri capability must remain least-privilege core:default")
+
+    bundle = config.get("bundle", {})
+    if bundle.get("active") is not False or bundle.get("icon") != ["icons/icon.png"]:
+        fail("P3 Tauri host must reference the tracked icon while bundling remains disabled")
 
 
 def main() -> None:
@@ -178,11 +214,13 @@ def main() -> None:
             if "#![forbid(unsafe_code)]" not in text:
                 fail(f"Rust source does not explicitly forbid unsafe code: {path.relative_to(ROOT)}")
 
+    verify_dependency_locks()
     verify_shell_contract()
 
     print("PincerPDF structural verification passed")
     print(f"workspace_members={len(REQUIRED_MEMBERS)}")
     print(f"rust_toolchain={toolchain['channel']}")
+    print("dependency_locks=verified")
     print("application_shell=verified")
     print("status=verified")
 
