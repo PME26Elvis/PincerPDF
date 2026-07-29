@@ -1,0 +1,41 @@
+name: Finalize P3 shell once
+
+on:
+  push:
+    branches:
+      - fix/p3-application-shell-verification
+    paths:
+      - ".github/workflows/finalize-p3-shell-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  finalize-shell:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: fix/p3-application-shell-verification
+          persist-credentials: true
+      - name: Mark the verified P3 shell ready
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('apps/pincerpdf-ui/src/main.rs')
+          source = path.read_text(encoding='utf-8')
+          old = '''                    <span class="readiness-icon is-progress" aria-hidden="true">"·"</span>\n                    <span><strong>"Application shell"</strong><small>"Leptos CSR + Tauri 2"</small></span>'''
+          new = '''                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>\n                    <span><strong>"Application shell"</strong><small>"Leptos CSR + Tauri 2 · 5 E2E"</small></span>'''
+          if source.count(old) != 1:
+              raise SystemExit('expected exactly one P3 readiness block')
+          path.write_text(source.replace(old, new), encoding='utf-8')
+          PY
+      - name: Commit and self-remove
+        run: |
+          rm .github/workflows/finalize-p3-shell-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/pincerpdf-ui/src/main.rs .github/workflows/finalize-p3-shell-once.yml
+          git commit -m "fix(shell): mark P3 application shell verified"
+          git push origin HEAD:fix/p3-application-shell-verification
