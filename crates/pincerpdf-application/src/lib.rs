@@ -34,6 +34,11 @@ pub fn required_capabilities(tool: ToolKind) -> CapabilitySet {
 }
 
 /// Validates that an adapter may execute the requested tool.
+///
+/// # Errors
+///
+/// Returns [`MissingCapabilities`] when `available` does not contain every capability
+/// required by `tool`.
 pub fn validate_tool_capabilities(
     tool: ToolKind,
     available: &CapabilitySet,
