@@ -36,9 +36,12 @@ jobs:
 
       - name: Build pinned development image
         run: |
-          docker build \
+          docker buildx build \
             --pull \
             --progress=plain \
+            --cache-from type=gha \
+            --cache-to type=gha,mode=max \
+            --load \
             --file .devcontainer/Dockerfile \
             --tag pincerpdf-devcontainer:verify \
             .
@@ -47,7 +50,7 @@ jobs:
         run: |
           docker run --rm \
             pincerpdf-devcontainer:verify \
-            bash -lc 'rustc --version && cargo --version && trunk --version && node --version && qpdf --version | head -n 1 && mutool -v'
+            bash -c 'rustc --version && cargo --version && trunk --version && node --version && qpdf --version | head -n 1 && mutool -v'
 
       - name: Run repository quality gate inside image
         run: |
@@ -55,7 +58,7 @@ jobs:
             --volume "$GITHUB_WORKSPACE:/workspace/PincerPDF" \
             --workdir /workspace/PincerPDF \
             pincerpdf-devcontainer:verify \
-            bash -lc 'make bootstrap-check && make check-fast'
+            bash -c 'make bootstrap-check && make check-fast'
 
       - name: Ensure validation did not modify tracked files
         run: git diff --exit-code
