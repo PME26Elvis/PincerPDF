@@ -94,7 +94,7 @@ pub struct PdfMetadata {
     pub pdf_version: Option<String>,
     /// Whether a bookmark outline is present.
     pub has_bookmarks: bool,
-    /// Whether an AcroForm is present.
+    /// Whether an `AcroForm` is present.
     pub has_forms: bool,
 }
 
