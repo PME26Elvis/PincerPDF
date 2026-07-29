@@ -146,6 +146,10 @@ pub trait PdfEnginePort: Send + Sync {
     fn capabilities(&self) -> CapabilitySet;
 
     /// Inspects semantic metadata without mutating the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when the source cannot be read, unlocked, or inspected.
     fn inspect(
         &self,
         source: &Path,
