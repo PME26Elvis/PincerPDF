@@ -276,7 +276,7 @@ def main() -> int:
             "qpdf.encryption.wrong_password",
             ["qpdf", "--password=wrong", "--show-npages", encrypted],
             expected=range(1, 256),
-            display_command=["qpdf", "--password=<redacted-wronf~", "--show-npages", str(encrypted)],
+            display_command=["qpdf", "--password=<redacted-wrong>", "--show-npages", str(encrypted)],
         )
     )
 
