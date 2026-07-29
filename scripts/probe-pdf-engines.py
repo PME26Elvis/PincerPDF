@@ -280,22 +280,22 @@ def main() -> int:
         )
     )
 
-    bookmark_subset = work / "bookmark-subset.pdf"
+    bookmark_subset_path = work / "bookmark-subset.pdf"
     results.append(
         run(
             "qpdf.bookmark_subset",
-            ["qpdf", required["bookmarks"], "--pages", ".", "1-2", "--", bookmark_subset],
+            ["qpdf", required["bookmarks"], "--pages", ".", "1-2", "--", bookmark_subset_path],
         )
     )
-    form_subset = work / "form-subset.pdf"
+    form_subset_path = work / "form-subset.pdf"
     results.append(
         run(
             "qpdf.form_subset",
-            ["qpdf", required["acroform"], "--pages", ".", "1", "--", form_subset],
+            ["qpdf", required["acroform"], "--pages", ".", "1", "--", form_subset_path],
         )
     )
-    bookmarks_subset = analyze_qdf(make_qdf(bookmark_subset, work, results))
-    form_subset = analyze_qdf(make_qdf(form_subset, work, results))
+    bookmarks_subset = analyze_qdf(make_qdf(bookmark_subset_path, work, results))
+    form_subset = analyze_qdf(make_qdf(form_subset_path, work, results))
     merged_structure = analyze_qdf(make_qdf(merged, work, results))
 
     # These are deliberately asserted as observed behavior of the pinned engine.
@@ -334,7 +334,7 @@ def main() -> int:
         "structure": structure,
         "derived_outputs": {
             path.name: {"bytes": path.stat().st_size, "sha256": sha256(path)}
-            for path in [extracted, merged, rotated, encrypted, bookmark_subset, form_subset]
+            for path in [extracted, merged, rotated, encrypted, bookmark_subset_path, form_subset_path]
         },
         "commands": [asdict(result) | {"passed": result.passed} for result in results],
         "summary": {

@@ -39,8 +39,8 @@ jobs:
           docker buildx build \
             --pull \
             --progress=plain \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
+            --cache-from type=gha,scope=pincerpdf-devcontainer \
+            --cache-to type=gha,scope=pincerpdf-devcontainer,mode=max \
             --load \
             --file .devcontainer/Dockerfile \
             --tag pincerpdf-devcontainer:verify \

@@ -45,8 +45,8 @@ jobs:
           docker buildx build \
             --pull \
             --progress=plain \
-            --cache-from type=gha \
-            --cache-to type=gha,mode=max \
+            --cache-from type=gha,scope=pincerpdf-devcontainer \
+            --cache-to type=gha,scope=pincerpdf-devcontainer,mode=max \
             --load \
             --file .devcontainer/Dockerfile \
             --tag pincerpdf-devcontainer:probe \
@@ -76,7 +76,8 @@ jobs:
           print(f"- Source bookmark nodes: {structure['bookmarks_source']['outline_nodes']}")
           print(f"- Subset dangling bookmark destinations: {structure['bookmarks_subset']['dangling_outline_destinations']}")
           print(f"- Merge retained outlines: {structure['merged']['has_outlines']}")
-          print(f"- Form subset widgets: {structure['form_subset']['widget_annotations']}")
+          print(f"- Source AcroForm fields/widgets: {structure['form_source']['field_arrays']}/{structure['form_source']['widget_annotations']}")
+          print(f"- Subset AcroForm fields/widgets: {structure['form_subset']['field_arrays']}/{structure['form_subset']['widget_annotations']}")
           PY
 
       - name: Upload capability report
