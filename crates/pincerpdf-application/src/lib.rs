@@ -34,6 +34,11 @@ pub fn required_capabilities(tool: ToolKind) -> CapabilitySet {
 }
 
 /// Validates that an adapter may execute the requested tool.
+///
+/// # Errors
+///
+/// Returns [`MissingCapabilities`] when `available` does not contain every capability
+/// required by `tool`.
 pub fn validate_tool_capabilities(
     tool: ToolKind,
     available: &CapabilitySet,
@@ -85,11 +90,12 @@ mod tests {
 
     #[test]
     fn merge_requires_inspection_and_merge() {
-        let available = CapabilitySet::from_capabilities([
-            PdfCapability::Inspect,
-            PdfCapability::Merge,
-        ]);
-        assert_eq!(validate_tool_capabilities(ToolKind::Merge, &available), Ok(()));
+        let available =
+            CapabilitySet::from_capabilities([PdfCapability::Inspect, PdfCapability::Merge]);
+        assert_eq!(
+            validate_tool_capabilities(ToolKind::Merge, &available),
+            Ok(())
+        );
     }
 
     #[test]

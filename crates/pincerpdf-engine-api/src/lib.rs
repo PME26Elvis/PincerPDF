@@ -49,9 +49,7 @@ impl CapabilitySet {
 
     /// Creates a set from an iterator, removing duplicates.
     #[must_use]
-    pub fn from_capabilities(
-        capabilities: impl IntoIterator<Item = PdfCapability>,
-    ) -> Self {
+    pub fn from_capabilities(capabilities: impl IntoIterator<Item = PdfCapability>) -> Self {
         Self(capabilities.into_iter().collect())
     }
 
@@ -96,7 +94,7 @@ pub struct PdfMetadata {
     pub pdf_version: Option<String>,
     /// Whether a bookmark outline is present.
     pub has_bookmarks: bool,
-    /// Whether an AcroForm is present.
+    /// Whether an `AcroForm` is present.
     pub has_forms: bool,
 }
 
@@ -148,6 +146,10 @@ pub trait PdfEnginePort: Send + Sync {
     fn capabilities(&self) -> CapabilitySet;
 
     /// Inspects semantic metadata without mutating the source.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when the source cannot be read, unlocked, or inspected.
     fn inspect(
         &self,
         source: &Path,

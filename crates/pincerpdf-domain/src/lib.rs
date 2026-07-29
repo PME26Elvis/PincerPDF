@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Pure domain values and state machines for PincerPDF.
+//! Pure domain values and state machines for `PincerPDF`.
 
 use std::error::Error;
 use std::fmt;
@@ -27,7 +27,7 @@ pub enum ErrorCode {
     EngineFailure,
     /// A task was cancelled.
     Cancelled,
-    /// An invariant failed inside PincerPDF.
+    /// An invariant failed inside `PincerPDF`.
     Internal,
 }
 
@@ -56,6 +56,10 @@ pub struct PageNumber(NonZeroU32);
 
 impl PageNumber {
     /// Constructs a page number, rejecting zero.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PageNumberError`] when `value` is zero.
     pub fn new(value: u32) -> Result<Self, PageNumberError> {
         NonZeroU32::new(value).map(Self).ok_or(PageNumberError)
     }
@@ -115,6 +119,10 @@ impl PageSelection {
     /// Resolves the expression against a concrete PDF page count.
     ///
     /// Segment order and deliberate duplicates are preserved.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ResolveSelectionError`] when any selected page exceeds `total_pages`.
     pub fn resolve(&self, total_pages: u32) -> Result<Vec<PageNumber>, ResolveSelectionError> {
         let mut pages = Vec::new();
 
@@ -217,10 +225,7 @@ fn parse_page(index: usize, raw: &str) -> Result<PageNumber, ParseSelectionError
         .map_err(|_| ParseSelectionError::new(index, raw, ParseSelectionErrorKind::ZeroPage))
 }
 
-fn ensure_in_bounds(
-    requested: PageNumber,
-    total_pages: u32,
-) -> Result<(), ResolveSelectionError> {
+fn ensure_in_bounds(requested: PageNumber, total_pages: u32) -> Result<(), ResolveSelectionError> {
     if requested.get() > total_pages {
         Err(ResolveSelectionError {
             requested,
@@ -382,17 +387,27 @@ impl TaskState {
         matches!(
             (self, next),
             (Self::Queued, Self::Running | Self::Cancelled)
-                | (Self::Running, Self::Cancelling | Self::Succeeded | Self::Failed)
+                | (
+                    Self::Running,
+                    Self::Cancelling | Self::Succeeded | Self::Failed
+                )
                 | (Self::Cancelling, Self::Cancelled | Self::Failed)
         )
     }
 
     /// Validates and returns the next state.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InvalidTaskTransition`] when `next` is not a documented lifecycle transition.
     pub fn transition_to(self, next: Self) -> Result<Self, InvalidTaskTransition> {
         if self.can_transition_to(next) {
             Ok(next)
         } else {
-            Err(InvalidTaskTransition { from: self, to: next })
+            Err(InvalidTaskTransition {
+                from: self,
+                to: next,
+            })
         }
     }
 
@@ -491,7 +506,9 @@ mod tests {
     #[test]
     fn selection_rejects_out_of_bounds_pages() {
         let selection: PageSelection = "2-5".parse().expect("valid syntax");
-        let error = selection.resolve(4).expect_err("page five is out of bounds");
+        let error = selection
+            .resolve(4)
+            .expect_err("page five is out of bounds");
         assert_eq!(error.requested().get(), 5);
         assert_eq!(error.total_pages(), 4);
     }

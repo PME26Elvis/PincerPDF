@@ -2,8 +2,8 @@
 //! Filesystem planning primitives for safe PDF output finalization.
 
 use std::error::Error;
-use std::fmt;
 use std::ffi::OsString;
+use std::fmt;
 use std::path::{Path, PathBuf};
 
 /// Policy applied when the final destination already exists.
@@ -27,6 +27,11 @@ pub struct OutputPathPlan {
 }
 
 /// Constructs an output path plan without touching the filesystem.
+///
+/// # Errors
+///
+/// Returns [`OutputPlanError`] when the destination lacks a file name, an existing
+/// destination conflicts with `policy`, or `operation_token` is not portable.
 pub fn plan_output_path(
     requested: &Path,
     final_path_exists: bool,

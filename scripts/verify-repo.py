@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = (
     "AGENTS.md",
     "Cargo.toml",
+    "Cargo.lock",
     "LICENSE",
     "NOTICE.md",
     "README.md",
@@ -20,6 +21,7 @@ REQUIRED_FILES = (
     ".cargo/config.toml",
     ".devcontainer/Dockerfile",
     ".devcontainer/devcontainer.json",
+    ".github/workflows/linux-quality.yml",
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
 )
