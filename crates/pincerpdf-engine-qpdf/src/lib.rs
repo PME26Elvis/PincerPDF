@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::module_name_repetitions)]
-//! Process-isolated QPDF adapter for proven PincerPDF capabilities.
+//! Process-isolated QPDF adapter for proven `PincerPDF` capabilities.
 
 use pincerpdf_domain::{ErrorCode, PageNumber};
 use pincerpdf_engine_api::{
@@ -8,7 +8,8 @@ use pincerpdf_engine_api::{
     PdfMetadata,
 };
 use pincerpdf_merge::{
-    CommandEvidence, ExecutionControl, MergeEnginePort, MergeEngineRequest, MergeEngineResult,
+    CancellationToken, CommandEvidence, ExecutionControl, MergeEnginePort, MergeEngineRequest,
+    MergeEngineResult,
     SecretString,
 };
 use std::ffi::OsString;
@@ -41,7 +42,7 @@ impl Default for QpdfConfig {
             inspection_control: ExecutionControl::new(
                 Duration::from_secs(30),
                 64 * 1024,
-                Default::default(),
+                CancellationToken::default(),
             ),
         }
     }
@@ -76,7 +77,7 @@ impl QpdfAdapter {
             vec!["--version".to_owned()],
             &config.inspection_control,
         )
-        .map_err(|failure| map_process_failure(failure, false))?;
+        .map_err(|failure| map_process_failure(&failure, false))?;
         let version = capture
             .evidence
             .stdout
@@ -102,7 +103,7 @@ impl QpdfAdapter {
         password_supplied: bool,
     ) -> Result<ProcessCapture, EngineError> {
         run_process(&self.config.executable, args, display_args, control)
-            .map_err(|failure| map_process_failure(failure, password_supplied))
+            .map_err(|failure| map_process_failure(&failure, password_supplied))
     }
 }
 
@@ -424,7 +425,7 @@ impl TemporaryPath {
                     let path = directory.join(format!("payload.{extension}"));
                     return Ok(Self { directory, path });
                 }
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => continue,
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
                 Err(error) => return Err(error),
             }
         }
@@ -456,6 +457,7 @@ struct ProcessCapture {
     evidence: CommandEvidence,
 }
 
+#[derive(Clone, Copy, Debug)]
 enum ProcessFailureKind {
     Spawn,
     Cancelled,
@@ -464,9 +466,10 @@ enum ProcessFailureKind {
     Join,
 }
 
+#[derive(Debug)]
 struct ProcessFailure {
     kind: ProcessFailureKind,
-    evidence: CommandEvidence,
+    evidence: Box<CommandEvidence>,
     message: String,
 }
 
@@ -485,7 +488,7 @@ fn run_process(
         .spawn()
         .map_err(|error| ProcessFailure {
             kind: ProcessFailureKind::Spawn,
-            evidence: empty_evidence(program, display_args.clone(), started.elapsed()),
+            evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
             message: format!("cannot start PDF engine: {error}"),
         })?;
 
@@ -516,17 +519,17 @@ fn run_process(
 
     let status = status.map_err(|error| ProcessFailure {
         kind: ProcessFailureKind::Exit,
-        evidence: empty_evidence(program, display_args.clone(), started.elapsed()),
+        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
         message: format!("cannot wait for PDF engine: {error}"),
     })?;
     let stdout = stdout_reader.join().map_err(|_| ProcessFailure {
         kind: ProcessFailureKind::Join,
-        evidence: empty_evidence(program, display_args.clone(), started.elapsed()),
+        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
         message: "PDF engine stdout reader panicked".to_owned(),
     })?;
     let stderr = stderr_reader.join().map_err(|_| ProcessFailure {
         kind: ProcessFailureKind::Join,
-        evidence: empty_evidence(program, display_args.clone(), started.elapsed()),
+        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
         message: "PDF engine stderr reader panicked".to_owned(),
     })?;
     let evidence = evidence(
@@ -546,7 +549,7 @@ fn run_process(
         };
         return Err(ProcessFailure {
             kind,
-            evidence,
+            evidence: Box::new(evidence),
             message: message.to_owned(),
         });
     }
@@ -560,7 +563,7 @@ fn run_process(
             } else {
                 format!("PDF engine failed: {}", evidence.stderr)
             },
-            evidence,
+            evidence: Box::new(evidence),
         })
     }
 }
@@ -619,7 +622,7 @@ fn evidence(
     }
 }
 
-fn map_process_failure(failure: ProcessFailure, password_supplied: bool) -> EngineError {
+fn map_process_failure(failure: &ProcessFailure, password_supplied: bool) -> EngineError {
     let combined =
         format!("{} {}", failure.evidence.stdout, failure.evidence.stderr).to_ascii_lowercase();
     let code = match failure.kind {
