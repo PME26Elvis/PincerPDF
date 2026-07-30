@@ -9,8 +9,7 @@ use pincerpdf_engine_api::{
 };
 use pincerpdf_merge::{
     CancellationToken, CommandEvidence, ExecutionControl, MergeEnginePort, MergeEngineRequest,
-    MergeEngineResult,
-    SecretString,
+    MergeEngineResult, SecretString,
 };
 use std::ffi::OsString;
 use std::fs::{self, File, OpenOptions};
@@ -488,7 +487,11 @@ fn run_process(
         .spawn()
         .map_err(|error| ProcessFailure {
             kind: ProcessFailureKind::Spawn,
-            evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
+            evidence: Box::new(empty_evidence(
+                program,
+                display_args.clone(),
+                started.elapsed(),
+            )),
             message: format!("cannot start PDF engine: {error}"),
         })?;
 
@@ -519,17 +522,29 @@ fn run_process(
 
     let status = status.map_err(|error| ProcessFailure {
         kind: ProcessFailureKind::Exit,
-        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
         message: format!("cannot wait for PDF engine: {error}"),
     })?;
     let stdout = stdout_reader.join().map_err(|_| ProcessFailure {
         kind: ProcessFailureKind::Join,
-        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
         message: "PDF engine stdout reader panicked".to_owned(),
     })?;
     let stderr = stderr_reader.join().map_err(|_| ProcessFailure {
         kind: ProcessFailureKind::Join,
-        evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
         message: "PDF engine stderr reader panicked".to_owned(),
     })?;
     let evidence = evidence(
