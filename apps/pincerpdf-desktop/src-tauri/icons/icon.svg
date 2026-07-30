@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="PincerPDF">
+  <rect width="512" height="512" rx="112" fill="#0b1220"/>
+  <rect x="28" y="28" width="456" height="456" rx="86" fill="#1a2944" stroke="#f4f7fb" stroke-width="8"/>
+  <path
+    fill="#ff9872"
+    d="M228 226 187 154l-62 17-44 54-12 127h81l-7-86c-2-29 13-50 40-55 24-4 39 9 48 38l11 35 31-15-45-43Z"
+  />
+  <path
+    fill="#ff7158"
+    d="m284 226 41-72 62 17 44 54 12 127h-81l7-86c2-29-13-50-40-55-24-4-39 9-48 38l-11 35-31-15 45-43Z"
+  />
+  <path
+    fill="#ff775d"
+    d="M256 132c-28 0-50 22-50 50v176c0 12 10 22 22 22h56c12 0 22-10 22-22V182c0-28-22-50-50-50Z"
+  />
+  <path d="M151 405h210" stroke="#f4f7fb" stroke-width="12" stroke-linecap="round"/>
+</svg>

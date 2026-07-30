@@ -18,6 +18,12 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_text(value: str) -> bytes:
+    """Encode extracted text with stable LF endings on every platform."""
+    normalized = value.replace("\r\n", "\n").replace("\r", "\n").strip()
+    return f"{normalized}\n".encode()
+
+
 def command(*args: str | Path) -> str:
     completed = subprocess.run(
         [str(arg) for arg in args],
@@ -64,9 +70,10 @@ def main() -> int:
     for output in outputs:
         command("qpdf", "--check", output)
         text_path = output.with_suffix(".txt")
-        text_path.write_text(
-            command("mutool", "draw", "-q", "-F", "txt", "-o", "-", output) + "\n",
-            encoding="utf-8",
+        text_path.write_bytes(
+            canonical_text(
+                command("mutool", "draw", "-q", "-F", "txt", "-o", "-", output)
+            )
         )
         report["outputs"][output.name] = {
             "bytes": output.stat().st_size,
@@ -79,7 +86,7 @@ def main() -> int:
     for secret in ("p4-secret", "p4-owner"):
         if secret in serialized:
             raise SystemExit("merge evidence leaked a fixture password")
-    (root / "report.json").write_text(serialized, encoding="utf-8")
+    (root / "report.json").write_bytes(serialized.encode())
     print(serialized, end="")
     return 0
 

@@ -1,7 +1,11 @@
 import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
+import { resolve } from "node:path";
 
-const screenshotDir = ".artifacts/application-shell/screenshots";
+const screenshotDir = resolve(
+  process.env.PINCERPDF_ARTIFACT_DIR ?? ".artifacts/application-shell",
+  "screenshots",
+);
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/");
