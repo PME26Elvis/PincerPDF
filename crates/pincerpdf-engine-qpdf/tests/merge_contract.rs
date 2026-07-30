@@ -1,4 +1,5 @@
 #![forbid(unsafe_code)]
+//! Real QPDF/MuPDF contract tests for the first Merge-core checkpoint.
 
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
@@ -94,10 +95,10 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     ];
     let mut previous = 0;
     for marker in expected {
-        let position = text[previous..]
-            .find(marker)
-            .map(|offset| previous + offset)
-            .unwrap_or_else(|| panic!("missing ordered page marker {marker:?} in {text:?}"));
+        let position = text[previous..].find(marker).map_or_else(
+            || panic!("missing ordered page marker {marker:?} in {text:?}"),
+            |offset| previous + offset,
+        );
         previous = position + marker.len();
     }
 
