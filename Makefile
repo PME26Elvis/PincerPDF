@@ -1,7 +1,7 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 
-.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection fixtures-pdf probe-pdf-engines web-build desktop-check shell-e2e clean
+.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection fixtures-pdf probe-pdf-engines merge-contract web-build desktop-check shell-e2e clean
 
 help:
 	@printf '%s\n' \
@@ -16,6 +16,7 @@ help:
 	  '  make selection SPEC=1-3,8 TOTAL=10' \
 	  '  make fixtures-pdf       Generate deterministic PDF engine fixtures' \
 	  '  make probe-pdf-engines  Run QPDF/MuPDF capability measurements' \
+	  '  make merge-contract     Run the ignored real-QPDF Merge contract' \
 	  '  make web-build          Build the Leptos CSR shell with Trunk' \
 	  '  make desktop-check      Compile-check the Tauri 2 host' \
 	  '  make shell-e2e          Run browser shell verification'
@@ -53,6 +54,14 @@ probe-pdf-engines: fixtures-pdf
 	@python3 scripts/probe-pdf-engines.py \
 	  --fixtures .artifacts/pdf-engine-probe/fixtures \
 	  --output .artifacts/pdf-engine-probe
+
+merge-contract: fixtures-pdf
+	@rm -rf .artifacts/merge-core
+	@mkdir -p .artifacts/merge-core
+	@PINCERPDF_PDF_FIXTURES="$(CURDIR)/.artifacts/pdf-engine-probe/fixtures" \
+	 PINCERPDF_MERGE_EVIDENCE_DIR="$(CURDIR)/.artifacts/merge-core/contract" \
+	 cargo test --locked -p pincerpdf-engine-qpdf --test merge_contract -- --ignored --nocapture
+	@python3 scripts/summarize-merge-evidence.py .artifacts/merge-core/contract
 
 web-build:
 	@cd apps/pincerpdf-ui && trunk build --release
