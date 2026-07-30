@@ -24,16 +24,24 @@ REQUIRED_FILES = (
     ".devcontainer/devcontainer.json",
     ".github/workflows/application-shell.yml",
     ".github/workflows/linux-quality.yml",
+    ".github/workflows/merge-core.yml",
     "apps/pincerpdf-ui/index.html",
     "apps/pincerpdf-ui/styles.css",
     "apps/pincerpdf-desktop/src-tauri/tauri.conf.json",
     "apps/pincerpdf-desktop/src-tauri/capabilities/default.json",
     "apps/pincerpdf-desktop/src-tauri/icons/icon.png",
+    "crates/pincerpdf-merge/Cargo.toml",
+    "crates/pincerpdf-merge/src/lib.rs",
+    "crates/pincerpdf-engine-qpdf/Cargo.toml",
+    "crates/pincerpdf-engine-qpdf/src/lib.rs",
+    "crates/pincerpdf-engine-qpdf/tests/merge_contract.rs",
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
+    "docs/architecture/adr/ADR-015-merge-core-boundary.md",
     "package.json",
     "package-lock.json",
     "playwright.config.mjs",
+    "scripts/summarize-merge-evidence.py",
     "tests/e2e/application-shell.spec.mjs",
 )
 
@@ -44,7 +52,9 @@ REQUIRED_MEMBERS = {
     "crates/pincerpdf-application",
     "crates/pincerpdf-domain",
     "crates/pincerpdf-engine-api",
+    "crates/pincerpdf-engine-qpdf",
     "crates/pincerpdf-filesystem",
+    "crates/pincerpdf-merge",
 }
 
 BANNED_TRACKED_PARTS = {
@@ -85,12 +95,19 @@ def load_json(relative: str) -> dict:
 
 
 def verify_dependency_locks() -> None:
-    """Verify the committed Rust and browser lockfiles cover the P3 applications."""
+    """Verify committed Rust and browser lockfiles cover P3 and P4.1."""
 
     cargo_lock = (ROOT / "Cargo.lock").read_text(encoding="utf-8")
-    for package_name in ("pincerpdf-desktop", "pincerpdf-ui", "tauri", "leptos"):
+    for package_name in (
+        "pincerpdf-desktop",
+        "pincerpdf-ui",
+        "pincerpdf-merge",
+        "pincerpdf-engine-qpdf",
+        "tauri",
+        "leptos",
+    ):
         if f'name = "{package_name}"' not in cargo_lock:
-            fail(f"Cargo.lock does not contain required P3 package: {package_name}")
+            fail(f"Cargo.lock does not contain required package: {package_name}")
 
     package = load_json("package.json")
     package_lock = load_json("package-lock.json")
@@ -168,6 +185,53 @@ def verify_shell_contract() -> None:
         fail("P3 Tauri host must reference the tracked icon while bundling remains disabled")
 
 
+def verify_merge_core_contract() -> None:
+    """Verify the durable P4.1 Merge boundary while the UI remains gated."""
+
+    merge_source = (ROOT / "crates/pincerpdf-merge/src/lib.rs").read_text(encoding="utf-8")
+    qpdf_source = (ROOT / "crates/pincerpdf-engine-qpdf/src/lib.rs").read_text(encoding="utf-8")
+    contract = (ROOT / "crates/pincerpdf-engine-qpdf/tests/merge_contract.rs").read_text(
+        encoding="utf-8"
+    )
+    makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
+    workflow = (ROOT / ".github/workflows/merge-core.yml").read_text(encoding="utf-8")
+    ui_source = (ROOT / "apps/pincerpdf-ui/src/main.rs").read_text(encoding="utf-8")
+
+    for token in (
+        "SecretString([REDACTED])",
+        "pub struct CancellationToken",
+        "pub struct ExecutionControl",
+        "pub trait MergeEnginePort",
+        "ensure_output_does_not_alias_source",
+        "struct OutputTransaction",
+    ):
+        if token not in merge_source:
+            fail(f"P4.1 Merge contract missing: {token}")
+
+    for token in (
+        "--password-file=<redacted>",
+        "options.mode(0o600)",
+        "builder.mode(0o700)",
+        "child.kill()",
+        "qdf_catalog_has_key",
+    ):
+        if token not in qpdf_source:
+            fail(f"QPDF adapter safety contract missing: {token}")
+
+    for token in (
+        '#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]',
+        "PINCERPDF_MERGE_EVIDENCE_DIR",
+        "mutool_text",
+    ):
+        if token not in contract:
+            fail(f"real Merge contract evidence hook missing: {token}")
+
+    if "merge-contract:" not in makefile or "make merge-contract" not in workflow:
+        fail("P4.1 real-engine contract is not wired into Make/Actions")
+    if 'short_label: "Merge"' not in ui_source or '"Not implemented"' not in ui_source:
+        fail("P4.1 must keep the Merge UI capability gate closed")
+
+
 def main() -> None:
     """Run repository structural verification."""
 
@@ -216,12 +280,14 @@ def main() -> None:
 
     verify_dependency_locks()
     verify_shell_contract()
+    verify_merge_core_contract()
 
     print("PincerPDF structural verification passed")
     print(f"workspace_members={len(REQUIRED_MEMBERS)}")
     print(f"rust_toolchain={toolchain['channel']}")
     print("dependency_locks=verified")
     print("application_shell=verified")
+    print("merge_core=verified")
     print("status=verified")
 
 
