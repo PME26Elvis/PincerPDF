@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-07-30
-- Phase: P4 — Merge vertical slice (P4.2 starting)
+- Phase: P4 — Merge vertical slice (P4.2 native-dialog acceptance)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -31,6 +31,7 @@
 - Responsive design tokens, visible focus, skip navigation, semantic landmarks, system/manual reduced motion, and stable test hooks established.
 - CI-generated Cargo/npm locks and tracked application icon committed.
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
+- P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
 
 ## Rust foundation evidence
 
@@ -178,19 +179,50 @@ The evidence summarizer now writes canonical LF UTF-8 bytes so host newline poli
 
 Linux remains the compatibility oracle for process/filesystem boundaries, WebKitGTK rendering, milestone integration and release evidence. MuPDF is `1.21.0` locally because the official `1.21.1` Windows release was source-only; Linux evidence remains pinned to `1.21.1`.
 
+## P4.2 Merge-desktop evidence
+
+The Windows-first P4.2 implementation now crosses four independently verified layers:
+
+- shared Serde DTOs keep password-bearing requests out of `Debug`,
+- the Tauri host owns native file dialogs, opaque path registration, QPDF discovery, blocking work and cooperative cancellation,
+- the Leptos UI exposes ordered source rows, page-selection validation, duplication/removal/reordering, destination choice, explicit bookmark/form/conflict policy, progress, cancellation and result states,
+- the browser adapter supplies deterministic fixtures only for UI, accessibility, motion and screenshot evidence.
+
+The complete local portable gate passes with warning-denied Clippy and 23 Rust tests. Two real-engine tests remain ignored in the portable lane and pass when explicitly supplied with the pinned local QPDF/MuPDF tools and generated fixtures:
+
+- P4.1 Merge engine contract: 1 passed;
+- P4.2 desktop command-boundary contract: 1 passed.
+
+The desktop contract registers source and destination paths inside `DesktopState`, submits only opaque tokens, preserves the requested `3,1` plus repeated-source page `2` order, and produces a verified three-page PDF:
+
+```text
+sha256=2b6b5ee06e034119456ee169f50b85c35cb22343adc62e0573b54ea3114518d9
+```
+
+The P4.2 Playwright suite passes 8/8 scenarios in 23.4 seconds. It verifies the single available Merge tool and seven independent gates, ordered planning, page-range errors, duplication, destination selection, running/completed states, advanced safety policy, reduced motion, keyboard skip navigation, and four Windows visual checkpoints:
+
+```text
+merge-empty-desktop.png       1440 x 1121
+merge-configured-desktop.png  1440 x 1264
+merge-completed-desktop.png   1440 x 1264
+merge-completed-compact.png    390 x 3110
+```
+
+The real Windows Tauri/WebView2 executable also launches successfully from the D-drive toolchain. Its accessibility tree exposes the landmarks and controls, reports `qpdf version 11.3.0`, and keeps the action disabled in the empty state. A complete system-dialog-driven UI automation run is still pending; the browser adapter and direct command contract do not substitute for that acceptance item. ADR-017 records this boundary.
+
 ## Active known boundary
 
 `ExistingOutputPolicy::Replace` is not yet accepted as a durable Windows behavior because `std::fs::rename` does not replace an existing destination there. P4.2 must keep conflict handling on `Fail` until an atomic Windows replacement implementation and recovery tests pass; removing the destination before rename is not an acceptable substitute.
 
 ## Exact next actions
 
-1. Add the P4.2 Tauri command boundary and deterministic browser/native adapters over the verified Merge service.
-2. Add Merge UI source rows, page-selection editing, validation, destination/conflict controls and accessible task progress.
-3. Implement and verify durable Windows replacement or keep overwrite visibly unavailable; extend the corpus for mixed page boxes/rotation, metadata policy and cancellation/output-conflict recovery.
-4. Add browser E2E, packaged Linux E2E and required Merge visual checkpoints.
-5. Replace only the Merge UI gate after the P4.2 engine, application, E2E and visual evidence passes.
-6. Keep all other seven tools visibly gated.
+1. Complete the native Windows system-dialog-driven Merge E2E with real fixtures, output verification, cancellation and conflict recovery.
+2. Run the P4.2 application-shell compatibility lane, including the new real desktop command contract, in the pinned Linux environment.
+3. Implement and verify durable Windows replacement or keep overwrite visibly unavailable.
+4. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
+5. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
+6. Keep all other seven tools visibly gated while P4 continues.
 
 ## Completion status
 
-P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress: the verified core is executable through the internal CLI, while the desktop Merge action stays gated until P4.2 satisfies its command, UI, E2E and visual acceptance criteria.
+P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress. P4.2 implementation, portable/native-command tests, browser E2E, Windows visual checkpoints and a real Tauri/WebView2 launch are green; native system-dialog automation and Linux milestone evidence remain before the checkpoint is complete.

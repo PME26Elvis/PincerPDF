@@ -1,8 +1,14 @@
 #![forbid(unsafe_code)]
 #![allow(clippy::needless_pass_by_value)]
-//! Leptos CSR presentation shell for `PincerPDF`.
+//! Leptos CSR presentation layer for `PincerPDF`.
+
+mod merge_workspace;
+mod native_bridge;
 
 use leptos::prelude::*;
+use merge_workspace::MergeWorkspace;
+use native_bridge::{call_without_args, is_tauri};
+use pincerpdf_desktop_api::MergeEngineStatus;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ToolDefinition {
@@ -15,13 +21,27 @@ struct ToolDefinition {
     phase: &'static str,
 }
 
+impl ToolDefinition {
+    fn is_merge(self) -> bool {
+        self.slug == "merge"
+    }
+
+    fn state_label(self) -> &'static str {
+        if self.is_merge() {
+            "Available"
+        } else {
+            "Not implemented"
+        }
+    }
+}
+
 const TOOLS: [ToolDefinition; 8] = [
     ToolDefinition {
         slug: "merge",
         test_id: "tool-nav-merge",
         short_label: "Merge",
         title: "Merge PDF",
-        description: "Combine ordered source documents into a single output.",
+        description: "Combine ordered source documents into a single verified output.",
         icon: "MG",
         phase: "P4",
     },
@@ -112,7 +132,9 @@ fn tool_button(
             <span class="tool-icon" aria-hidden="true">{tool.icon}</span>
             <span class="tool-copy">
                 <span class="tool-name">{tool.short_label}</span>
-                <span class="tool-state">"Not implemented"</span>
+                <span class=if tool.is_merge() { "tool-state is-ready" } else { "tool-state" }>
+                    {tool.state_label()}
+                </span>
             </span>
         </button>
     }
@@ -138,7 +160,7 @@ fn sidebar(
                 <p class="nav-label">"Workspace"</p>
                 <a class="nav-link is-active" href="#main-content" aria-current="page">
                     <span aria-hidden="true">"⌂"</span>
-                    <span>"Overview"</span>
+                    <span>"Tools"</span>
                 </a>
                 <span class="nav-link is-disabled" aria-disabled="true">
                     <span aria-hidden="true">"◷"</span>
@@ -150,7 +172,7 @@ fn sidebar(
             <nav class="tool-list" aria-label="PDF tools">
                 <div class="nav-heading">
                     <p class="nav-label">"PDF tools"</p>
-                    <span>"8 planned"</span>
+                    <span>"1 available · 7 planned"</span>
                 </div>
                 {TOOLS
                     .into_iter()
@@ -162,8 +184,8 @@ fn sidebar(
                 <div class="engine-note">
                     <span class="status-dot is-ready" aria-hidden="true"></span>
                     <span>
-                        <strong>"Engine evidence ready"</strong>
-                        <small>"QPDF structure · MuPDF render"</small>
+                        <strong>"Local engine boundary"</strong>
+                        <small>"Opaque paths · verified output"</small>
                     </span>
                 </div>
                 <button
@@ -177,7 +199,11 @@ fn sidebar(
                     <span>
                         <strong>"Reduce motion"</strong>
                         <small data-testid="motion-mode">
-                            {move || if reduced_motion.get() { "Manual mode on" } else { "Follow system" }}
+                            {move || if reduced_motion.get() {
+                                "Manual mode on"
+                            } else {
+                                "Follow system"
+                            }}
                         </small>
                     </span>
                 </button>
@@ -200,27 +226,24 @@ fn selected_tool_panel(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView
                     "Not implemented"
                 </span>
             </div>
-
             <p class="panel-description" data-testid="selected-tool-description">
                 {move || active_tool.get().description}
             </p>
-
             <div class="phase-banner">
                 <div>
                     <span class="phase-code">{move || active_tool.get().phase}</span>
                     <span>
                         <strong>"Implementation checkpoint"</strong>
-                        <small>"The shell exposes scope without pretending the PDF operation exists."</small>
+                        <small>"This workspace stays locked until its own parity evidence passes."</small>
                     </span>
                 </div>
                 <span class="lock-label">"Capability gated"</span>
             </div>
-
             <div class="panel-actions">
                 <button type="button" class="primary-action" disabled data-testid="open-files">
                     "Open PDF files"
                 </button>
-                <span>"Available when its vertical slice passes engine and parity gates."</span>
+                <span>"Merge is available now; the remaining tools retain independent gates."</span>
             </div>
         </section>
     }
@@ -228,119 +251,74 @@ fn selected_tool_panel(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView
 
 fn readiness_panel() -> impl IntoView {
     view! {
-        <section class="panel readiness-panel" aria-labelledby="readiness-title" data-testid="readiness-card">
+        <section class="panel readiness-panel" aria-labelledby="readiness-title">
             <div class="panel-heading">
                 <div>
                     <p class="eyebrow">"System readiness"</p>
                     <h2 id="readiness-title">"Verified foundations"</h2>
                 </div>
-                <span class="status-pill is-ready">"P3"</span>
+                <span class="status-pill is-ready">"P4"</span>
             </div>
             <ul class="readiness-list">
-                <li>
-                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>
-                    <span><strong>"Rust foundation"</strong><small>"Pinned 1.97.1 · 13 tests"</small></span>
-                </li>
-                <li>
-                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>
-                    <span><strong>"PDF engine probe"</strong><small>"32 measured commands"</small></span>
-                </li>
-                <li>
-                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>
-                    <span><strong>"Linux environment"</strong><small>"Reproducible devcontainer"</small></span>
-                </li>
-                <li>
-                    <span class="readiness-icon is-ready" aria-hidden="true">"✓"</span>
-                    <span><strong>"Application shell"</strong><small>"Leptos CSR + Tauri 2 · 5 E2E"</small></span>
-                </li>
+                <li><span class="readiness-icon is-ready">"✓"</span><span><strong>"Rust foundation"</strong><small>"Windows local quality gate"</small></span></li>
+                <li><span class="readiness-icon is-ready">"✓"</span><span><strong>"Merge core"</strong><small>"QPDF contract · atomic output"</small></span></li>
+                <li><span class="readiness-icon is-ready">"✓"</span><span><strong>"Browser adapter"</strong><small>"Deterministic E2E state"</small></span></li>
+                <li><span class="readiness-icon is-ready">"✓"</span><span><strong>"Linux compatibility"</strong><small>"Pinned milestone oracle"</small></span></li>
             </ul>
         </section>
     }
 }
 
-fn activity_panel() -> impl IntoView {
+fn gated_workspace(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView {
     view! {
-        <section class="panel activity-panel" aria-labelledby="activity-title">
-            <div class="panel-heading">
-                <div>
-                    <p class="eyebrow">"Recent activity"</p>
-                    <h2 id="activity-title">"No documents yet"</h2>
-                </div>
-                <span class="status-pill">"Local only"</span>
+        <section class="hero compact-hero" aria-labelledby="page-title" data-testid="hero">
+            <div>
+                <p class="eyebrow">"Future workspace"</p>
+                <h1 id="page-title">"Planned with evidence, not placeholders."</h1>
+                <p>"Each PDF operation unlocks only after its domain, engine, E2E and visual gates pass."</p>
             </div>
-            <div class="empty-state" data-testid="activity-empty-state">
-                <span class="empty-icon" aria-hidden="true">"PDF"</span>
-                <div>
-                    <strong>"Your completed tasks will appear here."</strong>
-                    <p>"PincerPDF will not create history until a real PDF tool is enabled."</p>
-                </div>
-            </div>
+            <div class="hero-metric"><strong>"1 / 8"</strong><span>"tools available"</span></div>
         </section>
+        <div class="dashboard-grid">
+            {selected_tool_panel(active_tool)}
+            {readiness_panel()}
+        </div>
     }
 }
 
-fn architecture_panel() -> impl IntoView {
-    view! {
-        <section class="panel architecture-panel" aria-labelledby="architecture-title">
-            <div class="panel-heading">
-                <div>
-                    <p class="eyebrow">"Execution model"</p>
-                    <h2 id="architecture-title">"Evidence before capability"</h2>
-                </div>
-            </div>
-            <div class="architecture-flow" role="list" aria-label="PDF task execution path">
-                <div role="listitem"><span>"01"</span><strong>"Validate input"</strong><small>"Domain rules"</small></div>
-                <div role="listitem"><span>"02"</span><strong>"Plan output"</strong><small>"Atomic paths"</small></div>
-                <div role="listitem"><span>"03"</span><strong>"Run adapter"</strong><small>"QPDF / MuPDF"</small></div>
-                <div role="listitem"><span>"04"</span><strong>"Verify result"</strong><small>"Structure + render"</small></div>
-            </div>
-        </section>
-    }
-}
-
-fn workspace(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView {
+fn workspace(
+    active_tool: ReadSignal<ToolDefinition>,
+    engine_status: ReadSignal<MergeEngineStatus>,
+) -> impl IntoView {
     view! {
         <div class="workspace">
             <header class="topbar">
                 <div>
-                    <span class="breadcrumb">"PincerPDF / Overview"</span>
-                    <strong>"Application shell checkpoint"</strong>
+                    <span class="breadcrumb">
+                        {move || format!("PincerPDF / {}", active_tool.get().short_label)}
+                    </span>
+                    <strong>{move || active_tool.get().title}</strong>
                 </div>
                 <div class="topbar-status" role="status">
                     <span class="status-dot is-ready" aria-hidden="true"></span>
-                    <span>"Local-first · no document loaded"</span>
+                    <span>"Windows-first · local document processing"</span>
                 </div>
             </header>
 
             <main id="main-content" tabindex="-1">
-                <section class="hero" aria-labelledby="page-title" data-testid="hero">
-                    <div>
-                        <p class="eyebrow">"P3 · Application shell"</p>
-                        <h1 id="page-title">"A precise workspace for everyday PDF operations."</h1>
-                        <p>
-                            "The interface, accessibility contract, and native host are real. "
-                            "PDF actions remain visibly gated until their vertical slices pass."
-                        </p>
-                    </div>
-                    <div class="hero-metric" aria-label="Current delivery status">
-                        <strong>"3 / 11"</strong>
-                        <span>"phases established"</span>
-                    </div>
-                </section>
-
-                <div class="dashboard-grid">
-                    {selected_tool_panel(active_tool)}
-                    {readiness_panel()}
-                    {activity_panel()}
-                    {architecture_panel()}
-                </div>
+                <Show
+                    when=move || active_tool.get().is_merge()
+                    fallback=move || gated_workspace(active_tool)
+                >
+                    <MergeWorkspace engine_status=engine_status />
+                </Show>
             </main>
 
             <footer class="statusbar" aria-label="Application status">
                 <span><strong>"Host"</strong> "Tauri 2"</span>
                 <span><strong>"UI"</strong> "Leptos CSR"</span>
                 <span><strong>"Motion"</strong> "System + manual control"</span>
-                <span class="statusbar-end">"No network services configured"</span>
+                <span class="statusbar-end">"No PDF data leaves this device"</span>
             </footer>
         </div>
     }
@@ -350,21 +328,49 @@ fn workspace(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView {
 fn App() -> impl IntoView {
     let (active_tool, set_active_tool) = signal(TOOLS[0]);
     let (reduced_motion, set_reduced_motion) = signal(false);
+    let native = is_tauri();
+    let initial_engine_status = if native {
+        MergeEngineStatus {
+            ready: false,
+            engine_id: None,
+            engine_version: None,
+            issue: None,
+        }
+    } else {
+        MergeEngineStatus {
+            ready: true,
+            engine_id: Some("deterministic-browser-adapter".to_owned()),
+            engine_version: Some("Browser verification mode".to_owned()),
+            issue: None,
+        }
+    };
+    let (engine_status, set_engine_status) = signal(initial_engine_status);
+    if native {
+        leptos::task::spawn_local(async move {
+            match call_without_args::<MergeEngineStatus>("merge_engine_status").await {
+                Ok(status) => set_engine_status.set(status),
+                Err(error) => set_engine_status.set(MergeEngineStatus {
+                    ready: false,
+                    engine_id: None,
+                    engine_version: None,
+                    issue: Some(error),
+                }),
+            }
+        });
+    }
 
     view! {
         <a class="skip-link" href="#main-content">"Skip to main content"</a>
         <div
-            class=move || {
-                if reduced_motion.get() {
-                    "app-shell motion-reduced"
-                } else {
-                    "app-shell"
-                }
+            class=move || if reduced_motion.get() {
+                "app-shell motion-reduced"
+            } else {
+                "app-shell"
             }
             data-testid="app-shell"
         >
             {sidebar(active_tool, set_active_tool, reduced_motion, set_reduced_motion)}
-            {workspace(active_tool)}
+            {workspace(active_tool, engine_status)}
         </div>
     }
 }
