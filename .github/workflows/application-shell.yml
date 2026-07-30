@@ -10,6 +10,7 @@ on:
       - ".devcontainer/**"
       - "apps/pincerpdf-desktop/**"
       - "apps/pincerpdf-ui/**"
+      - "crates/pincerpdf-desktop-api/**"
       - "tests/e2e/**"
       - "playwright.config.mjs"
       - "package.json"
@@ -26,6 +27,7 @@ on:
       - ".devcontainer/**"
       - "apps/pincerpdf-desktop/**"
       - "apps/pincerpdf-ui/**"
+      - "crates/pincerpdf-desktop-api/**"
       - "tests/e2e/**"
       - "playwright.config.mjs"
       - "package.json"
@@ -86,6 +88,8 @@ jobs:
               cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
               cargo test --workspace --all-targets --locked
               cargo check --locked -p pincerpdf-desktop
+              MERGE_DESKTOP_ARTIFACT_DIR="$PWD/.artifacts/application-shell" \
+                make merge-desktop-contract
               cd apps/pincerpdf-ui
               trunk build --release --dist ../../.artifacts/application-shell/dist
               cd ../..
@@ -107,6 +111,7 @@ jobs:
             echo
             echo "- Leptos CSR release build: passed"
             echo "- Tauri 2 Linux host check: passed"
+            echo "- trusted desktop Merge command contract: passed"
             echo "- Workspace format, Clippy and tests: passed"
             echo "- Browser E2E and keyboard checks: passed"
             echo "- Desktop and compact screenshots: captured"

@@ -17,5 +17,5 @@
 ## Current P4 checkpoints
 
 - **P4.1 — Merge core: Complete.** Engine-independent request/orchestration, process-isolated QPDF execution, password redaction, timeout/cancellation, semantic verification, atomic finalization and real QPDF/MuPDF evidence are green.
-- **P4.2 — Merge desktop slice: In progress.** Add the Tauri command boundary, accessible Merge workspace, deterministic adapters, browser/native E2E and visual checkpoints before unlocking the Merge action.
+- **P4.2 — Merge desktop slice: Native acceptance in progress.** The trusted Tauri command boundary, shared DTOs, accessible Merge workspace, deterministic browser adapter, real desktop-command contract, eight browser E2E scenarios, four Windows visual checkpoints and a native WebView2 launch are green. Complete the system-dialog-driven native E2E and Linux milestone lane before closing this checkpoint.
 - Bookmark reconstruction, form collision handling, metadata policy, table of contents, footer, normalization/compression and full legacy parity remain later P4 checkpoints.

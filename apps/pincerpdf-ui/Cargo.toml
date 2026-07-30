@@ -13,7 +13,15 @@ name = "pincerpdf-ui"
 path = "src/main.rs"
 
 [dependencies]
+js-sys = "=0.3.103"
 leptos = { version = "=0.8.20", default-features = false, features = ["csr"] }
+pincerpdf-desktop-api = { path = "../../crates/pincerpdf-desktop-api" }
+pincerpdf-domain = { path = "../../crates/pincerpdf-domain" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+wasm-bindgen = "=0.2.126"
+wasm-bindgen-futures = "=0.4.76"
+web-sys = { version = "=0.3.103", features = ["Window"] }
 
 [lints]
 workspace = true

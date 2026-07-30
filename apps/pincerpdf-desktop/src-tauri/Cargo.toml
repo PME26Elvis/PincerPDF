@@ -10,7 +10,15 @@ publish = false
 build = "build.rs"
 
 [dependencies]
+pincerpdf-desktop-api = { path = "../../../crates/pincerpdf-desktop-api" }
+pincerpdf-domain = { path = "../../../crates/pincerpdf-domain" }
+pincerpdf-engine-api = { path = "../../../crates/pincerpdf-engine-api" }
+pincerpdf-engine-qpdf = { path = "../../../crates/pincerpdf-engine-qpdf" }
+pincerpdf-filesystem = { path = "../../../crates/pincerpdf-filesystem" }
+pincerpdf-merge = { path = "../../../crates/pincerpdf-merge" }
+serde = { version = "=1.0.229", features = ["derive"] }
 tauri = { version = "=2.11.5" }
+tauri-plugin-dialog = { version = "=2.7.2" }
 
 [build-dependencies]
 tauri-build = { version = "=2.6.3" }
