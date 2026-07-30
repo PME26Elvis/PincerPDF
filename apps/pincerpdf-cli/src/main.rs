@@ -65,7 +65,8 @@ fn merge(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Erro
     let sources = arguments.map(MergeSource::new).collect::<Vec<_>>();
     let request = MergeRequest::new(sources, output)?;
     let adapter = QpdfAdapter::discover()?;
-    let report = MergeService::new(&adapter).execute(&request, &MergeExecutionOptions::default())?;
+    let report =
+        MergeService::new(&adapter).execute(&request, &MergeExecutionOptions::default())?;
     println!("merge.output={}", report.output.display());
     println!("merge.sources={}", report.source_count);
     println!("merge.pages={}", report.page_count);

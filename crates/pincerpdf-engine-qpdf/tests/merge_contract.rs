@@ -1,10 +1,10 @@
 #![forbid(unsafe_code)]
 
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
+use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{
     MergeError, MergeExecutionOptions, MergeRequest, MergeService, MergeSource, SecretString,
 };
-use pincerpdf_engine_qpdf::QpdfAdapter;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
@@ -65,10 +65,8 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     let output = work.join("ordered.pdf");
     let request = MergeRequest::new(
         [
-            MergeSource::new(&plain)
-                .with_selection("3,1,3".parse().expect("valid selection")),
-            MergeSource::new(&bookmarks)
-                .with_selection("2-3".parse().expect("valid selection")),
+            MergeSource::new(&plain).with_selection("3,1,3".parse().expect("valid selection")),
+            MergeSource::new(&bookmarks).with_selection("2-3".parse().expect("valid selection")),
         ],
         &output,
     )
@@ -127,9 +125,8 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     let encrypted_output = work.join("encrypted-merge.pdf");
     let encrypted_request = MergeRequest::new(
         [
-            MergeSource::new(&encrypted).with_password(
-                SecretString::new("p4-secret").expect("valid password"),
-            ),
+            MergeSource::new(&encrypted)
+                .with_password(SecretString::new("p4-secret").expect("valid password")),
             MergeSource::new(&plain),
         ],
         &encrypted_output,

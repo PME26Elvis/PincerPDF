@@ -33,7 +33,10 @@ impl SecretString {
     /// Returns [`SecretStringError`] when the value contains a line break or NUL byte.
     pub fn new(value: impl Into<String>) -> Result<Self, SecretStringError> {
         let value = value.into();
-        if value.chars().any(|character| matches!(character, '\n' | '\r' | '\0')) {
+        if value
+            .chars()
+            .any(|character| matches!(character, '\n' | '\r' | '\0'))
+        {
             Err(SecretStringError)
         } else {
             Ok(Self(value))
@@ -148,10 +151,14 @@ impl MergeRequest {
         }
         for (index, source) in sources.iter().enumerate() {
             if source.path.as_os_str().is_empty() {
-                return Err(MergeRequestError::EmptySourcePath { source_index: index });
+                return Err(MergeRequestError::EmptySourcePath {
+                    source_index: index,
+                });
             }
             if source.path == output {
-                return Err(MergeRequestError::OutputEqualsSource { source_index: index });
+                return Err(MergeRequestError::OutputEqualsSource {
+                    source_index: index,
+                });
             }
         }
         let extension_is_pdf = output
@@ -198,9 +205,15 @@ pub enum MergeRequestError {
 impl fmt::Display for MergeRequestError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::NotEnoughSources => formatter.write_str("merge requires at least two source entries"),
+            Self::NotEnoughSources => {
+                formatter.write_str("merge requires at least two source entries")
+            }
             Self::EmptySourcePath { source_index } => {
-                write!(formatter, "merge source {} has an empty path", source_index + 1)
+                write!(
+                    formatter,
+                    "merge source {} has an empty path",
+                    source_index + 1
+                )
             }
             Self::OutputMustBePdf => formatter.write_str("merge output must use a .pdf extension"),
             Self::OutputEqualsSource { source_index } => write!(
@@ -448,18 +461,18 @@ impl MergeError {
     pub const fn code(&self) -> ErrorCode {
         match self {
             Self::MissingCapabilities(_) => ErrorCode::CapabilityUnavailable,
-            Self::InspectSource { error, .. }
-            | Self::Engine(error)
-            | Self::VerifyOutput(error) => error.code(),
+            Self::InspectSource { error, .. } | Self::Engine(error) | Self::VerifyOutput(error) => {
+                error.code()
+            }
             Self::OutputAliasesSource { .. }
             | Self::EmptySourceDocument { .. }
             | Self::FormsUnsupported { .. }
             | Self::InvalidSelection { .. } => ErrorCode::InvalidInput,
             Self::OutputPlan(OutputPlanError::ExistingOutputConflict) => ErrorCode::OutputConflict,
             Self::OutputPlan(_) | Self::OutputIo(_) => ErrorCode::OutputWriteFailed,
-            Self::PageCountMismatch { .. }
-            | Self::UnexpectedBookmarks
-            | Self::UnexpectedForms => ErrorCode::EngineFailure,
+            Self::PageCountMismatch { .. } | Self::UnexpectedBookmarks | Self::UnexpectedForms => {
+                ErrorCode::EngineFailure
+            }
         }
     }
 }
@@ -468,8 +481,15 @@ impl fmt::Display for MergeError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::MissingCapabilities(error) => error.fmt(formatter),
-            Self::InspectSource { source_index, error } => {
-                write!(formatter, "failed to inspect merge source {}: {error}", source_index + 1)
+            Self::InspectSource {
+                source_index,
+                error,
+            } => {
+                write!(
+                    formatter,
+                    "failed to inspect merge source {}: {error}",
+                    source_index + 1
+                )
             }
             Self::OutputAliasesSource { source_index } => write!(
                 formatter,
@@ -486,7 +506,10 @@ impl fmt::Display for MergeError {
                 "merge source {} contains an interactive form; form merge is not yet verified",
                 source_index + 1
             ),
-            Self::InvalidSelection { source_index, error } => write!(
+            Self::InvalidSelection {
+                source_index,
+                error,
+            } => write!(
                 formatter,
                 "invalid page selection for merge source {}: {error}",
                 source_index + 1
@@ -494,7 +517,9 @@ impl fmt::Display for MergeError {
             Self::OutputPlan(error) => error.fmt(formatter),
             Self::OutputIo(message) => formatter.write_str(message),
             Self::Engine(error) => error.fmt(formatter),
-            Self::VerifyOutput(error) => write!(formatter, "failed to verify merge output: {error}"),
+            Self::VerifyOutput(error) => {
+                write!(formatter, "failed to verify merge output: {error}")
+            }
             Self::PageCountMismatch { expected, actual } => write!(
                 formatter,
                 "merge output page count mismatch: expected {expected}, observed {actual}"
@@ -631,9 +656,10 @@ fn ensure_output_does_not_alias_source(request: &MergeRequest) -> Result<(), Mer
     let canonical_parent = output_parent.canonicalize().map_err(|error| {
         MergeError::OutputIo(format!("cannot resolve merge output directory: {error}"))
     })?;
-    let output_name = request.output().file_name().ok_or_else(|| {
-        MergeError::OutputIo("merge output path has no file name".to_owned())
-    })?;
+    let output_name = request
+        .output()
+        .file_name()
+        .ok_or_else(|| MergeError::OutputIo("merge output path has no file name".to_owned()))?;
     let output_candidate = canonical_parent.join(output_name);
 
     for (source_index, source) in request.sources().iter().enumerate() {
@@ -666,16 +692,16 @@ struct OutputTransaction {
 
 impl OutputTransaction {
     fn begin(path: &Path, policy: ExistingOutputPolicy) -> Result<Self, MergeError> {
-        let final_exists = path
-            .try_exists()
-            .map_err(|error| MergeError::OutputIo(format!("cannot inspect output path: {error}")))?;
+        let final_exists = path.try_exists().map_err(|error| {
+            MergeError::OutputIo(format!("cannot inspect output path: {error}"))
+        })?;
         let token = format!(
             "merge_{}_{}",
             process::id(),
             NEXT_OPERATION_ID.fetch_add(1, Ordering::Relaxed)
         );
-        let plan = plan_output_path(path, final_exists, policy, &token)
-            .map_err(MergeError::OutputPlan)?;
+        let plan =
+            plan_output_path(path, final_exists, policy, &token).map_err(MergeError::OutputPlan)?;
         if plan.temporary_path.try_exists().map_err(|error| {
             MergeError::OutputIo(format!("cannot inspect temporary output path: {error}"))
         })? {
@@ -713,9 +739,13 @@ impl OutputTransaction {
                 OutputPlanError::ExistingOutputConflict,
             ));
         }
-        fs::rename(temporary, final_path)
-            .map_err(|error| MergeError::OutputIo(format!("cannot atomically finalize PDF: {error}")))?;
-        if let Some(parent) = final_path.parent().filter(|parent| !parent.as_os_str().is_empty()) {
+        fs::rename(temporary, final_path).map_err(|error| {
+            MergeError::OutputIo(format!("cannot atomically finalize PDF: {error}"))
+        })?;
+        if let Some(parent) = final_path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
             File::open(parent)
                 .and_then(|directory| directory.sync_all())
                 .map_err(|error| {
@@ -799,11 +829,16 @@ mod tests {
             request: &MergeEngineRequest,
             _control: &ExecutionControl,
         ) -> Result<MergeEngineResult, EngineError> {
-            let pages = request.inputs.iter().map(|input| input.pages.len()).sum::<usize>();
+            let pages = request
+                .inputs
+                .iter()
+                .map(|input| input.pages.len())
+                .sum::<usize>();
             let pages = u32::try_from(pages).expect("test page count fits u32");
             self.output_pages.store(pages, AtomicOrdering::Release);
-            fs::write(&request.output, b"%PDF-1.7\n%%EOF\n")
-                .map_err(|error| EngineError::new(ErrorCode::OutputWriteFailed, error.to_string()))?;
+            fs::write(&request.output, b"%PDF-1.7\n%%EOF\n").map_err(|error| {
+                EngineError::new(ErrorCode::OutputWriteFailed, error.to_string())
+            })?;
             Ok(MergeEngineResult {
                 page_count: pages,
                 evidence: Vec::new(),
@@ -831,7 +866,8 @@ mod tests {
     #[test]
     fn request_validation_preserves_duplicate_sources_but_rejects_unsafe_output() {
         let source = MergeSource::new("a.pdf");
-        let request = MergeRequest::new([source.clone(), source], "out.PDF").expect("valid request");
+        let request =
+            MergeRequest::new([source.clone(), source], "out.PDF").expect("valid request");
         assert_eq!(request.sources().len(), 2);
         assert_eq!(
             MergeRequest::new([MergeSource::new("a.pdf")], "out.pdf"),

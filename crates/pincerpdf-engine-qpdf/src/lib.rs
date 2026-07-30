@@ -250,9 +250,8 @@ impl MergeEnginePort for QpdfAdapter {
                 ));
             }
             if let Some(password) = input.password.as_ref() {
-                let password_file = PasswordFile::create(password).map_err(|error| {
-                    EngineError::new(ErrorCode::Internal, error.to_string())
-                })?;
+                let password_file = PasswordFile::create(password)
+                    .map_err(|error| EngineError::new(ErrorCode::Internal, error.to_string()))?;
                 let decrypted = TemporaryPath::new("decrypted-source", "pdf").map_err(|error| {
                     EngineError::new(
                         ErrorCode::Internal,
@@ -415,10 +414,8 @@ impl TemporaryPath {
     fn new(purpose: &str, extension: &str) -> io::Result<Self> {
         for _ in 0..32 {
             let id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
-            let directory = std::env::temp_dir().join(format!(
-                "pincerpdf-{purpose}-{}-{id}",
-                std::process::id()
-            ));
+            let directory = std::env::temp_dir()
+                .join(format!("pincerpdf-{purpose}-{}-{id}", std::process::id()));
             let mut builder = fs::DirBuilder::new();
             #[cfg(unix)]
             builder.mode(0o700);
@@ -623,8 +620,8 @@ fn evidence(
 }
 
 fn map_process_failure(failure: ProcessFailure, password_supplied: bool) -> EngineError {
-    let combined = format!("{} {}", failure.evidence.stdout, failure.evidence.stderr)
-        .to_ascii_lowercase();
+    let combined =
+        format!("{} {}", failure.evidence.stdout, failure.evidence.stderr).to_ascii_lowercase();
     let code = match failure.kind {
         ProcessFailureKind::Cancelled => ErrorCode::Cancelled,
         ProcessFailureKind::Spawn | ProcessFailureKind::TimedOut | ProcessFailureKind::Join => {
@@ -658,11 +655,8 @@ mod tests {
     #[cfg(unix)]
     #[test]
     fn bounded_capture_drains_but_retains_only_the_configured_limit() {
-        let control = ExecutionControl::new(
-            Duration::from_secs(2),
-            5,
-            CancellationToken::default(),
-        );
+        let control =
+            ExecutionControl::new(Duration::from_secs(2), 5, CancellationToken::default());
         let capture = run_process(
             Path::new("sh"),
             &[OsString::from("-c"), OsString::from("printf 1234567890")],
