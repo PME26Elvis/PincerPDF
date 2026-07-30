@@ -1,7 +1,7 @@
 # Project State
 
-- Updated: 2026-07-29
-- Phase: P4 — Merge vertical slice (starting)
+- Updated: 2026-07-30
+- Phase: P4 — Merge vertical slice (P4.2 starting)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: trunk-based, atomic checkpoints to `main`
@@ -30,6 +30,7 @@
 - Tauri 2 single-window host established with only `core:default` capability.
 - Responsive design tokens, visible focus, skip navigation, semantic landmarks, system/manual reduced motion, and stable test hooks established.
 - CI-generated Cargo/npm locks and tracked application icon committed.
+- P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 
 ## Rust foundation evidence
 
@@ -110,15 +111,56 @@ Workflow artifact `8720198828` has digest `sha256:29f4870e1a4232573eb8138544875c
 
 Trunk `0.21.14` downloads `wasm-opt version_123`, which rejected the Rust `1.97.1` bulk-memory output despite the WASM release compilation succeeding. P3 therefore explicitly disables that incompatible post-link pass with `data-wasm-opt="0"`; Cargo release optimization and thin LTO remain enabled. ADR-014 records this measured compatibility decision.
 
+## P4.1 Merge-core evidence
+
+PR #6 established the first executable PDF-tool vertical slice while intentionally keeping the desktop Merge capability gate closed.
+
+GitHub Actions run `30511384211` (`Linux quality`) completed successfully on head `0f00b8373b911bf38634c9f757813390a55f8559`:
+
+- Rust formatting and Clippy passed with warnings denied,
+- 21 portable Rust tests passed,
+- the real-engine contract remained intentionally ignored in the portable lane,
+- three evidence-summarizer regression tests passed,
+- repository structure, CLI smoke tests and clean-tree validation passed.
+
+GitHub Actions run `30511384208` (`Merge core`) completed successfully in the pinned Linux devcontainer:
+
+- the same portable workspace checks passed,
+- the ignored real-QPDF/MuPDF Merge contract passed,
+- source order and deliberate page duplicates were preserved,
+- AcroForm input was rejected before Merge,
+- encrypted input completed without fixture passwords appearing in retained evidence,
+- temporary sibling output passed semantic inspection before atomic finalization,
+- QPDF `11.3.0` and MuPDF `1.21.1` identities were captured across their actual stdout/stderr behavior,
+- the committed lock remained unchanged.
+
+The ordered output contains five pages:
+
+```text
+pdf_sha256=69aae958278cdf7097f71a1e9565d77d21d846620e7c4b7de0088cf1fbb87211
+text_sha256=86eea69463577647169ddccef56ed5eeccec6ee2e2920409a794b735bf8a19d6
+```
+
+The encrypted-input output contains six pages:
+
+```text
+pdf_sha256=18db80d8cde214812bb83e557862e8f861ee21129d1ba70a46e902d37ec25b7e
+text_sha256=a031c751b8eebb99dd75f2060e53a72ddf3854c7d034792f851d4fa81e3da3b0
+```
+
+Artifact `8747323877` has digest `sha256:6a3cff1e05b27e9ff0e545d65b53faf5be20de794404c8b70c33f4c995e07670`.
+
+Runs `30511384218` (`PDF engine capability probe`) and `30511384187` (`Application shell`) also completed successfully on the same head, confirming the 32-command engine baseline and the P3 Tauri/Leptos/Playwright shell remained intact.
+
 ## Exact next actions
 
-1. Squash-integrate PR #5 after the final evidence-state checks pass.
-2. Start P4 with a real Merge request/domain/application vertical slice behind the existing capability gate.
-3. Implement a process-isolated QPDF merge adapter with redacted evidence, bounded output, timeout/cancellation, and atomic finalization.
-4. Add merge fixture contracts for page order, duplicates, mixed page boxes/rotation, metadata, encryption, forms, and bookmark policy.
-5. Replace only the Merge UI gate after engine, application, E2E, and parity evidence pass.
+1. Start P4.2 with a Tauri command boundary and deterministic browser/native adapters over the verified Merge service.
+2. Add Merge UI source rows, page-selection editing, validation, destination/conflict controls and accessible task progress.
+3. Extend the Merge corpus for mixed page boxes/rotation, metadata policy and cancellation/output-conflict recovery.
+4. Add browser E2E, packaged Linux E2E and required Merge visual checkpoints.
+5. Replace only the Merge UI gate after the P4.2 engine, application, E2E and visual evidence passes.
 6. Keep all other seven tools visibly gated.
 
 ## Completion status
 
-P0 through P3 are complete. P4 starts from a reproducible Linux environment, measured PDF-engine responsibility split, and a verified Tauri/Leptos application shell rather than an untested UI scaffold.
+P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress: the verified core is executable through the internal CLI, while the desktop Merge action stays gated until P4.2 satisfies its command, UI, E2E and visual acceptance criteria.

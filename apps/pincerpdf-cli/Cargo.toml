@@ -11,6 +11,8 @@ publish = false
 pincerpdf-application = { path = "../../crates/pincerpdf-application" }
 pincerpdf-domain = { path = "../../crates/pincerpdf-domain" }
 pincerpdf-engine-api = { path = "../../crates/pincerpdf-engine-api" }
+pincerpdf-engine-qpdf = { path = "../../crates/pincerpdf-engine-qpdf" }
+pincerpdf-merge = { path = "../../crates/pincerpdf-merge" }
 
 [lints]
 workspace = true

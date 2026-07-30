@@ -7,7 +7,9 @@ members = [
   "crates/pincerpdf-application",
   "crates/pincerpdf-domain",
   "crates/pincerpdf-engine-api",
+  "crates/pincerpdf-engine-qpdf",
   "crates/pincerpdf-filesystem",
+  "crates/pincerpdf-merge",
 ]
 default-members = [
   "apps/pincerpdf-cli",
@@ -16,7 +18,9 @@ default-members = [
   "crates/pincerpdf-application",
   "crates/pincerpdf-domain",
   "crates/pincerpdf-engine-api",
+  "crates/pincerpdf-engine-qpdf",
   "crates/pincerpdf-filesystem",
+  "crates/pincerpdf-merge",
 ]
 
 [workspace.package]

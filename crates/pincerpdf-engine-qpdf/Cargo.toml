@@ -1,0 +1,19 @@
+[package]
+name = "pincerpdf-engine-qpdf"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[dependencies]
+pincerpdf-domain = { path = "../pincerpdf-domain" }
+pincerpdf-engine-api = { path = "../pincerpdf-engine-api" }
+pincerpdf-merge = { path = "../pincerpdf-merge" }
+
+[dev-dependencies]
+pincerpdf-filesystem = { path = "../pincerpdf-filesystem" }
+
+[lints]
+workspace = true
