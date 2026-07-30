@@ -289,7 +289,7 @@ impl ExecutionControl {
 impl Default for ExecutionControl {
     fn default() -> Self {
         Self::new(
-            Duration::from_secs(120),
+            Duration::from_mins(2),
             64 * 1024,
             CancellationToken::default(),
         )
@@ -663,10 +663,10 @@ fn ensure_output_does_not_alias_source(request: &MergeRequest) -> Result<(), Mer
     let output_candidate = canonical_parent.join(output_name);
 
     for (source_index, source) in request.sources().iter().enumerate() {
-        if let Ok(canonical_source) = source.path().canonicalize() {
-            if canonical_source == output_candidate {
-                return Err(MergeError::OutputAliasesSource { source_index });
-            }
+        if let Ok(canonical_source) = source.path().canonicalize()
+            && canonical_source == output_candidate
+        {
+            return Err(MergeError::OutputAliasesSource { source_index });
         }
     }
     Ok(())
