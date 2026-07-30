@@ -27,26 +27,30 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
+          import re
 
           path = Path("crates/pincerpdf-merge/src/lib.rs")
           text = path.read_text(encoding="utf-8")
-          old_timeout = "Duration::from_secs(120)"
-          old_alias = '''        if let Ok(canonical_source) = source.path().canonicalize() {
-              if canonical_source == output_candidate {
-                  return Err(MergeError::OutputAliasesSource { source_index });
-              }
-          }
-          '''
-          new_alias = '''        if let Ok(canonical_source) = source.path().canonicalize()
-              && canonical_source == output_candidate
-          {
-              return Err(MergeError::OutputAliasesSource { source_index });
-          }
-          '''
-          if text.count(old_timeout) != 1 or text.count(old_alias) != 1:
-              raise SystemExit("expected P4.1 source patterns were not found exactly once")
-          text = text.replace(old_timeout, "Duration::from_mins(2)")
-          text = text.replace(old_alias, new_alias)
+          if text.count("Duration::from_secs(120)") != 1:
+              raise SystemExit("expected timeout expression was not found exactly once")
+          text = text.replace("Duration::from_secs(120)", "Duration::from_mins(2)")
+          pattern = re.compile(
+              r"(?m)^(?P<i>\s*)if let Ok\(canonical_source\) = source\.path\(\)\.canonicalize\(\) \{\n"
+              r"(?P=i)    if canonical_source == output_candidate \{\n"
+              r"(?P=i)        return Err\(MergeError::OutputAliasesSource \{ source_index \}\);\n"
+              r"(?P=i)    \}\n"
+              r"(?P=i)\}\n"
+          )
+          replacement = (
+              r"\g<i>if let Ok(canonical_source) = source.path().canonicalize()\n"
+              r"\g<i>    && canonical_source == output_candidate\n"
+              r"\g<i>{\n"
+              r"\g<i>    return Err(MergeError::OutputAliasesSource { source_index });\n"
+              r"\g<i>}\n"
+          )
+          text, count = pattern.subn(replacement, text, count=1)
+          if count != 1:
+              raise SystemExit("expected canonical alias check was not found exactly once")
           path.write_text(text, encoding="utf-8")
           PY
           git config user.name "github-actions[bot]"
