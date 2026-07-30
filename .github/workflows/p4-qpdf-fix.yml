@@ -75,17 +75,18 @@ jobs:
                   "        return Err(ProcessFailure {\n            kind,\n            evidence: Box::new(evidence),\n            message: message.to_owned(),\n        });\n",
                   1,
               ),
-              (
-                  "            evidence,\n        })\n",
-                  "            evidence: Box::new(evidence),\n        })\n",
-                  1,
-              ),
           ]
           for old, new, expected in replacements:
               count = text.count(old)
               if count != expected:
                   raise SystemExit(f"expected {old!r} {expected} time(s), found {count}")
               text = text.replace(old, new)
+
+          exit_tail = "            evidence,\n        })\n"
+          if text.count(exit_tail) != 2:
+              raise SystemExit(f"expected two result tails, found {text.count(exit_tail)}")
+          index = text.rfind(exit_tail)
+          text = text[:index] + "            evidence: Box::new(evidence),\n        })\n" + text[index + len(exit_tail):]
 
           path.write_text(text, encoding="utf-8")
           PY
