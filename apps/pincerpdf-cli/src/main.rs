@@ -1,5 +1,5 @@
 #![forbid(unsafe_code)]
-//! Internal CLI for exercising verified PincerPDF foundations and vertical slices.
+//! Internal CLI for exercising verified `PincerPDF` foundations and vertical slices.
 
 use pincerpdf_application::validate_tool_capabilities;
 use pincerpdf_domain::{PageNumber, PageSelection, ToolKind};
