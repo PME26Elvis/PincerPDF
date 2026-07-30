@@ -416,9 +416,14 @@ impl TemporaryPath {
             let id = NEXT_TEMP_ID.fetch_add(1, Ordering::Relaxed);
             let directory = std::env::temp_dir()
                 .join(format!("pincerpdf-{purpose}-{}-{id}", std::process::id()));
-            let mut builder = fs::DirBuilder::new();
             #[cfg(unix)]
-            builder.mode(0o700);
+            let builder = {
+                let mut builder = fs::DirBuilder::new();
+                builder.mode(0o700);
+                builder
+            };
+            #[cfg(not(unix))]
+            let builder = fs::DirBuilder::new();
             match builder.create(&directory) {
                 Ok(()) => {
                     let path = directory.join(format!("payload.{extension}"));
@@ -668,6 +673,7 @@ fn map_process_failure(failure: &ProcessFailure, password_supplied: bool) -> Eng
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(unix)]
     use pincerpdf_merge::CancellationToken;
 
     #[cfg(unix)]

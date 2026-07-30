@@ -4,7 +4,7 @@
 - Phase: P4 — Merge vertical slice (P4.2 starting)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
-- Delivery model: trunk-based, atomic checkpoints to `main`
+- Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
 
 ## Completed
 
@@ -152,11 +152,41 @@ Artifact `8747323877` has digest `sha256:6a3cff1e05b27e9ff0e545d65b53faf5be20de7
 
 Runs `30511384218` (`PDF engine capability probe`) and `30511384187` (`Application shell`) also completed successfully on the same head, confirming the 32-command engine baseline and the P3 Tauri/Leptos/Playwright shell remained intact.
 
+## Windows-first local development evidence
+
+ADR-016 supersedes the original Linux-first delivery order without weakening the cross-platform product requirement. The primary edit/build/test loop now runs locally on Windows, with large tools, caches, temporary files, browser artifacts and Cargo targets rooted under the configurable development directory. The current workstation uses `D:\PincerPDF-dev`.
+
+The local environment has verified:
+
+- pinned Rust/Cargo `1.97.1`, Rustfmt, Clippy and the `wasm32-unknown-unknown` target,
+- Trunk `0.21.14`, the bundled Node `24.14.0`, Playwright `1.62.0` and an installed Chromium-compatible browser,
+- official QPDF `11.3.0` and official MuPDF tools `1.21.0` under the same non-system drive,
+- `cargo fmt`, warning-denied workspace Clippy, repository structure validation and all 21 portable Rust tests,
+- native Windows Tauri host compilation and Leptos CSR release build,
+- all five deterministic application-shell Chromium E2E scenarios and desktop/compact screenshots,
+- the 32-command PDF capability probe,
+- the ignored real-engine Merge contract: 1 passed, 0 failed.
+
+The Windows Merge evidence contains five ordered pages and six encrypted-input pages. PDF byte hashes differ from the Linux artifacts because they were generated on a different tool/platform run, while the canonical extracted-text hashes now match Linux exactly:
+
+```text
+ordered text_sha256=86eea69463577647169ddccef56ed5eeccec6ee2e2920409a794b735bf8a19d6
+encrypted text_sha256=a031c751b8eebb99dd75f2060e53a72ddf3854c7d034792f851d4fa81e3da3b0
+```
+
+The evidence summarizer now writes canonical LF UTF-8 bytes so host newline policy cannot create false semantic differences. Windows validation also exposed and fixed platform assumptions around Unix-only temporary-directory modes, cancellation-test signals, durable file handles and directory syncing. The development bootstrap loads Visual Studio before prepending the pinned D-drive tools, preventing compiler setup from silently hiding QPDF, MuPDF, Cargo or Trunk.
+
+Linux remains the compatibility oracle for process/filesystem boundaries, WebKitGTK rendering, milestone integration and release evidence. MuPDF is `1.21.0` locally because the official `1.21.1` Windows release was source-only; Linux evidence remains pinned to `1.21.1`.
+
+## Active known boundary
+
+`ExistingOutputPolicy::Replace` is not yet accepted as a durable Windows behavior because `std::fs::rename` does not replace an existing destination there. P4.2 must keep conflict handling on `Fail` until an atomic Windows replacement implementation and recovery tests pass; removing the destination before rename is not an acceptable substitute.
+
 ## Exact next actions
 
-1. Start P4.2 with a Tauri command boundary and deterministic browser/native adapters over the verified Merge service.
+1. Add the P4.2 Tauri command boundary and deterministic browser/native adapters over the verified Merge service.
 2. Add Merge UI source rows, page-selection editing, validation, destination/conflict controls and accessible task progress.
-3. Extend the Merge corpus for mixed page boxes/rotation, metadata policy and cancellation/output-conflict recovery.
+3. Implement and verify durable Windows replacement or keep overwrite visibly unavailable; extend the corpus for mixed page boxes/rotation, metadata policy and cancellation/output-conflict recovery.
 4. Add browser E2E, packaged Linux E2E and required Merge visual checkpoints.
 5. Replace only the Merge UI gate after the P4.2 engine, application, E2E and visual evidence passes.
 6. Keep all other seven tools visibly gated.

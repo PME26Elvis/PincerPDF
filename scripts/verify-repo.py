@@ -29,7 +29,9 @@ REQUIRED_FILES = (
     "apps/pincerpdf-ui/styles.css",
     "apps/pincerpdf-desktop/src-tauri/tauri.conf.json",
     "apps/pincerpdf-desktop/src-tauri/capabilities/default.json",
+    "apps/pincerpdf-desktop/src-tauri/icons/icon.ico",
     "apps/pincerpdf-desktop/src-tauri/icons/icon.png",
+    "apps/pincerpdf-desktop/src-tauri/icons/icon.svg",
     "crates/pincerpdf-merge/Cargo.toml",
     "crates/pincerpdf-merge/src/lib.rs",
     "crates/pincerpdf-engine-qpdf/Cargo.toml",
@@ -38,10 +40,13 @@ REQUIRED_FILES = (
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
     "docs/architecture/adr/ADR-015-merge-core-boundary.md",
+    "docs/architecture/adr/ADR-016-windows-first-local-development.md",
     "package.json",
     "package-lock.json",
     "playwright.config.mjs",
     "scripts/summarize-merge-evidence.py",
+    "scripts/Enter-PincerPdfDev.ps1",
+    "scripts/check-fast.ps1",
     "scripts/tests/test_summarize_merge_evidence.py",
     "tests/e2e/application-shell.spec.mjs",
 )
@@ -182,8 +187,11 @@ def verify_shell_contract() -> None:
         fail("P3 Tauri capability must remain least-privilege core:default")
 
     bundle = config.get("bundle", {})
-    if bundle.get("active") is not False or bundle.get("icon") != ["icons/icon.png"]:
-        fail("P3 Tauri host must reference the tracked icon while bundling remains disabled")
+    if bundle.get("active") is not False or bundle.get("icon") != [
+        "icons/icon.png",
+        "icons/icon.ico",
+    ]:
+        fail("Tauri host must reference tracked PNG and Windows ICO assets while bundling remains disabled")
 
 
 def verify_merge_core_contract() -> None:

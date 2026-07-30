@@ -35,5 +35,18 @@ class FirstNonEmptyLineTests(unittest.TestCase):
             MODULE.first_non_empty_line("", " \n ")
 
 
+class CanonicalTextTests(unittest.TestCase):
+    """Keep semantic evidence hashes independent of host newline policy."""
+
+    def test_normalizes_windows_newlines(self) -> None:
+        self.assertEqual(MODULE.canonical_text("first\r\nsecond\r\n"), b"first\nsecond\n")
+
+    def test_normalizes_legacy_mac_newlines(self) -> None:
+        self.assertEqual(MODULE.canonical_text("first\rsecond\r"), b"first\nsecond\n")
+
+    def test_preserves_intentional_blank_lines(self) -> None:
+        self.assertEqual(MODULE.canonical_text("first\n\nsecond"), b"first\n\nsecond\n")
+
+
 if __name__ == "__main__":
     unittest.main()

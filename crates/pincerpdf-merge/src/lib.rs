@@ -12,12 +12,15 @@ use pincerpdf_filesystem::{
 };
 use std::error::Error;
 use std::fmt;
-use std::fs::{self, File};
+use std::fs::{self, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
+
+#[cfg(unix)]
+use std::fs::File;
 
 static NEXT_OPERATION_ID: AtomicU64 = AtomicU64::new(1);
 
@@ -727,7 +730,9 @@ impl OutputTransaction {
                 "engine did not produce a regular temporary PDF".to_owned(),
             ));
         }
-        File::open(temporary)
+        OpenOptions::new()
+            .write(true)
+            .open(temporary)
             .and_then(|file| file.sync_all())
             .map_err(|error| MergeError::OutputIo(format!("cannot sync temporary PDF: {error}")))?;
         if !self.plan.replace_existing
@@ -746,15 +751,25 @@ impl OutputTransaction {
             .parent()
             .filter(|parent| !parent.as_os_str().is_empty())
         {
-            File::open(parent)
-                .and_then(|directory| directory.sync_all())
-                .map_err(|error| {
-                    MergeError::OutputIo(format!("cannot sync output directory: {error}"))
-                })?;
+            #[cfg(unix)]
+            sync_output_directory(parent)?;
+            #[cfg(not(unix))]
+            {
+                // std::fs cannot open a Windows directory for FlushFileBuffers. The
+                // temporary file itself was durably flushed before the same-volume rename.
+                let _ = parent;
+            }
         }
         self.committed = true;
         Ok(final_path.clone())
     }
+}
+
+#[cfg(unix)]
+fn sync_output_directory(parent: &Path) -> Result<(), MergeError> {
+    File::open(parent)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|error| MergeError::OutputIo(format!("cannot sync output directory: {error}")))
 }
 
 impl Drop for OutputTransaction {

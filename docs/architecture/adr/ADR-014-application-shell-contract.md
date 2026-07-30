@@ -12,7 +12,7 @@ The pinned Trunk `0.21.14` toolchain downloads `wasm-opt version_123`. Measured 
 ## Decision
 
 - Use Leptos `0.8.20` in CSR mode with Trunk for the presentation layer.
-- Use Tauri `2.11.5` with a single Linux-first window and a `core:default` capability only.
+- Use Tauri `2.11.5` with a single cross-platform window and a `core:default` capability only.
 - Expose all eight planned PDF tools, each explicitly labelled **Not implemented** until its own capability and parity gates pass.
 - Keep the primary file-action control disabled in P3.
 - Provide semantic landmarks, a skip link, visible focus treatment, stable `data-testid` hooks, and both system and manual reduced-motion policies.
@@ -35,4 +35,4 @@ GitHub Actions run `30442275280` passed complete workspace checks, Tauri host co
 
 ## Revisit triggers
 
-Revisit this decision if accessibility testing, native WebView behavior, security constraints, measured rendering performance, WASM size budgets, or a newer pinned Trunk/Binaryen combination show that the shell contract should change before the Linux release-candidate gate.
+Revisit this decision if accessibility testing, native WebView behavior, security constraints, measured rendering performance, WASM size budgets, or a newer pinned Trunk/Binaryen combination show that the shell contract should change before the Windows release-candidate gate.

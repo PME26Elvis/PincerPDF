@@ -1,6 +1,6 @@
 # ADR-001: Adopt Linux-first delivery
 
-- Status: Accepted
+- Status: Superseded by ADR-016
 - Date: 2026-07-29
 
 ## Context
@@ -10,6 +10,8 @@ PincerPDF is a long-running Rust rewrite of a mature Java/JavaFX PDF desktop app
 ## Decision
 
 Develop and validate a complete Linux version in the container before adding Windows/macOS release lanes.
+
+ADR-016 supersedes this delivery order after the active development environment changed to a persistent Windows workstation capable of running the pinned Rust, Tauri, browser and PDF toolchains locally.
 
 ## Consequences
 

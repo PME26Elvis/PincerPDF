@@ -6,6 +6,7 @@ PincerPDF uses specification- and evidence-driven trunk-based development.
 - Keep commits atomic, tested and independently reversible.
 - Push stable checkpoints directly to `main`; use a short-lived branch only when an isolated experiment would destabilize the trunk.
 - Do not retain merged branches.
-- Do not add cross-platform packaging complexity before the Linux release-candidate gate.
+- Keep the Windows local quality loop green before publishing and preserve the Linux devcontainer as the compatibility oracle.
+- Do not add macOS packaging complexity before the Windows release-candidate gate.
 - Behavior changes require tests and an update to durable project state or traceability evidence.
-- Run `make verify-structure` and, when the pinned toolchain is available, `make check-fast` before publishing.
+- Run `scripts/check-fast.ps1` on Windows or `make check-fast` in Linux before publishing.

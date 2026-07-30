@@ -1,12 +1,12 @@
 # PincerPDF
 
-A modern, Linux-first PDF workbench reimplemented in Rust.
+A modern, cross-platform PDF workbench reimplemented in Rust, developed Windows-first with continuous Linux compatibility evidence.
 
 PincerPDF is an independent project based on the functionality and open-source codebase of PDFsam Basic. It is not affiliated with or endorsed by PDFsam or Sober Lemur S.r.l.
 
 ## Current status
 
-Phase P1 is in progress. The repository currently contains the durable development contract, a pinned Linux container definition, and the first dependency-free Rust foundation crates. The Tauri/Leptos application shell and PDF engine adapters are intentionally not presented as complete.
+Phase P4 is in progress. The Rust foundation, reproducible Linux environment, PDF-engine capability probe, Tauri/Leptos application shell, and first verified Merge core are complete. The desktop Merge workspace remains capability-gated until its command, E2E, visual and native-engine acceptance evidence passes.
 
 ## Foundation implemented
 
@@ -17,6 +17,8 @@ Phase P1 is in progress. The repository currently contains the durable developme
 - Pure output-path planning for temporary/atomic finalization.
 - Minimal dependency-free CLI with `doctor` and `selection` commands.
 - Structural repository verification and reproducible container recipe.
+- Process-isolated QPDF Merge adapter with timeout, cancellation, password redaction, semantic verification and atomic finalization.
+- Tauri 2 + Leptos CSR application shell with deterministic browser E2E coverage.
 
 ## Development
 
@@ -28,7 +30,20 @@ Read these files before changing code:
 4. [`docs/development/DEFINITION_OF_DONE.md`](docs/development/DEFINITION_OF_DONE.md)
 5. Accepted ADRs under [`docs/architecture/adr/`](docs/architecture/adr/)
 
-Primary local commands:
+Primary Windows commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-fast.ps1
+```
+
+For an interactive development shell, allow scripts for the current process and dot-source the environment:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+. .\scripts\Enter-PincerPdfDev.ps1
+```
+
+Linux compatibility commands:
 
 ```bash
 make verify-structure
@@ -37,7 +52,7 @@ make check-fast
 make doctor
 ```
 
-`make check-fast` requires the pinned Rust toolchain. In restricted environments, `make verify-structure` still validates repository shape, manifests and policy invariants without downloading dependencies.
+Both quality paths require the pinned Rust toolchain. In restricted environments, `python scripts/verify-repo.py` still validates repository shape, manifests and policy invariants without downloading dependencies.
 
 ## License
 
