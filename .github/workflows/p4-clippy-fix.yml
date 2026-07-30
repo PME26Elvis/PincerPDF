@@ -1,0 +1,56 @@
+name: P4 apply initial Clippy fixes
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/p4-clippy-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out P4 branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Apply exact source fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path("crates/pincerpdf-merge/src/lib.rs")
+          text = path.read_text(encoding="utf-8")
+          old_timeout = "Duration::from_secs(120)"
+          old_alias = '''        if let Ok(canonical_source) = source.path().canonicalize() {
+              if canonical_source == output_candidate {
+                  return Err(MergeError::OutputAliasesSource { source_index });
+              }
+          }
+          '''
+          new_alias = '''        if let Ok(canonical_source) = source.path().canonicalize()
+              && canonical_source == output_candidate
+          {
+              return Err(MergeError::OutputAliasesSource { source_index });
+          }
+          '''
+          if text.count(old_timeout) != 1 or text.count(old_alias) != 1:
+              raise SystemExit("expected P4.1 source patterns were not found exactly once")
+          text = text.replace(old_timeout, "Duration::from_mins(2)")
+          text = text.replace(old_alias, new_alias)
+          path.write_text(text, encoding="utf-8")
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add crates/pincerpdf-merge/src/lib.rs
+          git commit -m "Fix initial P4.1 Clippy findings"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
