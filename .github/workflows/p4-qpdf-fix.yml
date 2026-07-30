@@ -27,7 +27,6 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           path = Path("crates/pincerpdf-engine-qpdf/src/lib.rs")
           text = path.read_text(encoding="utf-8")
@@ -50,8 +49,11 @@ jobs:
                   1,
               ),
               ("enum ProcessFailureKind {", "#[derive(Clone, Copy, Debug)]\nenum ProcessFailureKind {", 1),
-              ("struct ProcessFailure {", "#[derive(Debug)]\nstruct ProcessFailure {", 1),
-              ("    evidence: CommandEvidence,", "    evidence: Box<CommandEvidence>,", 1),
+              (
+                  "struct ProcessFailure {\n    kind: ProcessFailureKind,\n    evidence: CommandEvidence,\n    message: String,\n}",
+                  "#[derive(Debug)]\nstruct ProcessFailure {\n    kind: ProcessFailureKind,\n    evidence: Box<CommandEvidence>,\n    message: String,\n}",
+                  1,
+              ),
               ("map_process_failure(failure, false)", "map_process_failure(&failure, false)", 1),
               (
                   "map_process_failure(failure, password_supplied)",
@@ -63,6 +65,21 @@ jobs:
                   "fn map_process_failure(failure: &ProcessFailure, password_supplied: bool) -> EngineError {",
                   1,
               ),
+              (
+                  "evidence: empty_evidence(program, display_args.clone(), started.elapsed()),",
+                  "evidence: Box::new(empty_evidence(program, display_args.clone(), started.elapsed())),",
+                  4,
+              ),
+              (
+                  "        return Err(ProcessFailure {\n            kind,\n            evidence,\n            message: message.to_owned(),\n        });\n",
+                  "        return Err(ProcessFailure {\n            kind,\n            evidence: Box::new(evidence),\n            message: message.to_owned(),\n        });\n",
+                  1,
+              ),
+              (
+                  "            evidence,\n        })\n",
+                  "            evidence: Box::new(evidence),\n        })\n",
+                  1,
+              ),
           ]
           for old, new, expected in replacements:
               count = text.count(old)
@@ -70,39 +87,6 @@ jobs:
                   raise SystemExit(f"expected {old!r} {expected} time(s), found {count}")
               text = text.replace(old, new)
 
-          text, boxed_empty = re.subn(
-              r"evidence: empty_evidence\(([^\n]+)\),",
-              r"evidence: Box::new(empty_evidence(\1)),",
-              text,
-          )
-          if boxed_empty != 4:
-              raise SystemExit(f"expected four empty-evidence boxes, found {boxed_empty}")
-
-          old_forced = """        return Err(ProcessFailure {
-              kind,
-              evidence,
-              message: message.to_owned(),
-          });
-          """
-          new_forced = """        return Err(ProcessFailure {
-              kind,
-              evidence: Box::new(evidence),
-              message: message.to_owned(),
-          });
-          """
-          if text.count(old_forced) != 1:
-              raise SystemExit("forced process failure pattern not found exactly once")
-          text = text.replace(old_forced, new_forced)
-
-          old_exit = """            evidence,
-          })
-          """
-          new_exit = """            evidence: Box::new(evidence),
-          })
-          """
-          if text.count(old_exit) != 1:
-              raise SystemExit("exit process failure pattern not found exactly once")
-          text = text.replace(old_exit, new_exit)
           path.write_text(text, encoding="utf-8")
           PY
 
