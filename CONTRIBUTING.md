@@ -10,3 +10,4 @@ PincerPDF uses specification- and evidence-driven trunk-based development.
 - Do not add macOS packaging complexity before the Windows release-candidate gate.
 - Behavior changes require tests and an update to durable project state or traceability evidence.
 - Run `scripts/check-fast.ps1` on Windows or `make check-fast` in Linux before publishing.
+- Run `scripts/check-native-e2e.ps1` when changing the Tauri host, CSP, embedded assets, Leptos shell, native bridge or Windows WebView acceptance.

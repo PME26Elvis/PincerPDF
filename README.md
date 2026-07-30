@@ -6,7 +6,7 @@ PincerPDF is an independent project based on the functionality and open-source c
 
 ## Current status
 
-Phase P4 is in progress. The Rust foundation, reproducible Linux environment, PDF-engine capability probe, Tauri/Leptos application shell, and first verified Merge core are complete. The desktop Merge workspace remains capability-gated until its command, E2E, visual and native-engine acceptance evidence passes.
+Phase P4 is in progress. The Rust foundation, reproducible Linux environment, PDF-engine capability probe, Tauri/Leptos application shell, and first verified Merge core are complete. The Merge workspace is available for P4 acceptance; full parity and the Windows system-dialog flow are not yet complete.
 
 ## Foundation implemented
 
@@ -19,6 +19,7 @@ Phase P4 is in progress. The Rust foundation, reproducible Linux environment, PD
 - Structural repository verification and reproducible container recipe.
 - Process-isolated QPDF Merge adapter with timeout, cancellation, password redaction, semantic verification and atomic finalization.
 - Tauri 2 + Leptos CSR application shell with deterministic browser E2E coverage.
+- Production-protocol Windows WebView2 E2E with the real Tauri/QPDF bridge and no shipped test permissions.
 
 ## Development
 
@@ -34,6 +35,12 @@ Primary Windows commands:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/check-fast.ps1
+```
+
+For host/UI changes, build the embedded release UI and run the native WebView2 acceptance suite:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-native-e2e.ps1
 ```
 
 For an interactive development shell, allow scripts for the current process and dot-source the environment:

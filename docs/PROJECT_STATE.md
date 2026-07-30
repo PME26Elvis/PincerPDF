@@ -210,19 +210,68 @@ merge-completed-compact.png    390 x 3110
 
 The real Windows Tauri/WebView2 executable also launches successfully from the D-drive toolchain. Its accessibility tree exposes the landmarks and controls, reports `qpdf version 11.3.0`, and keeps the action disabled in the empty state. A complete system-dialog-driven UI automation run is still pending; the browser adapter and direct command contract do not substitute for that acceptance item. ADR-017 records this boundary.
 
+### Production WebView2 acceptance
+
+ADR-018 adds a fast native layer between deterministic browser tests and future system-dialog automation. It builds the optimized desktop executable with Tauri's production custom protocol and drives the actual embedded WebView2 through the official external `tauri-driver`.
+
+The first probe found and fixed two release-only defects:
+
+- a direct release build still opened `http://127.0.0.1:1420` unless `tauri/custom-protocol` was enabled;
+- the production CSP blocked the same-origin WASM fetch because `connect-src` omitted `'self'`.
+
+The corrected run opened `http://tauri.localhost/`, loaded the JavaScript/WASM, exposed `window.__TAURI__`, and crossed the real `merge_engine_status` and `cancel_merge` command bridge. The suite passed 3/3 scenarios in 2.6–4.8 seconds of test time and nine seconds end to end:
+
+- QPDF `11.3.0` discovery;
+- eight tool entries, one available Merge workspace and seven independent gates;
+- disabled empty-state execution, unknown-operation cancellation, manual reduced motion and native screenshot capture.
+
+The production-like binary still has only `core:default`; no WDIO Rust plugin, guest script or `wdio:*` capability is shipped. The retained native screenshot is 3600 × 2110:
+
+```text
+sha256=274ed135b05f0e2b346276c77c7e4da5ba998e6b6d3484340ffae411f6583875
+```
+
+The exact runner dependency graph includes compatibility/security overrides for the current Tauri service packaging gap and patched transitive packages. Both npm and pnpm audits report zero known vulnerabilities, and the native suite remains green after the overrides.
+
+### P4.2 Linux compatibility evidence
+
+PR #8 was squash-merged to `main` as `30281395a5aee6016df5f8b493c2de435338cb2f` after every required check passed on the exact source head `505978bc62d0133e19e2da0ea29d2c91b5e5808a`:
+
+- Linux quality run `30521001566`;
+- Merge core run `30521001569`;
+- PDF engine capability probe run `30521001582`;
+- Application shell run `30521001596`.
+
+The retained artifacts are:
+
+```text
+PDF engine capability evidence
+artifact=8750889460
+sha256=7d631671a4801a76e60914fd90480aad0541c5d7eadb413963a8f5a687c8d5a3
+
+Merge core evidence
+artifact=8751044520
+sha256=34cbdaed2e7c55ac4fddf47a7debda9be69463778db6f3b9f2864be804956b95
+
+Application shell evidence
+artifact=8751048133
+sha256=179ade86c57b298a8f3922b8f32b8ff9159a5ad784dc179914fe4a7ef0eaa6b9
+```
+
+This closes the P4.2 Linux milestone lane without restoring Actions as the ordinary edit/build/test loop.
+
 ## Active known boundary
 
 `ExistingOutputPolicy::Replace` is not yet accepted as a durable Windows behavior because `std::fs::rename` does not replace an existing destination there. P4.2 must keep conflict handling on `Fail` until an atomic Windows replacement implementation and recovery tests pass; removing the destination before rename is not an acceptable substitute.
 
 ## Exact next actions
 
-1. Complete the native Windows system-dialog-driven Merge E2E with real fixtures, output verification, cancellation and conflict recovery.
-2. Run the P4.2 application-shell compatibility lane, including the new real desktop command contract, in the pinned Linux environment.
-3. Implement and verify durable Windows replacement or keep overwrite visibly unavailable.
-4. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
-5. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
-6. Keep all other seven tools visibly gated while P4 continues.
+1. Complete the Windows system-dialog-driven Merge E2E with real fixtures, output verification, cancellation and conflict recovery; the production WebView2 layer is already green.
+2. Implement and verify durable Windows replacement or keep overwrite visibly unavailable.
+3. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
+4. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
+5. Keep all other seven tools visibly gated while P4 continues.
 
 ## Completion status
 
-P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress. P4.2 implementation, portable/native-command tests, browser E2E, Windows visual checkpoints and a real Tauri/WebView2 launch are green; native system-dialog automation and Linux milestone evidence remain before the checkpoint is complete.
+P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress. P4.2 implementation, portable/native-command tests, browser E2E, Windows visual checkpoints, production-protocol WebView2 E2E and Linux milestone evidence are green; native system-dialog automation and durable Windows replacement remain before the checkpoint is complete.
