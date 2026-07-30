@@ -1,0 +1,95 @@
+name: Merge core
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "Makefile"
+      - "apps/pincerpdf-cli/**"
+      - "crates/pincerpdf-merge/**"
+      - "crates/pincerpdf-engine-qpdf/**"
+      - "scripts/summarize-merge-evidence.py"
+      - "tests/fixtures/pdf/**"
+      - ".devcontainer/**"
+      - ".github/workflows/merge-core.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: merge-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  merge-core:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build cached development image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: .devcontainer/Dockerfile
+          load: true
+          tags: pincerpdf-devcontainer:merge-core
+          cache-from: type=gha,scope=pincerpdf-devcontainer
+          cache-to: type=gha,mode=max,scope=pincerpdf-devcontainer
+
+      - name: Validate Merge core
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            pincerpdf-devcontainer:merge-core \
+            bash -c '
+              set -euo pipefail
+              mkdir -p .artifacts/merge-core/locks
+              cargo generate-lockfile
+              cp Cargo.lock .artifacts/merge-core/locks/Cargo.lock
+              cargo fmt --all -- --check
+              cargo clippy --workspace --all-targets --all-features -- -D warnings
+              cargo test --workspace --all-targets
+              make merge-contract
+              cargo run --locked -q -p pincerpdf-cli -- doctor | tee .artifacts/merge-core/doctor.txt
+            '
+
+      - name: Verify only generated lock and evidence changed
+        run: |
+          git diff --exit-code -- . \
+            ':(exclude)Cargo.lock' \
+            ':(exclude).artifacts/**'
+
+      - name: Summarize checkpoint
+        run: |
+          {
+            echo "## PincerPDF P4.1 Merge core"
+            echo
+            echo "- workspace format, Clippy, and tests passed"
+            echo "- real QPDF Merge contract passed"
+            echo "- page order and deliberate duplicates verified with MuPDF text output"
+            echo "- form inputs rejected before merge"
+            echo "- encrypted input password evidence remained redacted"
+            echo "- temporary sibling output was semantically verified before atomic finalization"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload Merge evidence and generated lock
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: merge-core-evidence
+          path: .artifacts/merge-core
+          if-no-files-found: error
+          retention-days: 14
