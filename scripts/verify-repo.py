@@ -42,6 +42,7 @@ REQUIRED_FILES = (
     "package-lock.json",
     "playwright.config.mjs",
     "scripts/summarize-merge-evidence.py",
+    "scripts/tests/test_summarize_merge_evidence.py",
     "tests/e2e/application-shell.spec.mjs",
 )
 
@@ -228,6 +229,8 @@ def verify_merge_core_contract() -> None:
 
     if "merge-contract:" not in makefile or "make merge-contract" not in workflow:
         fail("P4.1 real-engine contract is not wired into Make/Actions")
+    if "python3 -m unittest discover -s scripts/tests" not in workflow:
+        fail("P4.1 evidence summarizer regression tests are not wired into Actions")
     if 'short_label: "Merge"' not in ui_source or '"Not implemented"' not in ui_source:
         fail("P4.1 must keep the Merge UI capability gate closed")
 

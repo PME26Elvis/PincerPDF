@@ -12,6 +12,7 @@ on:
       - "crates/pincerpdf-merge/**"
       - "crates/pincerpdf-engine-qpdf/**"
       - "scripts/summarize-merge-evidence.py"
+      - "scripts/tests/**"
       - "tests/fixtures/pdf/**"
       - ".devcontainer/**"
       - ".github/workflows/merge-core.yml"
@@ -62,6 +63,7 @@ jobs:
               cargo fmt --all -- --check
               cargo clippy --workspace --all-targets --all-features -- -D warnings
               cargo test --workspace --all-targets
+              python3 -m unittest discover -s scripts/tests -p "test_*.py"
               make merge-contract
               cargo run --locked -q -p pincerpdf-cli -- doctor | tee .artifacts/merge-core/doctor.txt
             '

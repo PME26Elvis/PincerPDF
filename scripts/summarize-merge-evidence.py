@@ -28,6 +28,26 @@ def command(*args: str | Path) -> str:
     return completed.stdout.strip()
 
 
+def first_non_empty_line(*streams: str) -> str:
+    """Return the first non-empty line across ordered process streams."""
+    for stream in streams:
+        for line in stream.splitlines():
+            if stripped := line.strip():
+                return stripped
+    raise RuntimeError("command produced no version output")
+
+
+def command_version(*args: str | Path) -> str:
+    """Read a tool version whether the executable reports it on stdout or stderr."""
+    completed = subprocess.run(
+        [str(arg) for arg in args],
+        text=True,
+        capture_output=True,
+        check=True,
+    )
+    return first_non_empty_line(completed.stdout, completed.stderr)
+
+
 def main() -> int:
     root = Path(sys.argv[1]).resolve()
     outputs = [root / "ordered.pdf", root / "encrypted-merge.pdf"]
@@ -37,8 +57,8 @@ def main() -> int:
 
     report = {
         "schema": 1,
-        "qpdf_version": command("qpdf", "--version").splitlines()[0],
-        "mutool_version": command("mutool", "-v").splitlines()[0],
+        "qpdf_version": command_version("qpdf", "--version"),
+        "mutool_version": command_version("mutool", "-v"),
         "outputs": {},
     }
     for output in outputs:
