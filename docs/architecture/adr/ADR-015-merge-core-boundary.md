@@ -41,3 +41,9 @@ The dedicated Linux workflow must retain:
 - form rejection evidence,
 - semantic `qpdf --check` and page counts,
 - output SHA-256 values and engine versions.
+
+## Accepted evidence
+
+GitHub Actions run `30511384208` passed this contract on source head `0f00b8373b911bf38634c9f757813390a55f8559` with QPDF `11.3.0` and MuPDF `1.21.1`. The ordered five-page output and encrypted-input six-page output both passed semantic inspection and independent text extraction. Artifact `8747323877` has digest `sha256:6a3cff1e05b27e9ff0e545d65b53faf5be20de794404c8b70c33f4c995e07670`.
+
+The same head passed Linux quality run `30511384211`, the 32-command PDF engine capability probe run `30511384218`, and application-shell regression run `30511384187`. P4.1 is therefore accepted without changing the P3 Merge UI gate.
