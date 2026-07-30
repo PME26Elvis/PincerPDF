@@ -1,1 +1,45 @@
-__CONTENT_FROM_FILE__
+name: P4 materialize Merge core
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - ".github/workflows/p4-materialize.yml"
+      - ".p4-payload/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: p4-materialize-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  materialize:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out P4 branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install pinned Rust toolchain
+        uses: dtolnay/rust-toolchain@1.97.1
+
+      - name: Materialize atomic P4.1 checkpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .p4-payload/part-* | base64 --decode > /tmp/p4-materialize.tar.gz
+          echo "6f44ab5af193574d67ff2ea90ad6af5f020ce96d2fe5f5e0dd71bbe23a3fa6c9  /tmp/p4-materialize.tar.gz" | sha256sum --check --strict
+          tar -xzf /tmp/p4-materialize.tar.gz -C .
+          cargo generate-lockfile
+          rm -rf .p4-payload .github/workflows/p4-materialize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build P4.1 Merge core"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
