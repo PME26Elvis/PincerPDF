@@ -2,7 +2,7 @@
 
 - Updated: 2026-07-31
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
-- Current checkpoint: P4.3 parity corpus
+- Current checkpoint: P4.4 document-level bookmark reconstruction
 
 This ledger distinguishes a verified behavior from a complete Merge feature.
 Rows remain partial until every policy named by the phase-one specification has
@@ -14,7 +14,7 @@ executable evidence.
 | --- | --- | --- | --- | --- |
 | MERGE-001 | Multiple inputs, ordering and duplicates | Verified | Rust planner/service tests; real QPDF/MuPDF ordered and duplicate-page contract | Add stress/performance thresholds during hardening |
 | MERGE-002 | Per-input page ranges | Verified | Parser properties plus real disjoint, reordered, bounded and open-ended-to-last-page selections | Add only stress/performance coverage during hardening |
-| MERGE-003 | Bookmark policies | Partial | Discard-and-report is verified; output is checked for no outline tree | Retain, one entry per document, retain under one entry |
+| MERGE-003 | Bookmark policies | Partial | Discard-and-report plus one top-level entry per ordered document are verified; generated titles and destination pages are checked through QPDF JSON | Retain source trees and retain them under one document entry |
 | MERGE-004 | AcroForm policies | Partial | Form-bearing input is rejected before output creation | Rename fields, merge, flatten and discard |
 | MERGE-005 | Table of contents | Planned | None | Filename and document-title modes |
 | MERGE-006 | Blank page after odd input | Planned | None | Typed parity plan and rendered contract |
@@ -36,6 +36,28 @@ through a Unicode long output path. It verifies:
 
 The last item records current safe baseline behavior, not the final
 table-of-contents or document-metadata product policy.
+
+## Document-level bookmark policy
+
+ADR-021 defines the first non-discard policy. PincerPDF reconstructs a new
+outline tree only after QPDF has assembled the selected pages, using the actual
+output page object references rather than source references.
+
+Windows real-engine evidence proves:
+
+- source file names become ordered top-level titles;
+- the first entry targets output page 1;
+- the second entry targets output page 2 when the first source contributes one
+  selected page;
+- duplicate source rows remain distinct entries;
+- the result passes QPDF structural validation; and
+- the complete catalog survives the JSON update while the trailer is not
+  replaced.
+
+The semantic Windows system-dialog path additionally selects two complete
+three-page inputs and verifies entries at output pages 1 and 4. Retaining and
+remapping the source outline hierarchy remains pending, so `MERGE-003` stays
+Partial.
 
 ## Legacy test migration
 

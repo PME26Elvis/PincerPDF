@@ -4,7 +4,8 @@
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{
-    MergeError, MergeExecutionOptions, MergeRequest, MergeService, MergeSource, SecretString,
+    BookmarkPolicy, MergeError, MergeExecutionOptions, MergeRequest, MergeService, MergeSource,
+    SecretString,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -75,6 +76,20 @@ fn qpdf_check(path: &Path) {
     );
 }
 
+fn qpdf_outlines(path: &Path) -> serde_json::Value {
+    let output = Command::new("qpdf")
+        .args(["--json=2", "--json-key=outlines"])
+        .arg(path)
+        .output()
+        .expect("qpdf outline JSON starts");
+    assert!(
+        output.status.success(),
+        "qpdf outline JSON stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("valid qpdf outline JSON")
+}
+
 #[test]
 #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
 fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
@@ -130,6 +145,8 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
         previous = position + marker.len();
     }
 
+    merge_one_entry_per_document(&adapter, &fixtures, &work);
+
     let forms_output = work.join("forms.pdf");
     let forms_request = MergeRequest::new(
         [MergeSource::new(&form), MergeSource::new(&plain)],
@@ -177,6 +194,40 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     if !retain_evidence {
         fs::remove_dir_all(work).expect("remove contract work directory");
     }
+}
+
+fn merge_one_entry_per_document(adapter: &QpdfAdapter, fixtures: &Path, work: &Path) {
+    let output = work.join("one-entry-bookmarks.pdf");
+    let request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("plain-three-pages.pdf"))
+                .with_selection("3".parse().expect("valid selection")),
+            MergeSource::new(fixtures.join("bookmarks.pdf"))
+                .with_selection("2-3".parse().expect("valid selection")),
+        ],
+        &output,
+    )
+    .expect("valid document-bookmark request");
+    let report = MergeService::new(adapter)
+        .execute(
+            &request,
+            &MergeExecutionOptions {
+                bookmark_policy: BookmarkPolicy::OneEntryPerDocument,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("document-bookmark merge succeeds");
+
+    assert_eq!(report.page_count, 3);
+    assert_eq!(report.bookmark_entries, 2);
+    assert_eq!(report.bookmark_sources_discarded, 1);
+    qpdf_check(&output);
+    let outlines = qpdf_outlines(&output);
+    assert_eq!(outlines["outlines"].as_array().map(Vec::len), Some(2));
+    assert_eq!(outlines["outlines"][0]["title"], "plain-three-pages.pdf");
+    assert_eq!(outlines["outlines"][0]["destpageposfrom1"], 1);
+    assert_eq!(outlines["outlines"][1]["title"], "bookmarks.pdf");
+    assert_eq!(outlines["outlines"][1]["destpageposfrom1"], 2);
 }
 
 fn merge_parity_preserves_geometry_discards_metadata_and_supports_unicode_long_paths(

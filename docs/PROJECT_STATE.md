@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-07-31
-- Phase: P4 — Merge vertical slice (P4.3 parity corpus)
+- Phase: P4 — Merge vertical slice (P4.4 document-level bookmarks)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -325,12 +325,107 @@ MERGE-001, MERGE-002 and the baseline of MERGE-009 are verified. MERGE-003,
 MERGE-004 and MERGE-008 remain partial, and MERGE-005 through MERGE-007 remain
 planned; the ledger does not overstate full Merge parity.
 
+PR #11 was squash-merged to `main` as
+`5d665571cf82c7f0c48d72a62f825f23a937c21a` after every relevant check passed
+on exact source head `11d46ce2d2ca3df8a0cf5e9e2f87ee1f4ed7d675`:
+
+- Linux quality run `30603683715`;
+- Merge core run `30603683704`;
+- PDF engine capability probe run `30603675535`; and
+- Application shell run `30603675531`.
+
+This closes the P4.3 Windows/Linux parity-corpus checkpoint.
+
+## P4.4 document-level bookmark evidence
+
+ADR-021 accepts the first non-discard Merge bookmark policy. The shared DTO,
+Leptos workspace, trusted desktop command, application service and QPDF adapter
+now carry an explicit choice between `Discard` and `OneEntryPerDocument`;
+discard remains the default.
+
+For the document-level policy, PincerPDF assembles pages without outlines,
+reads the actual output page and catalog object references through bounded QPDF
+JSON v2, adds a new outline tree through a private JSON update, structurally
+checks the result, and then requires the high-level outline titles and output
+page positions to match the application plan. The updater preserves the full
+catalog and deliberately omits the trailer.
+
+Local Windows evidence is green:
+
+- warning-denied workspace Clippy;
+- 29 portable Rust tests passed, with two real-engine tests intentionally
+  ignored in that lane;
+- the real QPDF/MuPDF Merge contract passed, including the prior ordering,
+  encryption, form rejection and geometry corpus;
+- the real native desktop command-boundary contract passed with two generated
+  entries;
+- 9/9 deterministic browser E2E scenarios passed; and
+- 8 Python structure/evidence tests passed.
+
+The dedicated one-entry visual checkpoint was inspected at full resolution.
+The selected state, descriptions and policy summary remain aligned without
+clipping, overlap or unintended horizontal scrolling:
+
+```text
+merge-bookmark-policy-desktop.png
+dimensions=1440x1564
+sha256=d648eaf41a69d7faf6415add7338925e5b2a173d9b1a173317b7b28044315918
+```
+
+The three-page real-engine bookmark output contains:
+
+```text
+plain-three-pages.pdf -> output page 1
+bookmarks.pdf         -> output page 2
+
+pdf_sha256=3f2690fa6e37e0f9834d1e1631337d51393a52b422ca0d308ab30276744e8524
+text_sha256=0d7f2ba5be2117774902f4098c27e8a795a2b02beb711b7a7ac8b5be60534b9e
+report_sha256=72f79d66014234da2beece4742ace007206ee5d21ac35660d0dca026752ecdf7
+```
+
+The trusted native command-boundary output uses the same source twice with
+different selections and proves duplicate document titles remain distinct at
+output pages 1 and 3:
+
+```text
+pdf_sha256=9f7f991982dd5599071c513ddc1ab5b33cdd158263759833a246647164d2b558
+```
+
+The optimized production-protocol Tauri/WebView2 suite passed 4/4 scenarios,
+including both explicit bookmark modes. Its retained native screenshot:
+
+```text
+sha256=24394ee20a7e5c496b9914040d2d5e09416c606609c34496d13edeb0a82996cd
+```
+
+The coordinate-free real Windows dialog flow also passed. It selected the
+complete plain and bookmark fixtures, produced six pages, verified document
+entries at pages 1 and 4, preserved sentinel bytes under the default conflict
+policy, and then atomically replaced them after explicit opt-in:
+
+```text
+system-dialog-evidence.json
+sha256=6a4304d82675001d49065748a5cbf6252a651b4e0e558fbf7e216d7b54d774e9
+
+system-dialog-merge-completed.png
+sha256=128dbf45623f9f01bf7c4209b03d8e12566806de6dc5ebe67eb75a0e823db2ce
+
+merged-from-system-dialog.pdf
+sha256=bc1bf55202027b9ed3049b8f95e5be721ebb4a175ca7556c72aef50242f627de
+pages=6
+```
+
+Linux compatibility evidence remains the final exit gate before P4.4 is
+integrated.
+
 ## Exact next actions
 
-1. Complete and retain Linux compatibility evidence for the new mixed-geometry, metadata and Unicode/long-path Merge corpus.
-2. Define the first non-discard bookmark policy without relying on QPDF's measured dangling-outline behavior.
-3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy gaps.
-4. Keep all other seven tools visibly gated while P4 continues.
+1. Retain Linux compatibility evidence and integrate P4.4 only on the exact
+   validated source head.
+2. Define source-outline retention and destination-remapping semantics without
+   relying on QPDF's measured dangling-outline behavior.
+3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy
+   gaps while all other seven tools remain visibly gated.
 
 ## Completion status
 

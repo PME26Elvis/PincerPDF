@@ -5,8 +5,8 @@ use crate::native_bridge::{call_with_args, call_without_args, is_tauri};
 use leptos::ev;
 use leptos::prelude::*;
 use pincerpdf_desktop_api::{
-    CommandError, MergeEngineStatus, MergeInputRequest, MergeRunRequest, MergeRunResult,
-    MergeSourceFeatures, PickedMergeDestination, PickedMergeSource,
+    CommandError, MergeBookmarkPolicy, MergeEngineStatus, MergeInputRequest, MergeRunRequest,
+    MergeRunResult, MergeSourceFeatures, PickedMergeDestination, PickedMergeSource,
 };
 use pincerpdf_domain::PageSelection;
 use serde::Serialize;
@@ -59,6 +59,7 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
     let (next_operation_id, set_next_operation_id) = signal(1_u64);
     let (advanced_open, set_advanced_open) = signal(false);
     let (replace_existing, set_replace_existing) = signal(false);
+    let (bookmark_policy, set_bookmark_policy) = signal(MergeBookmarkPolicy::Discard);
     let (picker_busy, set_picker_busy) = signal(false);
     let native = is_tauri();
 
@@ -139,6 +140,7 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                 .as_ref()
                 .expect("can_run requires a destination"),
             replace_existing.get_untracked(),
+            bookmark_policy.get_untracked(),
         );
         set_task.set(TaskState::Running {
             operation_id: operation_id.clone(),
@@ -158,7 +160,7 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
         } else {
             complete_browser_merge_after_delay(
                 operation_id,
-                browser_result(&sources.get_untracked()),
+                browser_result(&sources.get_untracked(), bookmark_policy.get_untracked()),
                 task,
                 set_task,
             );
@@ -379,8 +381,55 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                                         </small>
                                     </span>
                                 </label>
+                                <fieldset class="bookmark-policy" data-testid="merge-bookmark-policy">
+                                    <legend>"Bookmarks"</legend>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="discard"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::Discard
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-discard"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(MergeBookmarkPolicy::Discard);
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"Discard source bookmarks"</strong>
+                                            <small>"Create no outline tree and report how many source trees were removed."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="one-entry-per-document"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::OneEntryPerDocument
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-one-entry"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(
+                                                    MergeBookmarkPolicy::OneEntryPerDocument,
+                                                );
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"One entry per document"</strong>
+                                            <small>"Create one top-level bookmark at the first contributed page of every ordered source."</small>
+                                        </span>
+                                    </label>
+                                </fieldset>
                                 <dl class="policy-grid">
-                                    <div><dt>"Bookmarks"</dt><dd>"Discard and report"</dd></div>
+                                    <div>
+                                        <dt>"Bookmarks"</dt>
+                                        <dd>{move || match bookmark_policy.get() {
+                                            MergeBookmarkPolicy::Discard => "Discard and report",
+                                            MergeBookmarkPolicy::OneEntryPerDocument => {
+                                                "One entry per document"
+                                            }
+                                        }}</dd>
+                                    </div>
                                     <div><dt>"Interactive forms"</dt><dd>"Reject before processing"</dd></div>
                                     <div>
                                         <dt>"Existing output"</dt>
@@ -635,9 +684,10 @@ fn task_status(
                             <strong>"Merged PDF created"</strong>
                             <small data-testid="merge-result-summary">
                                 {format!(
-                                    "{} pages · {} sources · {}",
+                                    "{} pages · {} sources · {} bookmarks · {}",
                                     report.page_count,
                                     report.source_count,
+                                    report.bookmark_entries,
                                     report.output_display,
                                 )}
                             </small>
@@ -788,6 +838,7 @@ fn make_request(
     sources: &[SourceRow],
     destination: &PickedMergeDestination,
     replace_existing: bool,
+    bookmark_policy: MergeBookmarkPolicy,
 ) -> MergeRunRequest {
     MergeRunRequest {
         operation_id,
@@ -802,6 +853,7 @@ fn make_request(
             .collect(),
         output_token: destination.path_token.clone(),
         replace_existing,
+        bookmark_policy,
     }
 }
 
@@ -832,7 +884,11 @@ fn browser_sources() -> Vec<PickedMergeSource> {
     ]
 }
 
-fn browser_result(sources: &[SourceRow]) -> MergeRunResult {
+fn browser_result(sources: &[SourceRow], bookmark_policy: MergeBookmarkPolicy) -> MergeRunResult {
+    let bookmark_entries = match bookmark_policy {
+        MergeBookmarkPolicy::Discard => 0,
+        MergeBookmarkPolicy::OneEntryPerDocument => sources.len(),
+    };
     MergeRunResult {
         output_display: "merged-document.pdf".to_owned(),
         source_count: sources.len(),
@@ -841,6 +897,7 @@ fn browser_result(sources: &[SourceRow]) -> MergeRunResult {
             .iter()
             .filter(|source| source.picked.features.has_bookmarks)
             .count(),
+        bookmark_entries,
         engine_id: "deterministic-browser-adapter".to_owned(),
         engine_version: "P4.2".to_owned(),
     }

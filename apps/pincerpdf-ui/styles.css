@@ -1179,6 +1179,57 @@ main {
   line-height: 1.45;
 }
 
+.bookmark-policy {
+  display: grid;
+  gap: 0.65rem;
+  margin: 1rem 1.1rem;
+  padding: 0;
+  border: 0;
+}
+
+.bookmark-policy legend {
+  margin-bottom: 0.55rem;
+  font-size: 9px;
+  color: var(--text-subtle);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.bookmark-policy label {
+  display: flex;
+  gap: 0.8rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  cursor: pointer;
+}
+
+.bookmark-policy label:has(input:checked) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bookmark-policy input {
+  width: 1.15rem;
+  height: 1.15rem;
+  margin-top: 0.12rem;
+  accent-color: var(--accent);
+}
+
+.bookmark-policy span,
+.bookmark-policy strong,
+.bookmark-policy small {
+  display: block;
+}
+
+.bookmark-policy small {
+  margin-top: 0.25rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
 .advanced-card {
   padding: 0;
   overflow: hidden;

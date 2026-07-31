@@ -54,6 +54,22 @@ def command_version(*args: str | Path) -> str:
     return first_non_empty_line(completed.stdout, completed.stderr)
 
 
+def outline_summary(document: dict[str, object]) -> list[dict[str, object]]:
+    """Retain only stable outline semantics from QPDF JSON."""
+    outlines = document.get("outlines")
+    if not isinstance(outlines, list):
+        raise RuntimeError("QPDF outline JSON omitted the outlines array")
+    return [
+        {
+            "title": entry["title"],
+            "page": entry["destpageposfrom1"],
+            "children": len(entry["kids"]),
+        }
+        for entry in outlines
+        if isinstance(entry, dict)
+    ]
+
+
 def main() -> int:
     root = Path(sys.argv[1]).resolve()
     parity_output = (
@@ -61,13 +77,19 @@ def main() -> int:
         / "輸出-merge-parity-long-path-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         / "幾何-metadata.pdf"
     )
-    outputs = [root / "ordered.pdf", root / "encrypted-merge.pdf", parity_output]
+    bookmark_output = root / "one-entry-bookmarks.pdf"
+    outputs = [
+        root / "ordered.pdf",
+        root / "encrypted-merge.pdf",
+        bookmark_output,
+        parity_output,
+    ]
     missing = [str(path) for path in outputs if not path.is_file()]
     if missing:
         raise SystemExit(f"missing merge evidence outputs: {', '.join(missing)}")
 
     report = {
-        "schema": 1,
+        "schema": 2,
         "qpdf_version": command_version("qpdf", "--version"),
         "mutool_version": command_version("mutool", "-v"),
         "outputs": {},
@@ -104,6 +126,19 @@ def main() -> int:
             }
             for page in range(1, 6)
         ],
+    }
+    report["bookmark_policy"] = {
+        "mode": "one_entry_per_document",
+        "outlines": outline_summary(
+            json.loads(
+                command(
+                    "qpdf",
+                    "--json=2",
+                    "--json-key=outlines",
+                    bookmark_output,
+                )
+            )
+        ),
     }
 
     serialized = json.dumps(report, indent=2, sort_keys=True) + "\n"

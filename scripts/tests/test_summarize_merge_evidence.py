@@ -48,5 +48,39 @@ class CanonicalTextTests(unittest.TestCase):
         self.assertEqual(MODULE.canonical_text("first\n\nsecond"), b"first\n\nsecond\n")
 
 
+class OutlineSummaryTests(unittest.TestCase):
+    """Keep only title, destination page and hierarchy evidence."""
+
+    def test_extracts_stable_outline_semantics(self) -> None:
+        self.assertEqual(
+            MODULE.outline_summary(
+                {
+                    "outlines": [
+                        {
+                            "title": "first.pdf",
+                            "destpageposfrom1": 1,
+                            "kids": [],
+                            "object": "19 0 R",
+                        },
+                        {
+                            "title": "second.pdf",
+                            "destpageposfrom1": 4,
+                            "kids": [{"title": "ignored child detail"}],
+                            "object": "20 0 R",
+                        },
+                    ]
+                }
+            ),
+            [
+                {"title": "first.pdf", "page": 1, "children": 0},
+                {"title": "second.pdf", "page": 4, "children": 1},
+            ],
+        )
+
+    def test_rejects_missing_outline_array(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "omitted"):
+            MODULE.outline_summary({})
+
+
 if __name__ == "__main__":
     unittest.main()

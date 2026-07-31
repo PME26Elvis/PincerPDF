@@ -123,6 +123,47 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.equal(navigation.mergeWorkspace, true);
   });
 
+  it("exposes both explicit bookmark policies in the production WebView", async () => {
+    const policies = await browser.executeAsync((done) => {
+      document
+        .querySelector('[data-testid="merge-advanced-toggle"]')
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      requestAnimationFrame(() => {
+        const discard = document.querySelector(
+          '[data-testid="bookmark-policy-discard"]',
+        );
+        const oneEntry = document.querySelector(
+          '[data-testid="bookmark-policy-one-entry"]',
+        );
+        if (
+          !(discard instanceof HTMLInputElement) ||
+          !(oneEntry instanceof HTMLInputElement)
+        ) {
+          done({ controlsPresent: false });
+          return;
+        }
+        oneEntry.checked = true;
+        oneEntry.dispatchEvent(new Event("change", { bubbles: true }));
+        requestAnimationFrame(() =>
+          done({
+            controlsPresent: true,
+            discardChecked: discard.checked,
+            oneEntryChecked: oneEntry.checked,
+            summary:
+              document.querySelector(
+                '[data-testid="merge-advanced-panel"]',
+              )?.textContent ?? "",
+          }),
+        );
+      });
+    });
+
+    assert.equal(policies.controlsPresent, true);
+    assert.equal(policies.discardChecked, false);
+    assert.equal(policies.oneEntryChecked, true);
+    assert.match(policies.summary, /One entry per document/);
+  });
+
   it("exposes safe empty-state controls and manual reduced motion", async () => {
     const state = await browser.executeAsync((done) => {
       const runMerge = document.querySelector('[data-testid="run-merge"]');
