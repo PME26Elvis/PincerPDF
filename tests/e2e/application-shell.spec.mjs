@@ -92,6 +92,16 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
     "Reject before processing",
   );
   await expect(page.getByTestId("merge-advanced-panel")).toContainText("Stop safely");
+  const replaceExisting = page.getByTestId("replace-existing-output");
+  await expect(replaceExisting).not.toBeChecked();
+  await replaceExisting.check();
+  await expect(replaceExisting).toBeChecked();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "Atomic replacement",
+  );
+  await expect(page.getByTestId("merge-output-safety")).toContainText(
+    "only after the temporary PDF passes verification",
+  );
 });
 
 test("supports a manual reduced-motion override", async ({ page }) => {

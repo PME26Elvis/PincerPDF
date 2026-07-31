@@ -287,12 +287,17 @@ fn execute_merge(
     request: MergeRunRequest,
     cancellation: CancellationToken,
 ) -> Result<MergeRunResult, CommandError> {
+    let output_policy = if request.replace_existing {
+        ExistingOutputPolicy::Replace
+    } else {
+        ExistingOutputPolicy::Fail
+    };
     let output = state.resolve_path(&request.output_token)?;
     let merge_request = build_merge_request(state, request.sources, output)?;
     let engine =
         QpdfAdapter::discover().map_err(|error| engine_error(error.code(), error.to_string()))?;
     let options = MergeExecutionOptions {
-        output_policy: ExistingOutputPolicy::Fail,
+        output_policy,
         control: ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation),
     };
     let report = MergeService::new(&engine)
@@ -496,6 +501,7 @@ mod tests {
                     },
                 ],
                 output_token: destination,
+                replace_existing: false,
             },
             CancellationToken::default(),
         )

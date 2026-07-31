@@ -14,6 +14,13 @@ $env:PNPM_HOME = Join-Path $resolvedDevRoot "pnpm"
 $env:PNPM_STORE_DIR = Join-Path $resolvedDevRoot "cache\pnpm-store"
 $env:PNPM_CONFIG_STORE_DIR = $env:PNPM_STORE_DIR
 $env:PNPM_CONFIG_VIRTUAL_STORE_DIR = Join-Path $resolvedDevRoot "frontend\node_modules\.pnpm"
+$pythonSitePackages = Join-Path $resolvedDevRoot "python\site-packages"
+$env:PYTHONPATH = @(
+    $pythonSitePackages,
+    (Join-Path $pythonSitePackages "win32"),
+    (Join-Path $pythonSitePackages "win32\lib"),
+    (Join-Path $pythonSitePackages "pythonwin")
+) -join ";"
 $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $resolvedDevRoot "cache\playwright"
 $env:XDG_CACHE_HOME = Join-Path $resolvedDevRoot "cache"
 $env:XDG_CONFIG_HOME = Join-Path $resolvedDevRoot "config"

@@ -49,6 +49,8 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-016-windows-first-local-development.md",
     "docs/architecture/adr/ADR-017-trusted-desktop-merge-boundary.md",
     "docs/architecture/adr/ADR-018-production-webview-e2e.md",
+    "docs/architecture/adr/ADR-019-windows-atomic-replacement.md",
+    "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
     "package.json",
     "package-lock.json",
     "pnpm-workspace.yaml",
@@ -58,9 +60,13 @@ REQUIRED_FILES = (
     "scripts/Enter-PincerPdfDev.ps1",
     "scripts/check-fast.ps1",
     "scripts/check-native-e2e.ps1",
+    "scripts/check-system-dialog-e2e.ps1",
+    "scripts/invoke_windows_file_dialog.py",
+    "requirements-windows-e2e.txt",
     "scripts/tests/test_summarize_merge_evidence.py",
     "tests/e2e/application-shell.spec.mjs",
     "tests/native/merge-shell.e2e.mjs",
+    "tests/native/merge-system-dialog.e2e.mjs",
 )
 
 REQUIRED_MEMBERS = {
@@ -450,6 +456,82 @@ def verify_native_webview_contract() -> None:
         fail("production desktop binary must not include WDIO plugin code or permissions")
 
 
+def verify_windows_dialog_contract() -> None:
+    """Verify coordinate-free real Windows common-dialog acceptance."""
+
+    package = load_json("package.json")
+    requirements = (
+        ROOT / "requirements-windows-e2e.txt"
+    ).read_text(encoding="utf-8").splitlines()
+    runner = (
+        ROOT / "scripts/check-system-dialog-e2e.ps1"
+    ).read_text(encoding="utf-8")
+    driver = (
+        ROOT / "scripts/invoke_windows_file_dialog.py"
+    ).read_text(encoding="utf-8")
+    test = (
+        ROOT / "tests/native/merge-system-dialog.e2e.mjs"
+    ).read_text(encoding="utf-8")
+
+    if package.get("scripts", {}).get("test:e2e:system-dialog") != (
+        "powershell.exe -NoProfile -ExecutionPolicy Bypass "
+        "-File scripts/check-system-dialog-e2e.ps1"
+    ):
+        fail("Windows system-dialog package script is missing")
+
+    if requirements != [
+        "pywinauto==0.6.9",
+        "pywin32==312",
+        "comtypes==1.4.16",
+        "six==1.17.0",
+    ]:
+        fail("Windows system-dialog dependencies must remain exactly pinned")
+
+    for token in (
+        "PINCERPDF_DEV_ROOT",
+        "requirements-windows-e2e.txt",
+        "PINCERPDF_SYSTEM_DIALOG_E2E",
+        "PINCERPDF_SYSTEM_DIALOG_FIXTURES",
+        "PINCERPDF_SYSTEM_DIALOG_OUTPUT_DIR",
+        "pnpm exec wdio run wdio.native.conf.mjs",
+        "--spec tests/native/merge-system-dialog.e2e.mjs",
+    ):
+        if token not in runner:
+            fail(f"Windows system-dialog runner contract missing: {token}")
+
+    for token in (
+        'Desktop(backend="win32")',
+        'class_name="#32770"',
+        "dialog.process_id()",
+        "control.control_id()",
+        "set_edit_text",
+        "confirm_overwrite",
+        "control.click()",
+    ):
+        if token not in driver:
+            fail(f"semantic Windows dialog driver contract missing: {token}")
+    for forbidden in ("click_input", "move_mouse", "set_cursor_pos"):
+        if forbidden in driver:
+            fail(f"Windows dialog driver must not use coordinate input: {forbidden}")
+
+    for token in (
+        'invokeDialog("Cancel")',
+        'invokeDialog("Open", [plain, bookmarks])',
+        'invokeDialog("Save", [output])',
+        '"replace-existing-output"',
+        "conflictDialog: conflictDialogEvidence",
+        "conflictPreservedSha256",
+        "replacementQpdfCheck: true",
+        "save: saveEvidence",
+        '"--show-npages"',
+        '"--check"',
+        '"system-dialog-evidence.json"',
+        '"system-dialog-merge-completed.png"',
+    ):
+        if token not in test:
+            fail(f"Windows system-dialog acceptance evidence missing: {token}")
+
+
 def main() -> None:
     """Run repository structural verification."""
 
@@ -501,6 +583,7 @@ def main() -> None:
     verify_merge_core_contract()
     verify_merge_desktop_contract()
     verify_native_webview_contract()
+    verify_windows_dialog_contract()
 
     print("PincerPDF structural verification passed")
     print(f"workspace_members={len(REQUIRED_MEMBERS)}")
@@ -510,6 +593,7 @@ def main() -> None:
     print("merge_core=verified")
     print("merge_desktop=verified")
     print("native_webview=verified")
+    print("windows_system_dialog=verified")
     print("status=verified")
 
 

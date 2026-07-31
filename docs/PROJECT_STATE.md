@@ -1,7 +1,7 @@
 # Project State
 
-- Updated: 2026-07-30
-- Phase: P4 — Merge vertical slice (P4.2 native-dialog acceptance)
+- Updated: 2026-07-31
+- Phase: P4 — Merge vertical slice (P4.3 parity corpus)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -32,6 +32,7 @@
 - CI-generated Cargo/npm locks and tracked application icon committed.
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 - P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
+- P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
 
@@ -208,7 +209,7 @@ merge-completed-desktop.png   1440 x 1264
 merge-completed-compact.png    390 x 3110
 ```
 
-The real Windows Tauri/WebView2 executable also launches successfully from the D-drive toolchain. Its accessibility tree exposes the landmarks and controls, reports `qpdf version 11.3.0`, and keeps the action disabled in the empty state. A complete system-dialog-driven UI automation run is still pending; the browser adapter and direct command contract do not substitute for that acceptance item. ADR-017 records this boundary.
+The real Windows Tauri/WebView2 executable also launches successfully from the D-drive toolchain. Its accessibility tree exposes the landmarks and controls, reports `qpdf version 11.3.0`, and keeps the action disabled in the empty state. ADR-017 records the trusted command boundary.
 
 ### Production WebView2 acceptance
 
@@ -260,18 +261,46 @@ sha256=179ade86c57b298a8f3922b8f32b8ff9159a5ad784dc179914fe4a7ef0eaa6b9
 
 This closes the P4.2 Linux milestone lane without restoring Actions as the ordinary edit/build/test loop.
 
-## Active known boundary
+## Windows replacement boundary
 
-`ExistingOutputPolicy::Replace` is not yet accepted as a durable Windows behavior because `std::fs::rename` does not replace an existing destination there. P4.2 must keep conflict handling on `Fail` until an atomic Windows replacement implementation and recovery tests pass; removing the destination before rename is not an acceptable substitute.
+ADR-019 corrects the earlier conservative assumption about the pinned standard library: Rust 1.97.1 documents `std::fs::rename` as replacing an existing file on Windows through `FileRenameInfoEx` or `MoveFileExW`. The local Windows suite now proves successful replacement, late-conflict preservation, locked-destination failure, preservation of the original locked bytes, and temporary-file cleanup. PincerPDF never deletes the destination before rename.
+
+The replacement is accepted as an atomic namespace operation after the temporary PDF has been flushed and semantically verified. Filesystem-level directory-entry durability across sudden power loss remains explicitly OS/filesystem dependent rather than overclaimed.
+
+## Windows system-dialog acceptance
+
+ADR-020 closes the P4.2 boundary with a coordinate-free pywinauto Win32 driver against the optimized Tauri/WebView2 executable. The exact Python dependencies live under the configured D-drive development root rather than the system environment.
+
+The native flow passed through real Windows dialogs and:
+
+- cancelled a source picker without mutating the empty state;
+- selected two deterministic three-page PDFs in one Open dialog;
+- registered an output through Save As and produced a QPDF-verified six-page PDF;
+- reselected the existing destination and handled the localized Windows overwrite confirmation;
+- proved the default application conflict preserved sentinel bytes;
+- enabled replacement explicitly and produced a new QPDF-valid six-page PDF.
+
+The isolated system-dialog scenario passed in 10.2 seconds and the one-worker run completed in 17 seconds. Retained evidence:
+
+```text
+system-dialog-evidence.json
+sha256=280fca04c83148aa0a08b1b389edb1c63b4d06d90406ddc5093137344c1791be
+
+system-dialog-merge-completed.png
+sha256=decad9c1abea9a269ebd2a944f2af456839de61590ecf31b0978625657c5bd3d
+
+merged-from-system-dialog.pdf
+sha256=3e41c7a08e2c2d2d830f8a7b0429e5dbcd504761bf0ff919f487c9b2095feef6
+pages=6
+```
 
 ## Exact next actions
 
-1. Complete the Windows system-dialog-driven Merge E2E with real fixtures, output verification, cancellation and conflict recovery; the production WebView2 layer is already green.
-2. Implement and verify durable Windows replacement or keep overwrite visibly unavailable.
-3. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
-4. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
-5. Keep all other seven tools visibly gated while P4 continues.
+1. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
+2. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
+3. Define and implement the first explicit metadata and bookmark behavior from the measured corpus.
+4. Keep all other seven tools visibly gated while P4 continues.
 
 ## Completion status
 
-P0 through P3 and the P4.1 Merge core are complete. P4 remains in progress. P4.2 implementation, portable/native-command tests, browser E2E, Windows visual checkpoints, production-protocol WebView2 E2E and Linux milestone evidence are green; native system-dialog automation and durable Windows replacement remain before the checkpoint is complete.
+P0 through P3, P4.1 Merge core and P4.2 Merge desktop acceptance are complete. P4 remains in progress at the parity-corpus checkpoint. Portable/native-command tests, browser E2E, Windows visual checkpoints, production-protocol WebView2 E2E, Linux milestone evidence, atomic-replacement recovery and real system-dialog automation are green.

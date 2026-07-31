@@ -6,7 +6,8 @@
   "scripts": {
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:native": "wdio run wdio.native.conf.mjs"
+    "test:e2e:native": "wdio run wdio.native.conf.mjs",
+    "test:e2e:system-dialog": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/check-system-dialog-e2e.ps1"
   },
   "devDependencies": {
     "@playwright/test": "1.62.0",
