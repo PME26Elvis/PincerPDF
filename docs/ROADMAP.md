@@ -18,5 +18,5 @@
 
 - **P4.1 — Merge core: Complete.** Engine-independent request/orchestration, process-isolated QPDF execution, password redaction, timeout/cancellation, semantic verification, atomic finalization and real QPDF/MuPDF evidence are green.
 - **P4.2 — Merge desktop slice: Complete.** The trusted Tauri command boundary, shared DTOs, accessible Merge workspace, deterministic browser adapter, real desktop-command contract, eight browser E2E scenarios, four Windows visual checkpoints, three production-protocol WebView2 E2E scenarios, Windows replacement recovery tests, coordinate-free real system-dialog E2E, and the Linux milestone lane are green.
-- **P4.3 — Merge parity corpus: In progress.** Extend deterministic fixtures and contracts across mixed page boxes/rotation, metadata, bookmarks, encrypted inspection, Unicode/long paths, and mapped legacy behavior.
+- **P4.3 — Merge parity corpus: In progress.** Windows evidence is green for mixed MediaBox/CropBox/rotation, safe source-metadata discard, Unicode/long paths, open-ended-to-last-page ranges and the first durable feature/legacy-test ledger. Linux compatibility evidence and bookmark policy expansion remain.
 - Bookmark reconstruction, form collision handling, table of contents, footer, normalization/compression and full legacy parity remain later P4 checkpoints.

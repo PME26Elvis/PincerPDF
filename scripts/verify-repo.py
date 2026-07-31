@@ -51,6 +51,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-018-production-webview-e2e.md",
     "docs/architecture/adr/ADR-019-windows-atomic-replacement.md",
     "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
+    "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
     "pnpm-workspace.yaml",
@@ -266,6 +267,12 @@ def verify_merge_core_contract() -> None:
     contract = (ROOT / "crates/pincerpdf-engine-qpdf/tests/merge_contract.rs").read_text(
         encoding="utf-8"
     )
+    fixtures = (ROOT / "tests/fixtures/pdf/generate_fixtures.py").read_text(
+        encoding="utf-8"
+    )
+    traceability = (ROOT / "docs/compatibility/MERGE_TRACEABILITY.md").read_text(
+        encoding="utf-8"
+    )
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
     workflow = (ROOT / ".github/workflows/merge-core.yml").read_text(encoding="utf-8")
 
@@ -294,9 +301,38 @@ def verify_merge_core_contract() -> None:
         '#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]',
         "PINCERPDF_MERGE_EVIDENCE_DIR",
         "mutool_text",
+        "merge_parity_preserves_geometry_discards_metadata_and_supports_unicode_long_paths",
+        '"2-"',
+        '"pages/1/MediaBox"',
+        '"pages/1/CropBox"',
+        '"pages/5/Rotate"',
+        '"trailer/Info"',
     ):
         if token not in contract:
             fail(f"real Merge contract evidence hook missing: {token}")
+
+    for token in (
+        "make_geometry_metadata",
+        "geometry-metadata.pdf",
+        "Geometry landscape rotated",
+        "Source metadata must not leak implicitly",
+    ):
+        if token not in fixtures:
+            fail(f"P4.3 parity fixture contract missing: {token}")
+
+    for feature_id in (
+        "MERGE-001",
+        "MERGE-002",
+        "MERGE-003",
+        "MERGE-004",
+        "MERGE-005",
+        "MERGE-006",
+        "MERGE-007",
+        "MERGE-008",
+        "MERGE-009",
+    ):
+        if feature_id not in traceability:
+            fail(f"Merge traceability row missing: {feature_id}")
 
     if "merge-contract:" not in makefile or "make merge-contract" not in workflow:
         fail("P4.1 real-engine contract is not wired into Make/Actions")

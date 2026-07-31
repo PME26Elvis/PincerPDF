@@ -47,6 +47,34 @@ fn mutool_text(path: &Path) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
+fn mutool_value(path: &Path, selector: &str) -> String {
+    let output = Command::new("mutool")
+        .args(["show"])
+        .arg(path)
+        .arg(selector)
+        .output()
+        .expect("mutool show starts");
+    assert!(
+        output.status.success(),
+        "mutool show {selector} stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_owned()
+}
+
+fn qpdf_check(path: &Path) {
+    let output = Command::new("qpdf")
+        .arg("--check")
+        .arg(path)
+        .output()
+        .expect("qpdf check starts");
+    assert!(
+        output.status.success(),
+        "qpdf check stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
 #[test]
 #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
 fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
@@ -142,7 +170,86 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     assert!(evidence.contains("redacted"));
     assert_eq!(encrypted_report.page_count, 6);
 
+    merge_parity_preserves_geometry_discards_metadata_and_supports_unicode_long_paths(
+        &fixtures, &work,
+    );
+
     if !retain_evidence {
         fs::remove_dir_all(work).expect("remove contract work directory");
+    }
+}
+
+fn merge_parity_preserves_geometry_discards_metadata_and_supports_unicode_long_paths(
+    fixtures: &Path,
+    work: &Path,
+) {
+    let geometry = fixtures.join("geometry-metadata.pdf");
+    let plain = fixtures.join("plain-three-pages.pdf");
+
+    let source_directory = work.join(
+        "來源-merge-parity-long-path-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    );
+    let output_directory = work.join(
+        "輸出-merge-parity-long-path-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    );
+    fs::create_dir_all(&source_directory).expect("create Unicode long source path");
+    fs::create_dir_all(&output_directory).expect("create Unicode long output path");
+    let copied_geometry = source_directory.join("幾何-metadata-source.pdf");
+    fs::copy(&geometry, &copied_geometry).expect("copy geometry fixture to Unicode long path");
+    let output = output_directory.join("幾何-metadata.pdf");
+
+    let request = MergeRequest::new(
+        [
+            MergeSource::new(&copied_geometry)
+                .with_selection("2,1,3".parse().expect("valid geometry selection")),
+            MergeSource::new(&plain)
+                .with_selection("2-".parse().expect("valid open-ended selection")),
+        ],
+        &output,
+    )
+    .expect("valid parity request");
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let report = MergeService::new(&adapter)
+        .execute(&request, &MergeExecutionOptions::default())
+        .expect("geometry merge succeeds");
+
+    assert_eq!(report.page_count, 5);
+    assert_eq!(report.bookmark_sources_discarded, 0);
+    qpdf_check(&output);
+    assert_eq!(mutool_value(&output, "pages/1/MediaBox"), "[ 0 0 842 595 ]");
+    assert_eq!(mutool_value(&output, "pages/1/CropBox"), "[ 0 0 800 550 ]");
+    assert_eq!(mutool_value(&output, "pages/1/Rotate"), "90");
+    assert_eq!(mutool_value(&output, "pages/2/MediaBox"), "[ 0 0 300 500 ]");
+    assert_eq!(
+        mutool_value(&output, "pages/2/CropBox"),
+        "[ 10 20 290 480 ]"
+    );
+    assert_eq!(mutool_value(&output, "pages/2/Rotate"), "null");
+    assert_eq!(
+        mutool_value(&output, "pages/3/MediaBox"),
+        "[ -10 -20 602 772 ]"
+    );
+    assert_eq!(mutool_value(&output, "pages/3/CropBox"), "null");
+    assert_eq!(mutool_value(&output, "pages/3/Rotate"), "270");
+    assert_eq!(mutool_value(&output, "pages/4/MediaBox"), "[ 0 0 595 842 ]");
+    assert_eq!(mutool_value(&output, "pages/5/MediaBox"), "[ 0 0 612 792 ]");
+    assert_eq!(mutool_value(&output, "pages/5/Rotate"), "90");
+    assert_eq!(mutool_value(&output, "trailer/Info"), "null");
+
+    let text = mutool_text(&output);
+    let expected = [
+        "Geometry landscape rotated",
+        "Geometry portrait crop",
+        "Geometry offset rotated",
+        "Plain page 2",
+        "Plain page 3 rotated",
+    ];
+    let mut previous = 0;
+    for marker in expected {
+        let position = text[previous..].find(marker).map_or_else(
+            || panic!("missing parity page marker {marker:?} in {text:?}"),
+            |offset| previous + offset,
+        );
+        previous = position + marker.len();
     }
 }

@@ -56,7 +56,12 @@ def command_version(*args: str | Path) -> str:
 
 def main() -> int:
     root = Path(sys.argv[1]).resolve()
-    outputs = [root / "ordered.pdf", root / "encrypted-merge.pdf"]
+    parity_output = (
+        root
+        / "輸出-merge-parity-long-path-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        / "幾何-metadata.pdf"
+    )
+    outputs = [root / "ordered.pdf", root / "encrypted-merge.pdf", parity_output]
     missing = [str(path) for path in outputs if not path.is_file()]
     if missing:
         raise SystemExit(f"missing merge evidence outputs: {', '.join(missing)}")
@@ -81,6 +86,25 @@ def main() -> int:
             "pages": int(command("qpdf", "--show-npages", output)),
             "text_sha256": sha256(text_path),
         }
+
+    report["parity"] = {
+        "relative_path": str(parity_output.relative_to(root)).replace("\\", "/"),
+        "info": command("mutool", "show", parity_output, "trailer/Info"),
+        "pages": [
+            {
+                "media_box": command(
+                    "mutool", "show", parity_output, f"pages/{page}/MediaBox"
+                ),
+                "crop_box": command(
+                    "mutool", "show", parity_output, f"pages/{page}/CropBox"
+                ),
+                "rotate": command(
+                    "mutool", "show", parity_output, f"pages/{page}/Rotate"
+                ),
+            }
+            for page in range(1, 6)
+        ],
+    }
 
     serialized = json.dumps(report, indent=2, sort_keys=True) + "\n"
     for secret in ("p4-secret", "p4-owner"):
