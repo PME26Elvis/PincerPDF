@@ -81,6 +81,8 @@ pub struct MergeRunRequest {
     pub sources: Vec<MergeInputRequest>,
     /// Opaque destination token issued by the current native session.
     pub output_token: String,
+    /// Whether a pre-existing destination may be atomically replaced.
+    pub replace_existing: bool,
 }
 
 /// Verified result returned after atomic finalization.

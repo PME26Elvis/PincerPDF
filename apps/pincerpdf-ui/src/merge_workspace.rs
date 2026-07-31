@@ -58,6 +58,7 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
     let (next_source_id, set_next_source_id) = signal(1_u64);
     let (next_operation_id, set_next_operation_id) = signal(1_u64);
     let (advanced_open, set_advanced_open) = signal(false);
+    let (replace_existing, set_replace_existing) = signal(false);
     let (picker_busy, set_picker_busy) = signal(false);
     let native = is_tauri();
 
@@ -137,6 +138,7 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                 .get_untracked()
                 .as_ref()
                 .expect("can_run requires a destination"),
+            replace_existing.get_untracked(),
         );
         set_task.set(TaskState::Running {
             operation_id: operation_id.clone(),
@@ -332,9 +334,13 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                                 "Choose output"
                             </button>
                         </div>
-                        <p class="safety-note">
+                        <p class="safety-note" data-testid="merge-output-safety">
                             <span aria-hidden="true">"◇"</span>
-                            "If the destination already exists, this checkpoint stops without replacing it."
+                            {move || if replace_existing.get() {
+                                "Existing output will be replaced only after the temporary PDF passes verification."
+                            } else {
+                                "If the destination already exists, the merge stops without replacing it."
+                            }}
                         </p>
                     </section>
 
@@ -355,12 +361,38 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                             </span>
                         </button>
                         <Show when=move || advanced_open.get()>
-                            <dl class="policy-grid" data-testid="merge-advanced-panel">
-                                <div><dt>"Bookmarks"</dt><dd>"Discard and report"</dd></div>
-                                <div><dt>"Interactive forms"</dt><dd>"Reject before processing"</dd></div>
-                                <div><dt>"Existing output"</dt><dd>"Stop safely"</dd></div>
-                                <div><dt>"Finalization"</dt><dd>"Verify, flush, atomic rename"</dd></div>
-                            </dl>
+                            <div data-testid="merge-advanced-panel">
+                                <label class="overwrite-choice">
+                                    <input
+                                        type="checkbox"
+                                        prop:checked=move || replace_existing.get()
+                                        disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                        data-testid="replace-existing-output"
+                                        on:change=move |event| {
+                                            set_replace_existing.set(event_target_checked(&event));
+                                        }
+                                    />
+                                    <span>
+                                        <strong>"Replace an existing destination"</strong>
+                                        <small>
+                                            "Explicit opt-in · verify and flush the temporary PDF before atomic replacement."
+                                        </small>
+                                    </span>
+                                </label>
+                                <dl class="policy-grid">
+                                    <div><dt>"Bookmarks"</dt><dd>"Discard and report"</dd></div>
+                                    <div><dt>"Interactive forms"</dt><dd>"Reject before processing"</dd></div>
+                                    <div>
+                                        <dt>"Existing output"</dt>
+                                        <dd>{move || if replace_existing.get() {
+                                            "Atomic replacement"
+                                        } else {
+                                            "Stop safely"
+                                        }}</dd>
+                                    </div>
+                                    <div><dt>"Finalization"</dt><dd>"Verify, flush, atomic rename"</dd></div>
+                                </dl>
+                            </div>
                         </Show>
                     </section>
                 </div>
@@ -755,6 +787,7 @@ fn make_request(
     operation_id: String,
     sources: &[SourceRow],
     destination: &PickedMergeDestination,
+    replace_existing: bool,
 ) -> MergeRunRequest {
     MergeRunRequest {
         operation_id,
@@ -768,6 +801,7 @@ fn make_request(
             })
             .collect(),
         output_token: destination.path_token.clone(),
+        replace_existing,
     }
 }
 

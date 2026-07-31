@@ -39,6 +39,10 @@ The Windows UI evidence is deliberately split:
 2. WebdriverIO drives the optimized Tauri release executable through the official external `tauri-driver`/WebView2 path. It verifies embedded assets, production CSP, real DOM events, the global Tauri bridge and native command discovery.
 3. A smaller system-dialog suite must exercise the real Windows file picker, real fixture registration, output selection and conflict/cancellation recovery.
 
+The system-dialog suite uses a pinned pywinauto Win32 backend and semantic common-dialog control IDs rather than screen coordinates. It cancels a real source picker, selects two deterministic PDF fixtures, chooses a real save destination, verifies the six-page output with QPDF, proves that the default conflict policy preserves existing bytes, then explicitly opts into atomic replacement and verifies the recovered PDF. Test-only Python packages install under the configured development drive from `requirements-windows-e2e.txt`.
+
+The system-dialog runner launches exactly one native spec and one PincerPDF process. It must not run concurrently with the general native shell spec because process-scoped dialog discovery would otherwise be ambiguous. Failures are surfaced directly and are never hidden by retries.
+
 Run the second layer with:
 
 ```powershell

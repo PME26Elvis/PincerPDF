@@ -792,6 +792,9 @@ mod tests {
     use pincerpdf_engine_api::{PdfCapability, PdfMetadata};
     use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
 
+    #[cfg(windows)]
+    use std::os::windows::fs::OpenOptionsExt;
+
     struct FakeEngine {
         output_pages: AtomicU32,
     }
@@ -916,6 +919,86 @@ mod tests {
         assert_eq!(report.page_count, 6);
         assert_eq!(report.source_count, 2);
         assert!(output.is_file());
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn replace_policy_atomically_replaces_an_existing_output() {
+        let output = unique_path("replace-existing.pdf");
+        fs::write(&output, b"verified-old-output").expect("write original output");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Replace)
+            .expect("begin replacement");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"verified-new-output").expect("write replacement output");
+
+        transaction.commit().expect("replace existing output");
+
+        assert_eq!(
+            fs::read(&output).expect("read replaced output"),
+            b"verified-new-output"
+        );
+        assert!(!temporary.exists());
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn fail_policy_preserves_a_destination_created_after_planning() {
+        let output = unique_path("late-conflict.pdf");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Fail)
+            .expect("begin conflict-free output");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"uncommitted-output").expect("write temporary output");
+        fs::write(&output, b"late-existing-output").expect("create racing destination");
+
+        let error = transaction.commit().expect_err("late destination must win");
+
+        assert!(matches!(
+            error,
+            MergeError::OutputPlan(OutputPlanError::ExistingOutputConflict)
+        ));
+        assert_eq!(
+            fs::read(&output).expect("read preserved destination"),
+            b"late-existing-output"
+        );
+        drop(transaction);
+        assert!(!temporary.exists());
+        let _ = fs::remove_file(output);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn failed_windows_replace_preserves_the_old_output_and_cleans_the_temporary_file() {
+        let output = unique_path("locked-replacement.pdf");
+        fs::write(&output, b"locked-old-output").expect("write original output");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Replace)
+            .expect("begin replacement");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"uncommitted-new-output").expect("write temporary output");
+        let locked_output = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .share_mode(0)
+            .open(&output)
+            .expect("lock existing output without delete sharing");
+
+        let error = transaction
+            .commit()
+            .expect_err("Windows must reject replacement while destination is locked");
+
+        assert!(matches!(error, MergeError::OutputIo(_)));
+        assert!(output.exists());
+        assert!(temporary.exists());
+        drop(locked_output);
+        assert_eq!(
+            fs::read(&output).expect("read preserved output after releasing lock"),
+            b"locked-old-output"
+        );
+        drop(transaction);
+        assert!(!temporary.exists());
+        assert_eq!(
+            fs::read(&output).expect("read output after cleanup"),
+            b"locked-old-output"
+        );
         let _ = fs::remove_file(output);
     }
 
