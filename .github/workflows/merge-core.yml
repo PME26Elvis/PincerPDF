@@ -77,7 +77,7 @@ jobs:
       - name: Summarize checkpoint
         run: |
           {
-            echo "## PincerPDF P4.1 Merge core"
+            echo "## PincerPDF Merge core and P4.3 parity corpus"
             echo
             echo "- workspace format, Clippy, and tests passed"
             echo "- real QPDF Merge contract passed"
@@ -85,6 +85,8 @@ jobs:
             echo "- form inputs rejected before merge"
             echo "- encrypted input password evidence remained redacted"
             echo "- temporary sibling output was semantically verified before atomic finalization"
+            echo "- mixed MediaBox/CropBox/rotation geometry was preserved"
+            echo "- Unicode long input/output paths and explicit metadata discard were verified"
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload Merge evidence and generated lock

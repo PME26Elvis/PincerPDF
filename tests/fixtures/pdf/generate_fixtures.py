@@ -67,8 +67,18 @@ def write_pdf(path: Path, objects: list[PdfObject], root: int, info: int | None 
     }
 
 
-def common_page(page_number: int, parent: int, contents: int, media_box: str = '0 0 612 792', rotate: int | None = None, annots: str | None = None) -> PdfObject:
+def common_page(
+    page_number: int,
+    parent: int,
+    contents: int,
+    media_box: str = '0 0 612 792',
+    crop_box: str | None = None,
+    rotate: int | None = None,
+    annots: str | None = None,
+) -> PdfObject:
     body = f'<< /Type /Page /Parent {parent} 0 R /MediaBox [{media_box}] /Resources << /Font << /F1 20 0 R >> >> /Contents {contents} 0 R'.encode('ascii')
+    if crop_box is not None:
+        body += f' /CropBox [{crop_box}]'.encode('ascii')
     if rotate is not None:
         body += f' /Rotate {rotate}'.encode('ascii')
     if annots is not None:
@@ -129,6 +139,51 @@ def make_form(path: Path) -> dict[str, object]:
     return write_pdf(path, objects, root=1)
 
 
+def make_geometry_metadata(path: Path) -> dict[str, object]:
+    objects = [
+        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R >>'),
+        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'),
+        common_page(
+            3,
+            2,
+            4,
+            media_box='0 0 300 500',
+            crop_box='10 20 290 480',
+        ),
+        PdfObject(4, stream(content('Geometry portrait crop', x=36, y=440))),
+        common_page(
+            5,
+            2,
+            6,
+            media_box='0 0 842 595',
+            crop_box='0 0 800 550',
+            rotate=90,
+        ),
+        PdfObject(6, stream(content('Geometry landscape rotated', x=36, y=520))),
+        common_page(
+            7,
+            2,
+            8,
+            media_box='-10 -20 602 772',
+            rotate=270,
+        ),
+        PdfObject(8, stream(content('Geometry offset rotated', x=36, y=700))),
+        PdfObject(
+            9,
+            b'<< /Title '
+            + literal('Geometry metadata source')
+            + b' /Author '
+            + literal('PincerPDF parity corpus')
+            + b' /Subject '
+            + literal('Source metadata must not leak implicitly')
+            + b' >>',
+        ),
+    ]
+    objects.extend(PdfObject(number, b'<< >>') for number in range(10, 20))
+    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
+    return write_pdf(path, objects, root=1, info=9)
+
+
 def main() -> int:
     output = Path(sys.argv[1] if len(sys.argv) > 1 else 'tests/fixtures/pdf/generated')
     output.mkdir(parents=True, exist_ok=True)
@@ -136,6 +191,7 @@ def main() -> int:
         make_plain(output / 'plain-three-pages.pdf'),
         make_bookmarks(output / 'bookmarks.pdf'),
         make_form(output / 'acroform.pdf'),
+        make_geometry_metadata(output / 'geometry-metadata.pdf'),
     ]
     manifest = {'schema': 1, 'fixtures': fixtures}
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')

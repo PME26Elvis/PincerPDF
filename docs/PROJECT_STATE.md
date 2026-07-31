@@ -294,11 +294,42 @@ sha256=3e41c7a08e2c2d2d830f8a7b0429e5dbcd504761bf0ff919f487c9b2095feef6
 pages=6
 ```
 
+## P4.3 Merge parity-corpus evidence
+
+The first P4.3 corpus slice is executable locally and tracked in
+`docs/compatibility/MERGE_TRACEABILITY.md`. A deterministic fourth fixture adds
+source Info metadata and three deliberately different page geometries.
+
+The real QPDF/MuPDF contract now also:
+
+- reads the fixture through a Unicode long source path;
+- writes the final PDF through a different Unicode long output path;
+- selects the three geometry pages in `2,1,3` order and appends pages `2-`
+  through the last page of a second source;
+- checks exact MediaBox, CropBox and rotation values on all five output pages;
+- checks page-origin text order and QPDF structural validity;
+- confirms the current safe baseline does not implicitly copy one source's
+  Info dictionary to the merged document.
+
+The Windows contract passed as one ignored real-engine test in 3.71 seconds.
+The parity output contains five pages:
+
+```text
+fixture_sha256=78f437df1567432560bef76d11f7baa2766224016a7f6999e493738f7389434c
+pdf_sha256=789f36bc6ad1eb8576325af7f4f2ff88a2a316b1d20d01370bab08fb4451d953
+text_sha256=5b4feb5a1205192b7037be8b789201356ddd9d7ce19801f3ddba394dd57dabe2
+report_sha256=ae38b46d4e2ace13d61fa74e67c2616cc3452141c3c092ff7b4b9064056c5784
+```
+
+MERGE-001, MERGE-002 and the baseline of MERGE-009 are verified. MERGE-003,
+MERGE-004 and MERGE-008 remain partial, and MERGE-005 through MERGE-007 remain
+planned; the ledger does not overstate full Merge parity.
+
 ## Exact next actions
 
-1. Extend the Merge corpus for mixed page boxes/rotation, metadata policy, bookmarks, encrypted inspection and long/Unicode paths.
-2. Map the remaining Merge legacy-test rows and close functional-parity gaps before P4 exit.
-3. Define and implement the first explicit metadata and bookmark behavior from the measured corpus.
+1. Complete and retain Linux compatibility evidence for the new mixed-geometry, metadata and Unicode/long-path Merge corpus.
+2. Define the first non-discard bookmark policy without relying on QPDF's measured dangling-outline behavior.
+3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy gaps.
 4. Keep all other seven tools visibly gated while P4 continues.
 
 ## Completion status
