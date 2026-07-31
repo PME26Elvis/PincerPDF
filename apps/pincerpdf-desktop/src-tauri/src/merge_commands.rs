@@ -2,16 +2,16 @@
 //! Trusted desktop boundary for the P4.2 Merge workspace.
 
 use pincerpdf_desktop_api::{
-    CommandError, MergeEngineStatus, MergeInputRequest, MergeRunRequest, MergeRunResult,
-    MergeSourceFeatures, PickedMergeDestination, PickedMergeSource,
+    CommandError, MergeBookmarkPolicy, MergeEngineStatus, MergeInputRequest, MergeRunRequest,
+    MergeRunResult, MergeSourceFeatures, PickedMergeDestination, PickedMergeSource,
 };
 use pincerpdf_domain::{ErrorCode, PageSelection};
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_filesystem::ExistingOutputPolicy;
 use pincerpdf_merge::{
-    CancellationToken, ExecutionControl, MergeError, MergeExecutionOptions, MergeRequest,
-    MergeRequestError, MergeService, MergeSource, SecretString,
+    BookmarkPolicy, CancellationToken, ExecutionControl, MergeError, MergeExecutionOptions,
+    MergeRequest, MergeRequestError, MergeService, MergeSource, SecretString,
 };
 use std::collections::{BTreeMap, btree_map::Entry};
 use std::path::{Path, PathBuf};
@@ -292,12 +292,17 @@ fn execute_merge(
     } else {
         ExistingOutputPolicy::Fail
     };
+    let bookmark_policy = match request.bookmark_policy {
+        MergeBookmarkPolicy::Discard => BookmarkPolicy::Discard,
+        MergeBookmarkPolicy::OneEntryPerDocument => BookmarkPolicy::OneEntryPerDocument,
+    };
     let output = state.resolve_path(&request.output_token)?;
     let merge_request = build_merge_request(state, request.sources, output)?;
     let engine =
         QpdfAdapter::discover().map_err(|error| engine_error(error.code(), error.to_string()))?;
     let options = MergeExecutionOptions {
         output_policy,
+        bookmark_policy,
         control: ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation),
     };
     let report = MergeService::new(&engine)
@@ -308,6 +313,7 @@ fn execute_merge(
         source_count: report.source_count,
         page_count: report.page_count,
         bookmark_sources_discarded: report.bookmark_sources_discarded,
+        bookmark_entries: report.bookmark_entries,
         engine_id: report.engine.id,
         engine_version: report.engine.version,
     })
@@ -502,6 +508,7 @@ mod tests {
                 ],
                 output_token: destination,
                 replace_existing: false,
+                bookmark_policy: MergeBookmarkPolicy::OneEntryPerDocument,
             },
             CancellationToken::default(),
         )
@@ -509,6 +516,7 @@ mod tests {
 
         assert_eq!(report.source_count, 2);
         assert_eq!(report.page_count, 3);
+        assert_eq!(report.bookmark_entries, 2);
         assert_eq!(report.output_display, output.display().to_string());
         assert_eq!(report.engine_id, "qpdf-process");
         assert!(output.is_file());

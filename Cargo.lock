@@ -2736,6 +2736,7 @@ dependencies = [
  "pincerpdf-engine-api",
  "pincerpdf-filesystem",
  "pincerpdf-merge",
+ "serde_json",
 ]
 
 [[package]]

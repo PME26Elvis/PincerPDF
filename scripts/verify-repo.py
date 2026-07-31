@@ -51,6 +51,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-018-production-webview-e2e.md",
     "docs/architecture/adr/ADR-019-windows-atomic-replacement.md",
     "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
+    "docs/architecture/adr/ADR-021-document-level-bookmark-reconstruction.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -281,6 +282,8 @@ def verify_merge_core_contract() -> None:
         "pub struct CancellationToken",
         "pub struct ExecutionControl",
         "pub trait MergeEnginePort",
+        "pub enum BookmarkPolicy",
+        "BookmarkCountMismatch",
         "ensure_output_does_not_alias_source",
         "struct OutputTransaction",
     ):
@@ -293,6 +296,9 @@ def verify_merge_core_contract() -> None:
         "builder.mode(0o700)",
         "child.kill()",
         "qdf_catalog_has_key",
+        "add_document_bookmarks",
+        "--update-from-json=<private-bookmark-plan>",
+        "verify_document_bookmarks",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -307,6 +313,9 @@ def verify_merge_core_contract() -> None:
         '"pages/1/CropBox"',
         '"pages/5/Rotate"',
         '"trailer/Info"',
+        "merge_one_entry_per_document",
+        '"plain-three-pages.pdf"',
+        '"destpageposfrom1"',
     ):
         if token not in contract:
             fail(f"real Merge contract evidence hook missing: {token}")
@@ -338,6 +347,12 @@ def verify_merge_core_contract() -> None:
         fail("P4.1 real-engine contract is not wired into Make/Actions")
     if "python3 -m unittest discover -s scripts/tests" not in workflow:
         fail("P4.1 evidence summarizer regression tests are not wired into Actions")
+    summarizer = (ROOT / "scripts/summarize-merge-evidence.py").read_text(
+        encoding="utf-8"
+    )
+    for token in ("one-entry-bookmarks.pdf", "one_entry_per_document", "outline_summary"):
+        if token not in summarizer:
+            fail(f"document-level bookmark evidence summary missing: {token}")
 
 
 def verify_merge_desktop_contract() -> None:
@@ -366,6 +381,7 @@ def verify_merge_desktop_contract() -> None:
 
     for token in (
         "pub struct MergeRunRequest",
+        "pub enum MergeBookmarkPolicy",
         "pub struct MergeInputRequest",
         "pub struct CommandError",
         "pub path_token: String",
@@ -408,6 +424,9 @@ def verify_merge_desktop_contract() -> None:
         "browser_sources()",
         "complete_browser_merge_after_delay",
         "Discard and report",
+        'data-testid="bookmark-policy-discard"',
+        'data-testid="bookmark-policy-one-entry"',
+        "One entry per document",
         "Reject before processing",
     ):
         if token not in ui:
@@ -421,6 +440,8 @@ def verify_merge_desktop_contract() -> None:
         "ordered Merge plan",
         "running and completed Merge states",
         "advanced safety policies",
+        "one-entry-per-document bookmark policy",
+        "merge-bookmark-policy-desktop.png",
         "merge-completed-compact.png",
     ):
         if token not in tests:
@@ -479,6 +500,8 @@ def verify_native_webview_contract() -> None:
         "window.__TAURI__.core",
         '"merge_engine_status"',
         '"cancel_merge"',
+        '"bookmark-policy-one-entry"',
+        "both explicit bookmark policies",
         '"native-startup.json"',
         '"native-startup.html"',
         '"native-merge-empty-windows.png"',
@@ -555,6 +578,9 @@ def verify_windows_dialog_contract() -> None:
         'invokeDialog("Open", [plain, bookmarks])',
         'invokeDialog("Save", [output])',
         '"replace-existing-output"',
+        '"bookmark-policy-one-entry"',
+        '"--json-key=outlines"',
+        "firstOutlines",
         "conflictDialog: conflictDialogEvidence",
         "conflictPreservedSha256",
         "replacementQpdfCheck: true",

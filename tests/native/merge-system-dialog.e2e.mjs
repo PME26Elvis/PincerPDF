@@ -201,6 +201,20 @@ describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
       "registered save destination",
     );
 
+    await click("merge-advanced-toggle");
+    const bookmarkPolicyEnabled = await browser.execute(() => {
+      const oneEntry = document.querySelector(
+        '[data-testid="bookmark-policy-one-entry"]',
+      );
+      if (!(oneEntry instanceof HTMLInputElement)) {
+        return false;
+      }
+      oneEntry.checked = true;
+      oneEntry.dispatchEvent(new Event("change", { bubbles: true }));
+      return oneEntry.checked;
+    });
+    assert.equal(bookmarkPolicyEnabled, true);
+
     await click("run-merge");
     await waitForState(
       () =>
@@ -215,6 +229,22 @@ describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
       output,
     ]);
     assert.equal(firstQpdf.stdout.trim(), "6");
+    const firstOutlineJson = await execFileAsync("qpdf.exe", [
+      "--json=2",
+      "--json-key=outlines",
+      output,
+    ]);
+    const firstOutlines = JSON.parse(firstOutlineJson.stdout).outlines;
+    assert.deepEqual(
+      firstOutlines.map(({ title, destpageposfrom1 }) => ({
+        title,
+        page: destpageposfrom1,
+      })),
+      [
+        { title: "plain-three-pages.pdf", page: 1 },
+        { title: "bookmarks.pdf", page: 4 },
+      ],
+    );
     const firstBytes = await readFile(output);
     assert.equal(firstBytes.subarray(0, 5).toString("ascii"), "%PDF-");
 
@@ -247,7 +277,6 @@ describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
     assert.equal(sha256(await readFile(output)), sha256(sentinel));
     console.log("[system-dialog] default conflict preserved sentinel bytes");
 
-    await click("merge-advanced-toggle");
     const replacementEnabled = await browser.execute(() => {
       const checkbox = document.querySelector(
         '[data-testid="replace-existing-output"]',
@@ -292,6 +321,12 @@ describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
       conflictDialog: conflictDialogEvidence,
       conflictPreservedSha256: sha256(sentinel),
       firstOutputSha256: sha256(firstBytes),
+      firstOutlines: firstOutlines.map(
+        ({ title, destpageposfrom1 }) => ({
+          title,
+          page: destpageposfrom1,
+        }),
+      ),
       open: openEvidence,
       output,
       replacementQpdfCheck: true,

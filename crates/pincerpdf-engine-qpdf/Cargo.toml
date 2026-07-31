@@ -11,6 +11,7 @@ publish = false
 pincerpdf-domain = { path = "../pincerpdf-domain" }
 pincerpdf-engine-api = { path = "../pincerpdf-engine-api" }
 pincerpdf-merge = { path = "../pincerpdf-merge" }
+serde_json = "=1.0.151"
 
 [dev-dependencies]
 pincerpdf-filesystem = { path = "../pincerpdf-filesystem" }

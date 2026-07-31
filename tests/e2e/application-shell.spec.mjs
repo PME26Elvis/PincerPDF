@@ -75,6 +75,7 @@ test("reports deterministic running and completed Merge states", async ({ page }
   await expect(page.getByTestId("run-merge")).toBeDisabled();
   await expect(page.getByTestId("merge-result-summary")).toContainText("9 pages");
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 sources");
+  await expect(page.getByTestId("merge-result-summary")).toContainText("0 bookmarks");
   await expect(page.getByTestId("merge-result-summary")).toContainText(
     "merged-document.pdf",
   );
@@ -87,6 +88,15 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "Discard and report",
+  );
+  const discardBookmarks = page.getByTestId("bookmark-policy-discard");
+  const oneEntryBookmarks = page.getByTestId("bookmark-policy-one-entry");
+  await expect(discardBookmarks).toBeChecked();
+  await expect(oneEntryBookmarks).not.toBeChecked();
+  await oneEntryBookmarks.check();
+  await expect(oneEntryBookmarks).toBeChecked();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "One entry per document",
   );
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "Reject before processing",
@@ -102,6 +112,16 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
   await expect(page.getByTestId("merge-output-safety")).toContainText(
     "only after the temporary PDF passes verification",
   );
+});
+
+test("reports the deterministic one-entry-per-document bookmark policy", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await page.getByTestId("bookmark-policy-one-entry").check();
+  await page.getByTestId("run-merge").click();
+
+  await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
 });
 
 test("supports a manual reduced-motion override", async ({ page }) => {
@@ -143,8 +163,16 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
     animations: "disabled",
   });
 
+  await page.getByTestId("bookmark-policy-one-entry").check();
+  await page.screenshot({
+    path: `${screenshotDir}/merge-bookmark-policy-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
   await page.getByTestId("run-merge").click();
   await expect(page.getByTestId("merge-result-summary")).toContainText("9 pages");
+  await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
   await page.screenshot({
     path: `${screenshotDir}/merge-completed-desktop.png`,
     fullPage: true,
