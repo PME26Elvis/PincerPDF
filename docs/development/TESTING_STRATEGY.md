@@ -31,6 +31,24 @@ The ordinary inner loop runs locally on Windows: portable Rust checks, native Ta
 
 Linux remains mandatory evidence for engine-boundary changes, milestone integration, release candidates and any change touching filesystem/process/WebView assumptions. GitHub Actions is an auxiliary compatibility lane rather than the default compiler.
 
+## Windows native desktop layers
+
+The Windows UI evidence is deliberately split:
+
+1. Playwright drives the Leptos shell with deterministic browser adapters for broad, fast workflows and visual states.
+2. WebdriverIO drives the optimized Tauri release executable through the official external `tauri-driver`/WebView2 path. It verifies embedded assets, production CSP, real DOM events, the global Tauri bridge and native command discovery.
+3. A smaller system-dialog suite must exercise the real Windows file picker, real fixture registration, output selection and conflict/cancellation recovery.
+
+Run the second layer with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/check-native-e2e.ps1
+```
+
+Its retained startup report records the `tauri.localhost` URL, resource loads, browser security logs, WASM/Tauri globals and window handles. The production-like executable does not include the WDIO Rust/guest plugin or any `wdio:*` permission; the suite uses basic WebDriver script round-trips and the application's existing Tauri command bridge. This keeps the tested permission surface representative of the release target.
+
+When native-runner dependencies change, both `pnpm audit --audit-level moderate` and the native suite must pass. Exact compatibility/security overrides are repository contracts, not opportunistic floating upgrades.
+
 ## Flake policy
 
 Tests are never retried silently to create green status. A flaky test is quarantined only with an issue, owner, reason and expiration; its feature cannot be marked Verified if the quarantined test is the only acceptance evidence.

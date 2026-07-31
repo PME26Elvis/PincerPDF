@@ -48,14 +48,19 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-015-merge-core-boundary.md",
     "docs/architecture/adr/ADR-016-windows-first-local-development.md",
     "docs/architecture/adr/ADR-017-trusted-desktop-merge-boundary.md",
+    "docs/architecture/adr/ADR-018-production-webview-e2e.md",
     "package.json",
     "package-lock.json",
+    "pnpm-workspace.yaml",
     "playwright.config.mjs",
+    "wdio.native.conf.mjs",
     "scripts/summarize-merge-evidence.py",
     "scripts/Enter-PincerPdfDev.ps1",
     "scripts/check-fast.ps1",
+    "scripts/check-native-e2e.ps1",
     "scripts/tests/test_summarize_merge_evidence.py",
     "tests/e2e/application-shell.spec.mjs",
+    "tests/native/merge-shell.e2e.mjs",
 )
 
 REQUIRED_MEMBERS = {
@@ -139,6 +144,46 @@ def verify_dependency_locks() -> None:
     if playwright_version != "1.62.0" or locked_playwright.get("version") != playwright_version:
         fail("Playwright must remain exactly locked to 1.62.0 for P3 evidence")
 
+    required_native_dependencies = {
+        "@wdio/cli": "9.30.0",
+        "@wdio/local-runner": "9.30.0",
+        "@wdio/mocha-framework": "9.30.0",
+        "@wdio/spec-reporter": "9.29.1",
+        "@wdio/tauri-service": "1.2.0",
+        "webdriverio": "9.30.0",
+    }
+    for name, version in required_native_dependencies.items():
+        if package.get("devDependencies", {}).get(name) != version:
+            fail(f"native WebView dependency must remain exactly locked: {name}@{version}")
+
+    required_overrides = {
+        "@wdio/native-utils": "2.5.0",
+        "brace-expansion": "5.0.8",
+        "minimatch": "10.2.6",
+        "serialize-javascript": "7.0.5",
+    }
+    if package.get("overrides") != required_overrides:
+        fail("native WebView dependency compatibility/security overrides changed")
+
+    locked_override_paths = {
+        "@wdio/native-utils": "node_modules/@wdio/native-utils",
+        "brace-expansion": "node_modules/brace-expansion",
+        "minimatch": "node_modules/minimatch",
+        "serialize-javascript": "node_modules/serialize-javascript",
+    }
+    for name, path in locked_override_paths.items():
+        locked_version = package_lock.get("packages", {}).get(path, {}).get("version")
+        if locked_version != required_overrides[name]:
+            fail(f"package-lock does not resolve required override: {name}")
+
+    pnpm_workspace = (ROOT / "pnpm-workspace.yaml").read_text(encoding="utf-8")
+    for name, version in required_overrides.items():
+        if f'"{name}": "{version}"' not in pnpm_workspace:
+            fail(f"pnpm workspace does not resolve required override: {name}")
+    for allowed_build in ("edgedriver: true", "esbuild: true", "geckodriver: false"):
+        if allowed_build not in pnpm_workspace:
+            fail(f"pnpm build-script policy missing: {allowed_build}")
+
 
 def verify_shell_contract() -> None:
     """Verify stable shell, accessibility, motion, and native-host contracts."""
@@ -192,6 +237,9 @@ def verify_shell_contract() -> None:
         fail("Tauri host must expose exactly one main shell window in P3")
     if config.get("app", {}).get("withGlobalTauri") is not True:
         fail("Rust/WASM invoke bridge requires the explicitly configured global Tauri API")
+    csp = config.get("app", {}).get("security", {}).get("csp", "")
+    if "connect-src 'self' ipc: http://ipc.localhost" not in csp:
+        fail("production CSP must permit same-origin WASM fetch plus Tauri IPC")
     permissions = set(capability.get("permissions", []))
     if permissions != {"core:default"}:
         fail("P3 Tauri capability must remain least-privilege core:default")
@@ -345,6 +393,63 @@ def verify_merge_desktop_contract() -> None:
         fail("P4.2 native desktop contract is not wired into its Linux compatibility lane")
 
 
+def verify_native_webview_contract() -> None:
+    """Verify production-protocol WebView2 E2E without shipping test permissions."""
+
+    package = load_json("package.json")
+    config = (ROOT / "wdio.native.conf.mjs").read_text(encoding="utf-8")
+    script = (ROOT / "scripts/check-native-e2e.ps1").read_text(encoding="utf-8")
+    test = (ROOT / "tests/native/merge-shell.e2e.mjs").read_text(encoding="utf-8")
+    desktop_manifest = (
+        ROOT / "apps/pincerpdf-desktop/src-tauri/Cargo.toml"
+    ).read_text(encoding="utf-8")
+    desktop_host = (
+        ROOT / "apps/pincerpdf-desktop/src-tauri/src/main.rs"
+    ).read_text(encoding="utf-8")
+    capability = (
+        ROOT / "apps/pincerpdf-desktop/src-tauri/capabilities/default.json"
+    ).read_text(encoding="utf-8")
+
+    if package.get("scripts", {}).get("test:e2e:native") != (
+        "wdio run wdio.native.conf.mjs"
+    ):
+        fail("native WebView2 package script is missing")
+
+    for token in (
+        'driverProvider: "official"',
+        "autoInstallTauriDriver: true",
+        "autoDownloadEdgeDriver: true",
+        'browserName: "tauri"',
+        "PINCERPDF_NATIVE_E2E_ARTIFACT_DIR",
+    ):
+        if token not in config:
+            fail(f"native WebView2 runner contract missing: {token}")
+
+    for token in (
+        "--features tauri/custom-protocol",
+        "pnpm exec wdio run wdio.native.conf.mjs",
+        "PINCERPDF_NATIVE_E2E_ARTIFACT_DIR",
+    ):
+        if token not in script:
+            fail(f"production WebView2 build/run contract missing: {token}")
+
+    for token in (
+        "window.__TAURI__.core",
+        '"merge_engine_status"',
+        '"cancel_merge"',
+        '"native-startup.json"',
+        '"native-startup.html"',
+        '"native-merge-empty-windows.png"',
+        "dispatchEvent(new MouseEvent",
+    ):
+        if token not in test:
+            fail(f"native WebView2 acceptance evidence missing: {token}")
+
+    production_sources = "\n".join((desktop_manifest, desktop_host, capability))
+    if "tauri-plugin-wdio" in production_sources or '"wdio:' in capability:
+        fail("production desktop binary must not include WDIO plugin code or permissions")
+
+
 def main() -> None:
     """Run repository structural verification."""
 
@@ -395,6 +500,7 @@ def main() -> None:
     verify_shell_contract()
     verify_merge_core_contract()
     verify_merge_desktop_contract()
+    verify_native_webview_contract()
 
     print("PincerPDF structural verification passed")
     print(f"workspace_members={len(REQUIRED_MEMBERS)}")
@@ -403,6 +509,7 @@ def main() -> None:
     print("application_shell=verified")
     print("merge_core=verified")
     print("merge_desktop=verified")
+    print("native_webview=verified")
     print("status=verified")
 
 

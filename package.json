@@ -2,12 +2,25 @@
   "name": "pincerpdf",
   "private": true,
   "version": "0.1.0",
-  "description": "Deterministic browser verification for the PincerPDF application shell.",
+  "description": "Deterministic browser and native desktop verification for PincerPDF.",
   "scripts": {
     "test:e2e": "playwright test",
-    "test:e2e:headed": "playwright test --headed"
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:native": "wdio run wdio.native.conf.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.62.0"
+    "@playwright/test": "1.62.0",
+    "@wdio/cli": "9.30.0",
+    "@wdio/local-runner": "9.30.0",
+    "@wdio/mocha-framework": "9.30.0",
+    "@wdio/spec-reporter": "9.29.1",
+    "@wdio/tauri-service": "1.2.0",
+    "webdriverio": "9.30.0"
+  },
+  "overrides": {
+    "@wdio/native-utils": "2.5.0",
+    "brace-expansion": "5.0.8",
+    "minimatch": "10.2.6",
+    "serialize-javascript": "7.0.5"
   }
 }

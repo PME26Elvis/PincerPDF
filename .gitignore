@@ -4,6 +4,7 @@
 /src-tauri/target/
 /apps/pincerpdf-desktop/src-tauri/gen/
 /node_modules/
+/pnpm-lock.yaml
 /.pincer-local/
 /.artifacts/
 /test-results/
