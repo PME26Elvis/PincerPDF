@@ -45,6 +45,11 @@ test("runs the deterministic Split workspace across its core rule controls", asy
   await page.getByTestId("split-rule-bookmarks").check();
   await page.getByTestId("run-split").click();
   await expect(page.getByTestId("split-result-summary")).toContainText("2 parts");
+
+  await page.getByTestId("split-rule-size").check();
+  await page.getByTestId("split-max-bytes").fill("100000");
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("100000");
 });
 
 test("changes to a gated workspace without implying parity", async ({ page }) => {
