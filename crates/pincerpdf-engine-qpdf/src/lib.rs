@@ -12,7 +12,7 @@ use pincerpdf_merge::{
     BookmarkPolicy, CancellationToken, CommandEvidence, ExecutionControl, MergeEngineInput,
     MergeEnginePort, MergeEngineRequest, MergeEngineResult, MergeTocPolicy, SecretString,
 };
-use pincerpdf_split::SplitPlan;
+use pincerpdf_split::{BookmarkBoundary, SplitPlan};
 use serde_json::{Map, Value, json};
 use std::ffi::OsString;
 use std::fmt::Write as _;
@@ -279,6 +279,37 @@ impl QpdfAdapter {
         let outputs = guard.finalized.clone();
         guard.committed = true;
         Ok(SplitMaterializationReport { outputs, evidence })
+    }
+
+    /// Extracts ordered top-level bookmark page boundaries for bookmark-based
+    /// split planning. Nested children are retained by the source PDF but do
+    /// not create additional outputs in this first verified policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when QPDF cannot produce complete outline JSON
+    /// or a top-level outline lacks a usable page destination/title.
+    pub fn inspect_bookmark_boundaries(
+        &self,
+        source: &Path,
+        control: &ExecutionControl,
+    ) -> Result<Vec<BookmarkBoundary>, EngineError> {
+        let capture = self.run_qpdf(
+            &[
+                OsString::from("--json=2"),
+                OsString::from("--json-key=outlines"),
+                qpdf_path(source),
+            ],
+            vec![
+                "--json=2".to_owned(),
+                "--json-key=outlines".to_owned(),
+                source.display().to_string(),
+            ],
+            control,
+            false,
+        )?;
+        ensure_complete_json(&capture.evidence, "split bookmark boundaries")?;
+        parse_bookmark_boundaries(&capture.evidence.stdout)
     }
 
     fn prepare_merge_sources(
@@ -1252,6 +1283,38 @@ fn parse_source_bookmarks(
             )
         })
         .filter_map(Result::transpose)
+        .collect()
+}
+
+fn parse_bookmark_boundaries(document: &str) -> Result<Vec<BookmarkBoundary>, EngineError> {
+    let value = parse_qpdf_json(document, "split bookmark boundaries")?;
+    let outlines = json_array(&value, "outlines", "split bookmark boundaries")?;
+    outlines
+        .iter()
+        .enumerate()
+        .map(|(ordinal, entry)| {
+            let title = entry
+                .get("title")
+                .and_then(Value::as_str)
+                .filter(|title| !title.trim().is_empty())
+                .ok_or_else(|| {
+                    invalid_qpdf_json(format!(
+                        "top-level split bookmark {ordinal} omitted a non-empty title"
+                    ))
+                })?
+                .to_owned();
+            let page = entry
+                .get("destpageposfrom1")
+                .and_then(Value::as_u64)
+                .and_then(|page| u32::try_from(page).ok())
+                .and_then(|page| PageNumber::new(page).ok())
+                .ok_or_else(|| {
+                    invalid_qpdf_json(format!(
+                        "top-level split bookmark {ordinal} omitted a valid page destination"
+                    ))
+                })?;
+            Ok(BookmarkBoundary { title, page })
+        })
         .collect()
 }
 
@@ -2728,6 +2791,31 @@ mod tests {
             }]
         );
         assert_eq!(document_bookmark_title("bookmarks.pdf"), "bookmarks");
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_keeps_only_ordered_top_level_page_targets() {
+        let json = r#"{
+          "outlines": [
+            {"title":"Intro","destpageposfrom1":1,"kids":[]},
+            {"title":"Chapter 2","destpageposfrom1":3,"kids":[
+              {"title":"Appendix","destpageposfrom1":4,"kids":[]}
+            ]}
+          ]
+        }"#;
+        assert_eq!(
+            parse_bookmark_boundaries(json).expect("valid boundaries"),
+            vec![
+                BookmarkBoundary {
+                    title: "Intro".to_owned(),
+                    page: PageNumber::new(1).expect("page"),
+                },
+                BookmarkBoundary {
+                    title: "Chapter 2".to_owned(),
+                    page: PageNumber::new(3).expect("page"),
+                },
+            ]
+        );
     }
 
     #[test]

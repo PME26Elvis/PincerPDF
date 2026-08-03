@@ -327,6 +327,8 @@ def verify_merge_core_contract() -> None:
         "DocumentTitles",
         "qdf_document_title",
         "pub fn split",
+        "inspect_bookmark_boundaries",
+        "parse_bookmark_boundaries",
         "SplitMaterializationReport",
         "SplitOutputGuard",
         "parse_qpdf_page_count",
@@ -432,8 +434,12 @@ def verify_split_planner_contract() -> None:
     for token in ("split-plan", "plan_split", "every-page"):
         if token not in cli_source:
             fail(f"P5.1 CLI smoke contract missing: {token}")
-    if "split_materialization_conserves_pages_and_finalizes_outputs" not in split_contract:
-        fail("P5.1 real-engine split contract is missing")
+    for token in (
+        "split_materialization_conserves_pages_and_finalizes_outputs",
+        "qpdf_outline_boundaries_feed_bookmark_split_planner",
+    ):
+        if token not in split_contract:
+            fail(f"P5.1 real-engine split contract is missing: {token}")
     if not any(
         marker in roadmap
         for marker in (

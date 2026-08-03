@@ -84,3 +84,21 @@ fn split_materialization_conserves_pages_and_finalizes_outputs() {
     );
     fs::remove_dir_all(work).expect("clean split contract directory");
 }
+
+#[test]
+#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+fn qpdf_outline_boundaries_feed_bookmark_split_planner() {
+    let source = fixture_root().join("bookmarks.pdf");
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let boundaries = adapter
+        .inspect_bookmark_boundaries(&source, &ExecutionControl::default())
+        .expect("inspect top-level bookmark boundaries");
+    assert_eq!(boundaries.len(), 2);
+    assert_eq!(boundaries[0].title, "Chapter 1");
+    assert_eq!(boundaries[1].page.get(), 2);
+    let plan = plan_split(&source, 3, &SplitRule::Bookmarks(boundaries))
+        .expect("bookmark boundaries produce a split plan");
+    assert_eq!(plan.parts.len(), 2);
+    assert_eq!(plan.parts[0].pages.len(), 1);
+    assert_eq!(plan.parts[1].pages.len(), 2);
+}
