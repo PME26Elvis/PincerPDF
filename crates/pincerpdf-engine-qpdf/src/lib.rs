@@ -352,6 +352,11 @@ impl QpdfAdapter {
     /// Destinations are validated only for the selected depth; a parent or
     /// intermediate node without a destination may still contain usable
     /// descendants.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when QPDF cannot produce complete outline JSON
+    /// or a selected outline lacks a usable page destination/title.
     pub fn inspect_bookmark_boundaries_at_depth(
         &self,
         source: &Path,
@@ -524,11 +529,7 @@ impl QpdfAdapter {
         prepared: &[PreparedSource],
         control: &ExecutionControl,
         evidence: &mut Vec<CommandEvidence>,
-    ) -> Result<BookmarkPlan, EngineError> {
-        let policy = request.bookmark_policy;
-        let inputs = &request.inputs;
-        let toc_pages = toc_page_count(request.toc_policy, inputs.len());
-        if …17501 tokens truncated…rror),
+    ) -> Result<BookmarkPlan, Eng…17546 tokens truncated…rror),
             }
         }
         Err(io::Error::new(
