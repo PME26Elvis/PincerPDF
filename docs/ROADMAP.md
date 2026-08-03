@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.6 seconds
+Output:
 # Roadmap
 
 | Phase | Name | Status | Exit gate |
@@ -7,7 +10,7 @@
 | P2 | PDF engine capability spike | Complete | Engine responsibility split supported by executable structural/render evidence and ADR-013. |
 | P3 | Application shell and design system | Complete | Tauri/Leptos shell, accessibility basics, five browser E2E checks, and desktop/compact visual checkpoints pass. |
 | P4 | Merge vertical slice | In progress | Merge parity and assigned legacy-test rows have passing evidence. |
-| P5 | Split family | In progress | Planner, QPDF materializer, trusted desktop commands and deterministic browser workspace are implemented; real desktop/corpus gates remain. |
+| P5 | Split family | In progress | P5.1 planner/materializer/desktop evidence is complete; P5.2 metadata-safety and parity fixtures remain. |
 | P6 | Remaining PDF tools | Planned | All eight PDF tools reach verified functional parity. |
 | P7 | Desktop completeness | Planned | Non-tool original features are implemented or explicitly replaced. |
 | P8 | Hardening | Planned | Reliability, security, accessibility, performance and corpus gates meet RC thresholds. |
@@ -28,4 +31,6 @@
 
 ## Current P5 checkpoints
 
-- **P5.1 — Split planner/materializer: In progress.** `pincerpdf-split` plans every-page, fixed-count, explicit range, validated bookmark-boundary and conservative size-bounded outputs without engine or filesystem side effects. The QPDF adapter materializes each part with page-count conservation, size-limit verification, hidden sibling outputs and atomic finalization; the real contract is green locally and Linux Actions evidence is green. QPDF outline extraction now supports an explicit zero-based depth, preserving top-level behavior while safely selecting nested destinations. The trusted Tauri Split command boundary and deterministic Leptos workspace now cover source/output selection, every-page/fixed/range/bookmark/size rule DTOs, bookmark depth, cancellation and result states; native desktop and screenshot evidence remain the exit gate.
+- **P5.1 — Split planner/materializer: Complete.** `pincerpdf-split` plans every-page, fixed-count, explicit range, validated bookmark-boundary and conservative size-bounded outputs without engine or filesystem side effects. The QPDF adapter materializes each part with page-count conservation, size-limit verification, hidden sibling outputs and atomic finalization; the real contract is green locally and Linux Actions evidence is green. QPDF outline extraction supports an explicit zero-based depth, preserving top-level behavior while safely selecting nested destinations. The trusted Tauri Split command boundary and deterministic Leptos workspace cover source/output selection, every-page/fixed/range/bookmark/size rule DTOs, bookmark depth, cancellation and result states; native desktop and desktop/compact screenshot evidence are green.
+- **P5.2 — Split metadata safety and parity: In progress.** Split outline reconstruction now remaps surviving direct page destinations, prunes dangling leaves, and fails closed for named destinations, unresolved/action-backed outlines, and ambiguous duplicate-page destination identity. Dedicated real-engine fixtures for safe named/action/style preservation and Unicode title evidence remain to be added.
+
