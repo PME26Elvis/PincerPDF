@@ -50,4 +50,7 @@ fidelity, and duplicate-page selections with ambiguous destination identity
 remain gated until dedicated real-engine fixtures define their safe policy.
 The nested boundary selection, desktop depth control, and page-subset outline
 reconstruction are implemented and covered by the split contract. Split-by-size
-estimation is defined separately by ADR-028.
+estimation is defined separately by ADR-028. Private QPDF staging may live on
+a different filesystem from the selected output directory; the adapter copies
+into the same-volume hidden sibling before the final atomic rename so Linux
+containers and Windows volumes share the same correctness boundary.

@@ -300,12 +300,7 @@ impl QpdfAdapter {
                 roots: parse_source_bookmarks(&outline_json, &split_input, 0)?,
             };
             if bookmark_plan.roots.is_empty() {
-                fs::rename(raw_output.path(), &output_plan.temporary_path).map_err(|error| {
-                    EngineError::new(
-                        ErrorCode::OutputWriteFailed,
-                        format!("cannot stage split output: {error}"),
-                    )
-                })?;
+                stage_split_output(raw_output.path(), &output_plan.temporary_path)?;
             } else {
                 let bookmarked_output =
                     TemporaryPath::new("split-bookmarked", "pdf").map_err(|error| {
@@ -322,14 +317,7 @@ impl QpdfAdapter {
                     control,
                     &mut evidence,
                 )?;
-                fs::rename(bookmarked_output.path(), &output_plan.temporary_path).map_err(
-                    |error| {
-                        EngineError::new(
-                            ErrorCode::OutputWriteFailed,
-                            format!("cannot stage bookmarked split output: {error}"),
-                        )
-                    },
-                )?;
+                stage_split_output(bookmarked_output.path(), &output_plan.temporary_path)?;
             }
             let page_capture = self.run_qpdf(
                 &[
@@ -2582,6 +2570,21 @@ fn parse_qpdf_page_count(stdout: &str, context: &str) -> Result<u32, EngineError
         EngineError::new(
             ErrorCode::EngineFailure,
             format!("qpdf returned a non-integer {context} page count"),
+        )
+    })
+}
+
+fn stage_split_output(source: &Path, destination: &Path) -> Result<(), EngineError> {
+    fs::copy(source, destination).map_err(|error| {
+        EngineError::new(
+            ErrorCode::OutputWriteFailed,
+            format!("cannot stage split output: {error}"),
+        )
+    })?;
+    fs::remove_file(source).map_err(|error| {
+        EngineError::new(
+            ErrorCode::OutputWriteFailed,
+            format!("cannot clean split staging output: {error}"),
         )
     })
 }
