@@ -46,6 +46,7 @@ REQUIRED_FILES = (
     "crates/pincerpdf-engine-qpdf/Cargo.toml",
     "crates/pincerpdf-engine-qpdf/src/lib.rs",
     "crates/pincerpdf-engine-qpdf/tests/merge_contract.rs",
+    "crates/pincerpdf-engine-qpdf/tests/split_contract.rs",
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
     "docs/architecture/adr/ADR-015-merge-core-boundary.md",
@@ -325,6 +326,10 @@ def verify_merge_core_contract() -> None:
         "MergeTocPolicy",
         "DocumentTitles",
         "qdf_document_title",
+        "pub fn split",
+        "SplitMaterializationReport",
+        "SplitOutputGuard",
+        "parse_qpdf_page_count",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -376,7 +381,12 @@ def verify_merge_core_contract() -> None:
         if feature_id not in traceability:
             fail(f"Merge traceability row missing: {feature_id}")
 
-    if "merge-contract:" not in makefile or "make merge-contract" not in workflow:
+    if (
+        "merge-contract:" not in makefile
+        or "split-contract:" not in makefile
+        or "make merge-contract" not in workflow
+        or "make split-contract" not in workflow
+    ):
         fail("P4.1 real-engine contract is not wired into Make/Actions")
     if "python3 -m unittest discover -s scripts/tests" not in workflow:
         fail("P4.1 evidence summarizer regression tests are not wired into Actions")
@@ -400,6 +410,9 @@ def verify_split_planner_contract() -> None:
     split_source = (ROOT / "crates/pincerpdf-split/src/lib.rs").read_text(
         encoding="utf-8"
     )
+    split_contract = (
+        ROOT / "crates/pincerpdf-engine-qpdf/tests/split_contract.rs"
+    ).read_text(encoding="utf-8")
     cli_source = (ROOT / "apps/pincerpdf-cli/src/main.rs").read_text(encoding="utf-8")
     roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
     for token in (
@@ -417,6 +430,8 @@ def verify_split_planner_contract() -> None:
     for token in ("split-plan", "plan_split", "every-page"):
         if token not in cli_source:
             fail(f"P5.1 CLI smoke contract missing: {token}")
+    if "split_materialization_conserves_pages_and_finalizes_outputs" not in split_contract:
+        fail("P5.1 real-engine split contract is missing")
     if "P5.1 — Split planner: In progress" not in roadmap:
         fail("P5.1 roadmap status is missing")
 

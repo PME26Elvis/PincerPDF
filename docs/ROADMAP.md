@@ -28,4 +28,4 @@
 
 ## Current P5 checkpoints
 
-- **P5.1 — Split planner: In progress.** `pincerpdf-split` plans every-page, fixed-count and explicit range outputs without engine or filesystem side effects. The CLI exposes `split-plan` for deterministic smoke checks; QPDF materialization, bookmark-aware splitting and split-by-size/bookmarks remain gated.
+- **P5.1 — Split planner/materializer: In progress.** `pincerpdf-split` plans every-page, fixed-count and explicit range outputs without engine or filesystem side effects. The QPDF adapter now materializes each part with page-count conservation, hidden sibling outputs and atomic finalization; the real contract is green locally and awaiting the next Linux Actions evidence. Bookmark-aware splitting and split-by-size remain gated.

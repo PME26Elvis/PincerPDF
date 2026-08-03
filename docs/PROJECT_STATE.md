@@ -525,8 +525,8 @@ local Windows toolchain after this adjustment.
 
 ## Exact next actions
 
-1. Materialize `pincerpdf-split` plans through a process-isolated QPDF adapter
-   with page-conservation and atomic-output contract evidence.
+1. Retain Linux Actions evidence for the new split materializer and its
+   page-conservation/atomic-output contract.
 2. Add explicit split-by-bookmarks and split-by-size planning only after their
    source metadata and size-estimation policies are testable.
 3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,

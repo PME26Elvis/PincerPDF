@@ -10,8 +10,9 @@ Introduce `pincerpdf-split` as an engine-independent planner. It owns the
 partition rules `every-page`, `every:N`, and ordered explicit ranges, and
 returns exact one-based page vectors plus deterministic output stems. The
 planner performs no filesystem writes, PDF parsing, password handling or
-engine invocation. A later QPDF adapter will consume the plan and apply the
-same temporary-output and atomic-finalization policies as Merge.
+engine invocation. The QPDF adapter now consumes the plan through a separate
+materializer that applies hidden sibling outputs, page-count verification,
+source-alias protection and atomic finalization for every part.
 
 The internal CLI exposes `split-plan` so the planner can be smoke-tested in a
 restricted environment before any PDF materializer is enabled in the UI.
@@ -27,7 +28,6 @@ restricted environment before any PDF materializer is enabled in the UI.
 
 ## Deferred behavior
 
-QPDF output materialization, split-by-bookmarks, split-by-size, bookmark
-destination remapping, collision policies and browser/native UI remain gated
-until real-engine contract fixtures prove page conservation and output
-validity.
+Split-by-bookmarks, split-by-size, bookmark destination remapping, collision
+policies and browser/native UI remain gated until their own real-engine
+contract fixtures prove page conservation and output validity.

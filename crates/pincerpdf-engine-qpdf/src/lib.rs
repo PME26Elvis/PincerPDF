@@ -7,10 +7,12 @@ use pincerpdf_engine_api::{
     CapabilitySet, EngineError, EngineIdentity, InspectOptions, PdfCapability, PdfEnginePort,
     PdfMetadata,
 };
+use pincerpdf_filesystem::{ExistingOutputPolicy, OutputPathPlan, plan_output_path};
 use pincerpdf_merge::{
     BookmarkPolicy, CancellationToken, CommandEvidence, ExecutionControl, MergeEngineInput,
     MergeEnginePort, MergeEngineRequest, MergeEngineResult, MergeTocPolicy, SecretString,
 };
+use pincerpdf_split::SplitPlan;
 use serde_json::{Map, Value, json};
 use std::ffi::OsString;
 use std::fmt::Write as _;
@@ -57,6 +59,45 @@ impl Default for QpdfConfig {
 pub struct QpdfAdapter {
     config: QpdfConfig,
     identity: EngineIdentity,
+}
+
+/// Verified outputs and redacted QPDF evidence for one split materialization.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SplitMaterializationReport {
+    /// Atomically finalized output paths in plan order.
+    pub outputs: Vec<PathBuf>,
+    /// External-command evidence for each extraction and count verification.
+    pub evidence: Vec<CommandEvidence>,
+}
+
+struct SplitOutputGuard {
+    plans: Vec<OutputPathPlan>,
+    finalized: Vec<PathBuf>,
+    committed: bool,
+}
+
+impl SplitOutputGuard {
+    fn new(plans: Vec<OutputPathPlan>) -> Self {
+        Self {
+            plans,
+            finalized: Vec::new(),
+            committed: false,
+        }
+    }
+}
+
+impl Drop for SplitOutputGuard {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        for plan in &self.plans {
+            let _ = fs::remove_file(&plan.temporary_path);
+        }
+        for output in &self.finalized {
+            let _ = fs::remove_file(output);
+        }
+    }
 }
 
 impl QpdfAdapter {
@@ -108,6 +149,136 @@ impl QpdfAdapter {
     ) -> Result<ProcessCapture, EngineError> {
         run_process(&self.config.executable, args, display_args, control)
             .map_err(|failure| map_process_failure(&failure, password_supplied))
+    }
+
+    /// Materializes an engine-independent split plan into atomically finalized
+    /// one-output-per-part PDFs.
+    ///
+    /// Existing destination files are rejected. Every QPDF invocation writes
+    /// to a hidden sibling first, verifies its page count, then renames it into
+    /// place. If any part fails, already-created outputs are removed so a
+    /// partial split is never reported as successful.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when the output directory, source alias, QPDF
+    /// process, page count or finalization policy is invalid.
+    #[allow(clippy::too_many_lines)]
+    pub fn split(
+        &self,
+        plan: &SplitPlan,
+        output_directory: &Path,
+        control: &ExecutionControl,
+    ) -> Result<SplitMaterializationReport, EngineError> {
+        if !output_directory.is_dir() {
+            return Err(EngineError::new(
+                ErrorCode::OutputWriteFailed,
+                format!(
+                    "split output directory is not a directory: {}",
+                    output_directory.display()
+                ),
+            ));
+        }
+        if plan.parts.is_empty() {
+            return Err(EngineError::new(
+                ErrorCode::InvalidInput,
+                "split plan contains no output parts",
+            ));
+        }
+        let canonical_source = plan.source.canonicalize().map_err(|error| {
+            EngineError::new(
+                ErrorCode::InputUnreadable,
+                format!(
+                    "cannot resolve split source {}: {error}",
+                    plan.source.display()
+                ),
+            )
+        })?;
+        let mut planned = Vec::with_capacity(plan.parts.len());
+        for part in &plan.parts {
+            let final_path = output_directory.join(format!("{}.pdf", part.filename_stem));
+            let final_exists = final_path.try_exists().map_err(|error| {
+                EngineError::new(ErrorCode::OutputWriteFailed, error.to_string())
+            })?;
+            let final_canonical = final_path.canonicalize().ok();
+            if final_canonical.as_deref() == Some(canonical_source.as_path()) {
+                return Err(EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    "split output would overwrite its source PDF",
+                ));
+            }
+            let token = format!("split_{}", part.ordinal);
+            let output_plan = plan_output_path(
+                &final_path,
+                final_exists,
+                ExistingOutputPolicy::Fail,
+                &token,
+            )
+            .map_err(|error| EngineError::new(ErrorCode::OutputConflict, error.to_string()))?;
+            planned.push(output_plan);
+        }
+
+        let mut guard = SplitOutputGuard::new(planned.clone());
+        let mut evidence = Vec::new();
+        for (part, output_plan) in plan.parts.iter().zip(&planned) {
+            let page_spec = page_specification(&part.pages);
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(&plan.source),
+                    OsString::from(&page_spec),
+                    OsString::from("--"),
+                    qpdf_path(&output_plan.temporary_path),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    plan.source.display().to_string(),
+                    page_spec,
+                    "--".to_owned(),
+                    output_plan.temporary_path.display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(capture.evidence);
+            let page_capture = self.run_qpdf(
+                &[
+                    OsString::from("--show-npages"),
+                    qpdf_path(&output_plan.temporary_path),
+                ],
+                vec![
+                    "--show-npages".to_owned(),
+                    output_plan.temporary_path.display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            let actual = parse_qpdf_page_count(&page_capture.evidence.stdout, "split")?;
+            evidence.push(page_capture.evidence);
+            let expected = u32::try_from(part.pages.len()).map_err(|_| {
+                EngineError::new(ErrorCode::InvalidInput, "split part page count overflowed")
+            })?;
+            if actual != expected {
+                return Err(EngineError::new(
+                    ErrorCode::EngineFailure,
+                    format!(
+                        "split output page conservation failed: expected {expected}, got {actual}"
+                    ),
+                ));
+            }
+            fs::rename(&output_plan.temporary_path, &output_plan.final_path).map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot finalize split output: {error}"),
+                )
+            })?;
+            guard.finalized.push(output_plan.final_path.clone());
+        }
+        let outputs = guard.finalized.clone();
+        guard.committed = true;
+        Ok(SplitMaterializationReport { outputs, evidence })
     }
 
     fn prepare_merge_sources(
@@ -2054,6 +2225,15 @@ fn write_toc_pdf(path: &Path, entries: &[TocEntry], page_count: usize) -> io::Re
 
 fn qpdf_path(path: &Path) -> OsString {
     path.as_os_str().to_os_string()
+}
+
+fn parse_qpdf_page_count(stdout: &str, context: &str) -> Result<u32, EngineError> {
+    stdout.trim().parse::<u32>().map_err(|_| {
+        EngineError::new(
+            ErrorCode::EngineFailure,
+            format!("qpdf returned a non-integer {context} page count"),
+        )
+    })
 }
 
 struct TemporaryPath {
