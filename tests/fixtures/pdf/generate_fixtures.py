@@ -1,203 +1,179 @@
-#!/usr/bin/env python3
-from __future__ import annotations
+­r‡^Ñf¥–Ø¦{[r‰İ°ë­¦ëHÈKİ\Ü‹Øš[‹Ù[ˆ]ÛŒÂ™œ›ÛH×Ù]\™W×È[\Ü[››İ][ÛœÂ‚š[\Ü\ÚX‚š[\ÜœÛÛ‚š[\ÜŞ\Â™œ›ÛH]XÛ\ÜÙ\È[\Ü]XÛ\ÜÂ™œ›ÛH]Xˆ[\Ü]‚‚]XÛ\ÜÊœ›Ş™[UYJB˜Û\ÜÈ“Øš™Xİ‚ˆ[X™\ˆ[ˆ›ÙNˆ]\Â‚‚™Yˆ]\˜[
+˜[YNˆİŠHOˆ]\Î‚ˆ\ØØ\YH˜[YKœ™\XÙJ	×	Ë	×	ÊKœ™\XÙJ	Ê	Ë	×
+	ÊKœ™\XÙJ	ÊIË	×
+IÊBˆ™]\›ˆ‰ÊÙ\ØØ\YJIË™[˜ÛÙJ	Ø\ØÚZIÊB‚‚™Yˆİ™X[J]Nˆ]\Ë^˜Nˆ]\ÈH‰ÉÊHOˆ]\Î‚ˆXİ[Û˜\HH‰ÏÓ[™İ	È
+ÈİŠ[Š]JJK™[˜ÛÙJ	Ø\ØÚZIÊBˆYˆ^˜N‚ˆXİ[Û˜\H
+ÏH‰È	È
+È^˜BˆXİ[Û˜\H
+ÏH‰È‰Âˆ™]\›ˆXİ[Û˜\H
+È‰×œİ™X[W‰È
+È]H
+È‰×™[™İ™X[IÂ‚‚™YˆÛÛ[
+^ˆİ‹ˆ[HÌ‹Nˆ[HÌŒ
+HOˆ]\Î‚ˆ™]\›ˆ‰Ğ•ÑŒHNˆŞHŞ_H	Ë™[˜ÛÙJ	Ø\ØÚZIÊH
+È]\˜[
+^
+H
+È‰ÈˆU	Â‚‚™YˆÜš]WÜŠ]ˆ]Øš™XİÎˆ\İÔ“Øš™XİK›Ûİˆ[[™›Îˆ[›Û™HH›Û™JHOˆXİÜİ‹Øš™XİN‚ˆÜ™\™YHÛÜY
+Øš™XİËÙ^O[[X™H][Nˆ][K›[X™\ŠBˆ^XİYH\İ
+˜[™ÙJKÜ™\™YËLWK›[X™\ˆ
+ÈJJBˆXİX[HÚ][K›[X™\ˆ›Üˆ][H[ˆÜ™\™YBˆYˆXİX[OH^XİY‚ˆ˜Z\ÙH˜[YQ\œ›ÜŠ‰ÛØš™Xİ[X™\œÈ]\İ™HÛÛYİ[İ\ÎˆØXİX[IÊB‚ˆİ]]H]X\œ˜^J‰ÉT‹LK×‰WL—L×Ù—×‰ÊBˆÙ™œÙ]ÈHÌBˆ›Üˆ][H[ˆÜ™\™Y‚ˆÙ™œÙ]Ë˜\[™
+[Šİ]]
+JBˆİ]]
+ÏH‰ŞÚ][K›[X™\ŸHØš—‰Ë™[˜ÛÙJ	Ø\ØÚZIÊBˆİ]]
+ÏH][K˜›ÙBˆİ]]
+ÏH‰×™[™Øš—‰Â‚ˆ™Y—ÛÙ™œÙ]H[Šİ]]
+Bˆİ]]
+ÏH‰Ş™Y—ŒÛ[ŠÙ™œÙ]Ê_W‰Ë™[˜ÛÙJ	Ø\ØÚZIÊBˆİ]]
+ÏH‰ÌMLÍHˆ‰Âˆ›ÜˆÙ™œÙ][ˆÙ™œÙ]ÖÌN—N‚ˆİ]]
+ÏH‰ŞÛÙ™œÙ]ŒLHˆ‰Ë™[˜ÛÙJ	Ø\ØÚZIÊB‚ˆ˜Z[\ˆH‰ÏÔÚ^™HÛ[ŠÙ™œÙ]Ê_HÔ›ÛİÜ›ÛİH‰Ë™[˜ÛÙJ	Ø\ØÚZIÊBˆYˆ[™›È\È›İ›Û™N‚ˆ˜Z[\ˆ
+ÏH‰ÈÒ[™›ÈÚ[™›ßH‰Ë™[˜ÛÙJ	Ø\ØÚZIÊBˆ˜Z[\ˆ
+ÏH‰È‰Âˆİ]]
+ÏH‰İ˜Z[\—‰È
+È˜Z[\ˆ
+È‰×œİ\™Y—‰Âˆİ]]
+ÏHİŠ™Y—ÛÙ™œÙ]
+K™[˜ÛÙJ	Ø\ØÚZIÊH
+È‰×‰IQSÑ—‰Âˆ]Üš]WØ]\Êİ]]
+Bˆ™]\›ˆÂˆ	Ü]	Îˆ]›˜[YKˆ	Ø]\ÉÎˆ[Šİ]]
+Kˆ	ÜÚLM‰Îˆ\ÚX‹œÚLMŠİ]]
+Kš^YÙ\İ
 
-import hashlib
-import json
-import sys
-from dataclasses import dataclass
-from pathlib import Path
-
-
-@dataclass(frozen=True)
-class PdfObject:
-    number: int
-    body: bytes
-
-
-def literal(value: str) -> bytes:
-    escaped = value.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
-    return f'({escaped})'.encode('ascii')
-
-
-def stream(data: bytes, extra: bytes = b'') -> bytes:
-    dictionary = b'<< /Length ' + str(len(data)).encode('ascii')
-    if extra:
-        dictionary += b' ' + extra
-    dictionary += b' >>'
-    return dictionary + b'\nstream\n' + data + b'\nendstream'
-
-
-def content(text: str, x: int = 72, y: int = 720) -> bytes:
-    return f'BT /F1 18 Tf {x} {y} Td '.encode('ascii') + literal(text) + b' Tj ET'
-
-
-def write_pdf(path: Path, objects: list[PdfObject], root: int, info: int | None = None) -> dict[str, object]:
-    ordered = sorted(objects, key=lambda item: item.number)
-    expected = list(range(1, ordered[-1].number + 1))
-    actual = [item.number for item in ordered]
-    if actual != expected:
-        raise ValueError(f'object numbers must be contiguous: {actual}')
-
-    output = bytearray(b'%PDF-1.7\n%\xe2\xe3\xcf\xd3\n')
-    offsets = [0]
-    for item in ordered:
-        offsets.append(len(output))
-        output += f'{item.number} 0 obj\n'.encode('ascii')
-        output += item.body
-        output += b'\nendobj\n'
-
-    xref_offset = len(output)
-    output += f'xref\n0 {len(offsets)}\n'.encode('ascii')
-    output += b'0000000000 65535 f \n'
-    for offset in offsets[1:]:
-        output += f'{offset:010d} 00000 n \n'.encode('ascii')
-
-    trailer = f'<< /Size {len(offsets)} /Root {root} 0 R'.encode('ascii')
-    if info is not None:
-        trailer += f' /Info {info} 0 R'.encode('ascii')
-    trailer += b' >>'
-    output += b'trailer\n' + trailer + b'\nstartxref\n'
-    output += str(xref_offset).encode('ascii') + b'\n%%EOF\n'
-    path.write_bytes(output)
-    return {
-        'path': path.name,
-        'bytes': len(output),
-        'sha256': hashlib.sha256(output).hexdigest(),
-        'objects': len(ordered),
-    }
-
-
-def common_page(
-    page_number: int,
-    parent: int,
-    contents: int,
-    media_box: str = '0 0 612 792',
-    crop_box: str | None = None,
-    rotate: int | None = None,
-    annots: str | None = None,
-) -> PdfObject:
-    body = f'<< /Type /Page /Parent {parent} 0 R /MediaBox [{media_box}] /Resources << /Font << /F1 20 0 R >> >> /Contents {contents} 0 R'.encode('ascii')
-    if crop_box is not None:
-        body += f' /CropBox [{crop_box}]'.encode('ascii')
-    if rotate is not None:
-        body += f' /Rotate {rotate}'.encode('ascii')
-    if annots is not None:
-        body += f' /Annots [{annots}]'.encode('ascii')
-    body += b' >>'
-    return PdfObject(page_number, body)
-
-
-def make_plain(path: Path) -> dict[str, object]:
-    objects = [
-        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R >>'),
-        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'),
-        common_page(3, 2, 4),
-        PdfObject(4, stream(content('Plain page 1'))),
-        common_page(5, 2, 6, media_box='0 0 595 842'),
-        PdfObject(6, stream(content('Plain page 2'))),
-        common_page(7, 2, 8, rotate=90),
-        PdfObject(8, stream(content('Plain page 3 rotated'))),
-        PdfObject(9, b'<< /Title ' + literal('PincerPDF fixture') + b' /Author ' + literal('PincerPDF tests') + b' >>'),
-    ]
-    objects.extend(PdfObject(number, b'<< >>') for number in range(10, 20))
-    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
-    return write_pdf(path, objects, root=1, info=9)
-
-
-def make_bookmarks(path: Path) -> dict[str, object]:
-    objects = [
-        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R /Outlines 9 0 R /PageMode /UseOutlines >>'),
-        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'),
-        common_page(3, 2, 4),
-        PdfObject(4, stream(content('Bookmark chapter 1'))),
-        common_page(5, 2, 6),
-        PdfObject(6, stream(content('Bookmark chapter 2'))),
-        common_page(7, 2, 8),
-        PdfObject(8, stream(content('Bookmark appendix'))),
-        PdfObject(9, b'<< /Type /Outlines /First 10 0 R /Last 11 0 R /Count 2 >>'),
-        PdfObject(10, b'<< /Title ' + literal('Chapter 1') + b' /Parent 9 0 R /Next 11 0 R /Dest [3 0 R /Fit] >>'),
-        PdfObject(11, b'<< /Title ' + literal('Chapter 2') + b' /Parent 9 0 R /Prev 10 0 R /First 12 0 R /Last 12 0 R /Count 1 /Dest [5 0 R /Fit] >>'),
-        PdfObject(12, b'<< /Title ' + literal('Appendix') + b' /Parent 11 0 R /Dest [7 0 R /Fit] >>'),
-    ]
-    objects.extend(PdfObject(number, b'<< >>') for number in range(13, 20))
-    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
-    return write_pdf(path, objects, root=1)
-
-
-def make_form(path: Path) -> dict[str, object]:
-    objects = [
-        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>'),
-        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>'),
-        common_page(3, 2, 4, annots='7 0 R'),
-        PdfObject(4, stream(content('Form fixture'))),
-        PdfObject(5, b'<< >>'),
-        PdfObject(6, b'<< /Fields [7 0 R] /NeedAppearances true /DA (/F1 12 Tf 0 g) /DR << /Font << /F1 20 0 R >> >> >>'),
-        PdfObject(7, b'<< /Type /Annot /Subtype /Widget /FT /Tx /T ' + literal('Name') + b' /V ' + literal('PincerPDF') + b' /Rect [72 660 300 690] /P 3 0 R /F 4 /DA (/F1 12 Tf 0 g) >>'),
-    ]
-    objects.extend(PdfObject(number, b'<< >>') for number in range(8, 20))
-    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
-    return write_pdf(path, objects, root=1)
-
-
-def make_geometry_metadata(path: Path) -> dict[str, object]:
-    objects = [
-        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R >>'),
-        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'),
-        common_page(
-            3,
-            2,
-            4,
-            media_box='0 0 300 500',
-            crop_box='10 20 290 480',
-        ),
-        PdfObject(4, stream(content('Geometry portrait crop', x=36, y=440))),
-        common_page(
-            5,
-            2,
-            6,
-            media_box='0 0 842 595',
-            crop_box='0 0 800 550',
-            rotate=90,
-        ),
-        PdfObject(6, stream(content('Geometry landscape rotated', x=36, y=520))),
-        common_page(
-            7,
-            2,
-            8,
-            media_box='-10 -20 602 772',
-            rotate=270,
-        ),
-        PdfObject(8, stream(content('Geometry offset rotated', x=36, y=700))),
-        PdfObject(
-            9,
-            b'<< /Title '
-            + literal('Geometry metadata source')
-            + b' /Author '
-            + literal('PincerPDF parity corpus')
-            + b' /Subject '
-            + literal('Source metadata must not leak implicitly')
-            + b' >>',
-        ),
-    ]
-    objects.extend(PdfObject(number, b'<< >>') for number in range(10, 20))
-    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
-    return write_pdf(path, objects, root=1, info=9)
-
-
-def main() -> int:
-    output = Path(sys.argv[1] if len(sys.argv) > 1 else 'tests/fixtures/pdf/generated')
-    output.mkdir(parents=True, exist_ok=True)
-    fixtures = [
-        make_plain(output / 'plain-three-pages.pdf'),
-        make_bookmarks(output / 'bookmarks.pdf'),
-        make_form(output / 'acroform.pdf'),
-        make_geometry_metadata(output / 'geometry-metadata.pdf'),
-    ]
-    manifest = {'schema': 1, 'fixtures': fixtures}
-    (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-    print(json.dumps(manifest, indent=2))
-    return 0
-
-
-if __name__ == '__main__':
-    raise SystemExit(main())
+Kˆ	ÛØš™XİÉÎˆ[ŠÜ™\™Y
+KˆB‚‚™YˆÛÛ[[Û—ÜYÙJˆYÙWÛ[X™\ˆ[ˆ\™[ˆ[ˆÛÛ[Îˆ[ˆYYXWØ›ŞˆİˆH	ÌŒLˆÎL‰ËˆÜ›ÜØ›Şˆİˆ›Û™HH›Û™Kˆ›İ]Nˆ[›Û™HH›Û™Kˆ[››İÎˆİˆ›Û™HH›Û™KŠHOˆ“Øš™Xİ‚ˆ›ÙHH‰ÏÕ\HÔYÙHÔ\™[Ü\™[HˆÓYYXP›ŞŞÛYYXWØ›ŞWHÔ™\Ûİ\˜Ù\ÈÑ›ÛÑŒHŒˆˆˆĞÛÛ[ÈØÛÛ[ßH‰Ë™[˜ÛÙJ	Ø\ØÚZIÊBˆYˆÜ›ÜØ›Ş\È›İ›Û™N‚ˆ›ÙH
+ÏH‰ÈĞÜ›Ü›ŞŞØÜ›ÜØ›ŞWIË™[˜ÛÙJ	Ø\ØÚZIÊBˆYˆ›İ]H\È›İ›Û™N‚ˆ›ÙH
+ÏH‰ÈÔ›İ]HÜ›İ]_IË™[˜ÛÙJ	Ø\ØÚZIÊBˆYˆ[››İÈ\È›İ›Û™N‚ˆ›ÙH
+ÏH‰ÈĞ[››İÈŞØ[››İßWIË™[˜ÛÙJ	Ø\ØÚZIÊBˆ›ÙH
+ÏH‰È‰Âˆ™]\›ˆ“Øš™Xİ
+YÙWÛ[X™\‹›ÙJB‚‚™YˆXZÙWÜZ[Š]ˆ]
+HOˆXİÜİ‹Øš™XİN‚ˆØš™XİÈHÂˆ“Øš™Xİ
+K‰ÏÕ\HĞØ][ÙÈÔYÙ\Èˆˆ‰ÊKˆ“Øš™Xİ
+‹‰ÏÕ\HÔYÙ\ÈÒÚYÈÌÈˆHˆÈ—HĞÛİ[È‰ÊKˆÛÛ[[Û—ÜYÙJË‹
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	ÔZ[ˆYÙHIÊJJKˆÛÛ[[Û—ÜYÙJK‹‹YYXWØ›ŞIÌNMH‰ÊKˆ“Øš™Xİ
+‹İ™X[JÛÛ[
+	ÔZ[ˆYÙH‰ÊJJKˆÛÛ[[Û—ÜYÙJË‹›İ]ONL
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	ÔZ[ˆYÙHÈ›İ]Y	ÊJJKˆ“Øš™Xİ
+K‰ÏÕ]H	È
+È]\˜[
+	Ô[˜Ù\”ˆš^\™IÊH
+È‰ÈĞ]]Üˆ	È
+È]\˜[
+	Ô[˜Ù\”ˆ\İÉÊH
+È‰È‰ÊKˆBˆØš™XİË™^[™
+“Øš™Xİ
+[X™\‹‰Ï‰ÊH›Üˆ[X™\ˆ[ˆ˜[™ÙJLŒ
+JBˆØš™XİË˜\[™
+“Øš™Xİ
+Œ‰ÏÕ\HÑ›ÛÔİX\HÕ\LHĞ˜\ÙQ›ÛÒ[™]XØH‰ÊJBˆ™]\›ˆÜš]WÜŠ]Øš™XİË›ÛİLK[™›ÏNJB‚‚™YˆXZÙWØ›ÛÚÛX\šÜÊ]ˆ]
+HOˆXİÜİ‹Øš™XİN‚ˆØš™XİÈHÂˆ“Øš™Xİ
+K‰ÏÕ\HĞØ][ÙÈÔYÙ\ÈˆˆÓİ][™\ÈHˆÔYÙS[ÙHÕ\ÙSİ][™\È‰ÊKˆ“Øš™Xİ
+‹‰ÏÕ\HÔYÙ\ÈÒÚYÈÌÈˆHˆÈ—HĞÛİ[È‰ÊKˆÛÛ[[Û—ÜYÙJË‹
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	Ğ›ÛÚÛX\šÈÚ\\ˆIÊJJKˆÛÛ[[Û—ÜYÙJK‹ŠKˆ“Øš™Xİ
+‹İ™X[JÛÛ[
+	Ğ›ÛÚÛX\šÈÚ\\ˆ‰ÊJJKˆÛÛ[[Û—ÜYÙJË‹
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	Ğ›ÛÚÛX\šÈ\[™^	ÊJJKˆ“Øš™Xİ
+K‰ÏÕ\HÓİ][™\ÈÑš\œİLˆÓ\İLHˆĞÛİ[ˆ‰ÊKˆ“Øš™Xİ
+L‰ÏÕ]H	È
+È]\˜[
+	ĞÚ\\ˆIÊH
+È‰ÈÔ\™[HˆÓ™^LHˆÑ\İÌÈˆÑš]H‰ÊKˆ“Øš™Xİ
+LK‰ÏÕ]H	È
+È]\˜[
+	ĞÚ\\ˆ‰ÊH
+È‰ÈÔ\™[HˆÔ™]ˆLˆÑš\œİLˆˆÓ\İLˆˆĞÛİ[HÑ\İÍHˆÑš]H‰ÊKˆ“Øš™Xİ
+L‹‰ÏÕ]H	È
+È]\˜[
+	Ğ\[™^	ÊH
+È‰ÈÔ\™[LHˆÑ\İÍÈˆÑš]H‰ÊKˆBˆØš™XİË™^[™
+“Øš™Xİ
+[X™\‹‰Ï‰ÊH›Üˆ[X™\ˆ[ˆ˜[™ÙJLËŒ
+JBˆØš™XİË˜\[™
+“Øš™Xİ
+Œ‰ÏÕ\HÑ›ÛÔİX\HÕ\LHĞ˜\ÙQ›ÛÒ[™]XØH‰ÊJBˆ™]\›ˆÜš]WÜŠ]Øš™XİË›ÛİLJB‚‚™YˆXZÙWÙ›Ü›J]ˆ]
+HOˆXİÜİ‹Øš™XİN‚ˆØš™XİÈHÂˆ“Øš™Xİ
+K‰ÏÕ\HĞØ][ÙÈÔYÙ\ÈˆˆĞXÜ›Ñ›Ü›Hˆˆ‰ÊKˆ“Øš™Xİ
+‹‰ÏÕ\HÔYÙ\ÈÒÚYÈÌÈ—HĞÛİ[H‰ÊKˆÛÛ[[Û—ÜYÙJË‹[››İÏIÍÈ‰ÊKˆ“Øš™Xİ
+İ™X[JÛÛ[
+	Ñ›Ü›Hš^\™IÊJJKˆ“Øš™Xİ
+K‰Ï‰ÊKˆ“Øš™Xİ
+‹‰ÏÑšY[ÈÍÈ—HÓ™YY\X\˜[˜Ù\ÈYHÑH
+ÑŒHLˆˆÊHÑˆÑ›ÛÑŒHŒˆˆˆ‰ÊKˆ“Øš™Xİ
+Ë‰ÏÕ\HĞ[››İÔİX\HÕÚYÙ]Ñ•ÕÕ	È
+È]\˜[
+	Ó˜[YIÊH
+È‰ÈÕˆ	È
+È]\˜[
+	Ô[˜Ù\”‰ÊH
+È‰ÈÔ™XİÍÌˆŒÌLHÔÈˆÑˆÑH
+ÑŒHLˆˆÊH‰ÊKˆBˆØš™XİË™^[™
+“Øš™Xİ
+[X™\‹‰Ï‰ÊH›Üˆ[X™\ˆ[ˆ˜[™ÙJŒ
+JBˆØš™XİË˜\[™
+“Øš™Xİ
+Œ‰ÏÕ\HÑ›ÛÔİX\HÕ\LHĞ˜\ÙQ›ÛÒ[™]XØH‰ÊJBˆ™]\›ˆÜš]WÜŠ]Øš™XİË›ÛİLJB‚‚™YˆXZÙWÙÙ[ÛY]WÛY]Y]J]ˆ]
+HOˆXİÜİ‹Øš™XİN‚ˆØš™XİÈHÂˆ“Øš™Xİ
+K‰ÏÕ\HĞØ][ÙÈÔYÙ\Èˆˆ‰ÊKˆ“Øš™Xİ
+‹‰ÏÕ\HÔYÙ\ÈÒÚYÈÌÈˆHˆÈ—HĞÛİ[È‰ÊKˆÛÛ[[Û—ÜYÙJˆËˆ‹ˆˆYYXWØ›ŞIÌÌL	ËˆÜ›ÜØ›ŞIÌLŒL	Ëˆ
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	ÑÙ[ÛY]HÜ˜Z]Ü›Ü	ËLÍ‹OM
+JJKˆÛÛ[[Û—ÜYÙJˆKˆ‹ˆ‹ˆYYXWØ›ŞIÌˆNMIËˆÜ›ÜØ›ŞIÌML	Ëˆ›İ]ONLˆ
+Kˆ“Øš™Xİ
+‹İ™X[JÛÛ[
+	ÑÙ[ÛY]H[™ØØ\H›İ]Y	ËLÍ‹OMLŒ
+JJKˆÛÛ[[Û—ÜYÙJˆËˆ‹ˆˆYYXWØ›ŞIËLLLŒŒˆÍÌ‰Ëˆ›İ]OLÌˆ
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	ÑÙ[ÛY]HÙ™œÙ]›İ]Y	ËLÍ‹OMÌ
+JJKˆ“Øš™Xİ
+ˆKˆ‰ÏÕ]H	Âˆ
+È]\˜[
+	ÑÙ[ÛY]HY]Y]HÛİ\˜ÙIÊBˆ
+È‰ÈĞ]]Üˆ	Âˆ
+È]\˜[
+	Ô[˜Ù\”ˆ\š]HÛÜœ\ÉÊBˆ
+È‰ÈÔİXš™Xİ	Âˆ
+È]\˜[
+	ÔÛİ\˜ÙHY]Y]H]\İ›İXZÈ[\XÚ]IÊBˆ
+È‰È‰Ëˆ
+KˆBˆØš™XİË™^[™
+“Øš™Xİ
+[X™\‹‰Ï‰ÊH›Üˆ[X™\ˆ[ˆ˜[™ÙJLŒ
+JBˆØš™XİË˜\[™
+“Øš™Xİ
+Œ‰ÏÕ\HÑ›ÛÔİX\HÕ\LHĞ˜\ÙQ›ÛÒ[™]XØH‰ÊJBˆ™]\›ˆÜš]WÜŠ]Øš™XİË›ÛİLK[™›ÏNJB‚‚™YˆXZÙWÚ[š\š]YÙÙ[ÛY]J]ˆ]
+HOˆXİÜİ‹Øš™XİN‚ˆˆˆ‘^\˜Ú\ÙHYÙHÙ[ÛY]H[š\š]Yœ›ÛHHÔYÙ\È›ÙKˆˆˆ‚ˆØš™XİÈHÂˆ“Øš™Xİ
+K‰ÏÕ\HĞØ][ÙÈÔYÙ\Èˆˆ‰ÊKˆ“Øš™Xİ
+ˆ‹ˆ‰ÏÕ\HÔYÙ\ÈÒÚYÈÌÈˆH—HĞÛİ[ˆÓYYXP›ŞÌŒŒŒH	Âˆ‰ËĞÜ›Ü›ŞÌŒÌNHÔ›İ]HN‰Ëˆ
+Kˆ“Øš™Xİ
+ˆËˆ‰ÏÕ\HÔYÙHÔ\™[ˆˆÔ™\Ûİ\˜Ù\ÈÑ›ÛÑŒHŒˆˆˆ	Âˆ‰ËĞÛÛ[Èˆ‰Ëˆ
+Kˆ“Øš™Xİ
+İ™X[JÛÛ[
+	Ò[š\š]YÙ[ÛY]Hš\œİ	ËLÍ‹OMM
+JJKˆ“Øš™Xİ
+ˆKˆ‰ÏÕ\HÔYÙHÔ\™[ˆˆÔ›İ]HLÔ™\Ûİ\˜Ù\ÈÑ›ÛÑŒHŒˆˆˆ	Âˆ‰ËĞÛÛ[Èˆˆ‰Ëˆ
+Kˆ“Øš™Xİ
+‹İ™X[JÛÛ[
+	Ò[š\š]YÙ[ÛY]H›İ]YÚ[	ËLÍ‹OMLŒ
+JJKˆBˆØš™XİË™^[™
+“Øš™Xİ
+[X™\‹‰Ï‰ÊH›Üˆ[X™\ˆ[ˆ˜[™ÙJËŒ
+JBˆØš™XİË˜\[™
+“Øš™Xİ
+Œ‰ÏÕ\HÑ›ÛÔİX\HÕ\LHĞ˜\ÙQ›ÛÒ[™]XØH‰ÊJBˆ™]\›ˆÜš]WÜŠ]Øš™XİË›ÛİLJB‚‚™YˆXZ[Š
+HOˆ[‚ˆİ]]H]
+Ş\Ë˜\™İ–ÌWHYˆ[ŠŞ\Ë˜\™İŠHˆH[ÙH	İ\İËÙš^\™\ËÜ‹ÙÙ[™\˜]Y	ÊBˆİ]]›ZÙ\Š\™[ÏUYK^\İÛÚÏUYJBˆš^\™\ÈHÂˆXZÙWÜZ[Šİ]]È	ÜZ[‹]™YK\YÙ\Ëœ‰ÊKˆXZÙWØ›ÛÚÛX\šÜÊİ]]È	Ø›ÛÚÛX\šÜËœ‰ÊKˆXZÙWÙ›Ü›Jİ]]È	ØXÜ›Ù›Ü›Kœ‰ÊKˆXZÙWÙÙ[ÛY]WÛY]Y]Jİ]]È	ÙÙ[ÛY]K[Y]Y]Kœ‰ÊKˆXZÙWÚ[š\š]YÙÙ[ÛY]Jİ]]È	ÙÙ[ÛY]KZ[š\š]Yœ‰ÊKˆBˆX[šY™\İHÉÜØÚ[XIÎˆK	Ùš^\™\ÉÎˆš^\™\ßBˆ
+İ]]È	ÛX[šY™\İšœÛÛ‰ÊKÜš]Wİ^
+œÛÛ‹™[\ÊX[šY™\İ[™[LŠH
+È	×‰Ë[˜ÛÙ[™ÏIİ]‹N	ÊBˆš[
+œÛÛ‹™[\ÊX[šY™\İ[™[LŠJBˆ™]\›ˆ‚‚šYˆ×Û˜[YW×ÈOH	××ÛXZ[—×ÉÎ‚ˆ˜Z\ÙHŞ\İ[Q^]
+XZ[Š
+JB

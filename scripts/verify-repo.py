@@ -1,4 +1,4 @@
-­r‡^Ñf¥–Ø¦{m¬yÊ'vÃ®¶›­#!/usr/bin/env python3
+­r‡^Ñf¥–Ø¦{]lyÊ'vÃ®¶›­#!/usr/bin/env python3
 """Dependency-free structural verification for restricted bootstrap environments."""
 
 from __future__ import annotations
@@ -301,6 +301,10 @@ def verify_merge_core_contract() -> None:
         "--update-from-json=<private-bookmark-plan>",
         "verify_bookmark_plan",
         "parse_source_bookmarks",
+        "write_footer_overlay",
+        "--overlay",
+        "add_filename_footer",
+        "GeneratedBlankPage",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -318,6 +322,8 @@ def verify_merge_core_contract() -> None:
         "merge_one_entry_per_document",
         "merge_retained_source_bookmarks",
         "merge_retained_bookmarks_under_document_entries",
+        "inherited_blank_output",
+        "pages/2/CropBox",
         '"plain-three-pages"',
         '"destpageposfrom1"',
     ):
@@ -329,6 +335,9 @@ def verify_merge_core_contract() -> None:
         "geometry-metadata.pdf",
         "Geometry landscape rotated",
         "Source metadata must not leak implicitly",
+        "make_inherited_geometry",
+        "geometry-inherited.pdf",
+        "Inherited geometry first",
     ):
         if token not in fixtures:
             fail(f"P4.3 parity fixture contract missing: {token}")

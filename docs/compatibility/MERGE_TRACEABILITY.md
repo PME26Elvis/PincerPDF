@@ -1,1 +1,90 @@
-­r‡^Ñf¥–Ø¦{kr‰İ°ë­¦ëHÈY\™ÙH™X]\™H[™YØXŞK]\İ˜XÙXXš[]B‚‹H\]YˆŒ‹LLÂ‹H\İ™X[H˜\Ù[[™NˆœØ[H˜\ÚXÈ‹ŒKTÓTÒÕ‹Hİ\œ™[ÚXÚÜÚ[ˆÈš[[˜[YH›Ûİ\ˆİ™\›^B‚•\ÈYÙ\ˆ\İ[™İZ\Ú\ÈH™\šYšYY™Z]š[Üˆœ›ÛHHÛÛ\]HY\™ÙH™X]\™K‚”›İÜÈ™[XZ[ˆ\X[[[]™\HÛXŞH˜[YYHH\ÙK[Û™HÜXÚYšXØ][Ûˆ\Â™^Xİ]X›H]šY[˜ÙK‚‚ˆÈÈ™X]\™HYÙ\‚‚ŸQ™\]Z\™Y™Z]š[Üˆİ]\Èİ\œ™[]šY[˜ÙH™[XZ[š[™ÈÛÜšÈŸKKHKKHKKHKKHKKHŸQT‘ÑKLH][\H[œ]ËÜ™\š[™È[™\XØ]\È™\šYšYY\İ[›™\‹ÜÙ\šXÙH\İÎÈ™X[T‹Ó]TˆÜ™\™Y[™\XØ]K\YÙHÛÛ˜XİYİ™\ÜËÜ\™›Ü›X[˜ÙH™\ÚÛÈ\š[™È\™[š[™ÈŸQT‘ÑKLˆ\‹Z[œ]YÙH˜[™Ù\È™\šYšYY\œÙ\ˆ›Ü\Y\È\È™X[\Ú›Ú[™[Ü™\™Y›İ[™Y[™Ü[‹Y[™Y]Ë[\İ\YÙHÙ[Xİ[ÛœÈYÛ›Hİ™\ÜËÜ\™›Ü›X[˜ÙHÛİ™\˜YÙH\š[™È\™[š[™ÈŸQT‘ÑKLÈ›ÛÚÛX\šÈÛXÚY\È\X[[›İ\ˆ\YÛXÚY\È\™H™\šYšYYÚ]Tˆ”ÓÓˆ\ØØ\™Û™H[K™]Z[™Y™[]˜[Y\˜\˜ÚK[™™]Z[™YY\˜\˜ÚH[™\ˆHØİ[Y[[HYš[™Kİ™\šYH›Û‹\YÙH\İ[˜][ÛœËXİ[ÛœËİ[KÛÛÜˆ[™Ü[‹\İ]HšY[]HŸQT‘ÑKLXÜ›Ñ›Ü›HÛXÚY\È\X[›Ü›KX™X\š[™È[œ]\È™Z™XİY™Y›Ü™Hİ]]Ü™X][Ûˆ™[˜[YHšY[ËY\™ÙK›][ˆ[™\ØØ\™ŸQT‘ÑKLHX›HÙˆÛÛ[È[›™Y›Û™Hš[[˜[YH[™Øİ[Y[]]H[Ù\ÈŸQT‘ÑKLˆ›[šÈYÙHY\ˆÙ[œ]™\šYšYY™X[T‹Ó]TˆÛÛ˜Xİ™\šYšY\È\‹\Ûİ\˜ÙH[œÙ\[Û‹š[˜[\Ûİ\˜ÙH[œÙ\[Û‹Ûİ\˜ÙK[X]ÚYYYXP›ŞÜ›İ][Û‹[\H^^˜Xİ[Û‹[™›ÛÚÛX\šÈ\İ[˜][ÛˆÙ™œÙ]™[X\[™ÎÈœ›İÜÙ\ˆL‘H™\šYšY\ÈHÛÛ›ÛYœ›ØY\ˆÜ›Ü›ŞÚ[š\š]YYÙ[ÛY]HÛÜœ\ÈÛİ™\˜YÙHŸQT‘ÑKLÈš[[˜[YH›Ûİ\ˆ\X[™X[T‹Ó]TˆÛÛ˜Xİ™\šYšY\ÈH\‹[İ]]\YÙHÛİ\˜ÙHš[[˜[YHİ™\›^KÛİ\˜ÙHÙ[ÛY]H™\Ù\˜][Ûˆ[™›[šË\YÙHÛZ\ÜÚ[ÛÈœ›İÜÙ\ˆL‘H™\šYšY\ÈH^XÚ]ÛÛ›Û[X™YY[šXÛÙH›Û›Û‹PTĞÒRHš[[˜[YHšY[]Kš\İX[˜\Ù[[™H[™›Ûİ\ˆÛÛ\Ú[ÛˆÛXŞHŸQT‘ÑKLYÙH›Ü›X[^˜][Ûˆ\X[›Û™X™\Ù\™\ÈYYXP›ŞÜ›Ü›Ş[™›İ][ÛˆXÜ›ÜÜÈZ^YÙ[ÛY]HØ[YHÚY[™ÜšY[][Û‹X]Ø\™HØ[YHÚYŸQT‘ÑKLHÚ[™ÛH˜[Yİ]]™\šYšYY˜\Ù[[™HTˆİXİ\™KÜYÙHÛİ[]Tˆ^Ü™[™\‹]ÛZXÈİ]][™Ş\İ[KYX[ÙÈ›İÈ™]˜[Y]H›Üˆ]™\HY˜[˜ÙY\ÛXŞHÛÛXš[˜][Ûˆ‚•HŒÈÙ[ÛY]Hš^\™HÛÛZ[œÈÜ˜Z][™ØØ\KÜ›ÜYÙ™œÙ][™œ›İ]YYÙ\È\ÈÛİ\˜ÙHØİ[Y[Y]Y]KˆH™X[Y[™Ú[™HÛÛ˜XİÙ[XİÂÜÙHYÙ\Èİ]ÙˆÜ™\‹\[™È[ˆÜ[‹Y[™Y‹XÙ[Xİ[Ûˆ›İYÚH\İœYÙHÙˆ[›İ\ˆÛİ\˜ÙK™XYÈ›İYÚH[šXÛÙHÛ™ÈÛİ\˜ÙH][™Üš]\Â›İYÚH[šXÛÙHÛ™Èİ]]]ˆ]™\šYšY\Î‚‚‹HYÙK[ÜšYÚ[ˆ^Ü™\Â‹H^XİYYXP›Ş[™Ü›Ü›Ş\œ˜^\ÎÂ‹HL0¬[™Ì0¬›İ][ÛœÎÂ‹HH˜[Yš]™K\YÙHİ]]Â‹H›È[\XÚ][š\š][˜ÙHÙˆÛ™HÛİ\˜ÙHØİ[Y[	ÜÈ[™›ÈXİ[Û˜\K‚‚•H\İ][H™XÛÜ™Èİ\œ™[ØY™H˜\Ù[[™H™Z]š[Ü‹›İHš[˜[X›K[Ù‹XÛÛ[ÈÜˆØİ[Y[[Y]Y]H›ÙXİÛXŞK‚‚ˆÈÈš[[˜[YH›Ûİ\ˆÛXŞB‚•Hİ\œ™[È[\[Y[][ÛˆÙ[™\˜]\ÈHš]˜]HÛ™K\YÙK\\‹[İ]]\YÙB›İ™\›^HY\ˆTˆYÙH\ÜÙ[X›KˆXXÚİ™\›^HYÙHÛÜY\ÈHÛÛšX][™ÂœÛİ\˜ÙHYÙIÜÈYYXP›ŞÜ›Ü›Ş[™›İ][Û‹[™XÙ\ÈHÛİ\˜ÙHš[[˜[YB›™X\ˆHİÙ\‹[YYYXKX›ŞÜšYÚ[‹ˆÙ[™\˜]YÙ\YÙH›[šÜÈ[X™\˜][Bœ™XÙZ]™H›È›Ûİ\‹ˆHİ™\›^H\È\YY™Y›Ü™H[H›ÛÚÛX\šÈ™XÛÛœİXİ[Û‹œÛÈİ]]İ][™H\İ[˜][ÛœÈÛÛ[YHÈ™Y™\ˆÈHš[˜[YÙHØš™XİË‚‚•Hš\œİÛÛ˜XİÛXÙH\Ù\ÈHZ[Z[ˆ[™]XØKÕÚ[[œÚH™\Ûİ\˜ÙH[™\™Y›Ü™H™\Ù\™\ÈTĞÒRHš[[˜[Y\ÈÛ›Kˆ›Û‹PTĞÒRH˜[Y\È\™H™\XÙYÚ]Bš\ÚX›H˜[˜XÚÈX\šÙ\ˆ˜]\ˆ[ˆ™Z[™ÈÚ[[H[Z]Y\È[˜[Y‚›]\˜[]\Ëˆ[šXÛÙH›Û[X™Y[™È[™ÛÛ\Ú[Û‹X]Ø\™HXÙ[Y[™[XZ[‚™^XÚ]›ÛİË]\ÛÜšÈ[™\ˆQT‘ÑKLË‚‚ˆÈÈØİ[Y[[]™[›ÛÚÛX\šÈÛXŞB‚Q‹LŒHYš[™\ÈØİ[Y[[šY\È[™Q‹LŒˆYš[™\ÈÛİ\˜ÙK[İ][™H™][[Û‹ˆ[˜Ù\”ˆ™XÛÛœİXİÈH™]Â›İ][™H™YHÛ›HY\ˆTˆ\È\ÜÙ[X›YHÙ[XİYYÙ\Ë\Ú[™ÈHXİX[›İ]]YÙHØš™Xİ™Y™\™[˜Ù\È˜]\ˆ[ˆÛİ\˜ÙH™Y™\™[˜Ù\Ë‚‚•Ú[™İÜÈ™X[Y[™Ú[™H]šY[˜ÙH›İ™\Î‚‚‹HÛİ\˜ÙHš[H˜\ÙH˜[Y\È™XÛÛYHÜ™\™YÜ[]™[]\ÎÂ‹HHš\œİ[H\™Ù]Èİ]]YÙHNÂ‹HHÙXÛÛ™[H\™Ù]Èİ]]YÙHˆÚ[ˆHš\œİÛİ\˜ÙHÛÛšX]\ÈÛ™BˆÙ[XİYYÙNÂ‹H\XØ]HÛİ\˜ÙH›İÜÈ™[XZ[ˆ\İ[˜İ[šY\ÎÂ‹HH™\İ[\ÜÙ\ÈTˆİXİ\˜[˜[Y][ÛÈ[™‹HHÛÛ\]HØ][ÙÈİ\š]™\ÈH”ÓÓˆ\]HÚ[HH˜Z[\ˆ\È›İˆ™\XÙY‚‚•H™X[Y[™Ú[™HÛİ\˜ÙK[İ][™HÛÛ˜XİY][Û˜[HÙ[XİÈÛİ\˜ÙHYÙ\È‹LÂ™œ›ÛHH™\İY[İ][™Hš^\™Kˆ][™\È^ÛYYÚ\\ˆX™]Z[œÂ˜Ú\\ˆ˜]İ]]YÙHH[™]È\[™^Ú[]İ]]YÙH‹ˆB™Ü›İ\YÛXŞHXÙ\È]™]Z[™YY\˜\˜ÚH™[İÈHš^\™H˜\ÙK[˜[YH[B˜]İ]]YÙHˆY\ˆH™XÙY[™ÈZ[ˆÛİ\˜ÙKˆQT‘ÑKLØİ^\È\X[Û›B˜™XØ]\ÙH›Û‹\YÙH\İ[˜][ÛœÈ[™İ][™H™\Ù[][Ûˆ]šX]\È™[XZ[ˆİ]Ù‚œØÛÜK‚‚ˆÈÈYØXŞH\İZYÜ˜][Û‚‚Ÿ\İ™X[H\İYØXŞH[[İ\œ™[\™Ù]\ÜÜÚ][ÛˆŸKKHKKHKKHKKHŸY\™ÙSÜ[ÛœÔ[™U\İš˜]˜XY˜[˜ÙYÜ[ÛˆY˜][È[™Ù[Xİ[Ûˆœ›İÜÙ\ˆY˜[˜ÙY\ÛXŞHL‘H\È]\™HÛXŞK\ÜXÚYšXÈÛÛ\Û™[\İÈ\X[ŸY\™ÙT\˜[Y]\œĞZ[\•\İš˜]˜XÛÛ™\˜[Y]YRHİ]HÈY\™ÙH\˜[Y]\œÈ\Y\ÚİÜËY\™ÙT™\]Y\İ˜[Y][Û‹Ü™\™Y™X[Y[™Ú[™HÛÛ˜XİÈ™\XÙYÈY˜[˜ÙYšY[È[™[™ÈŸY\™ÙTÙ[Xİ[Û”[™U\İš˜]˜XÛİ\˜ÙHÙ[Xİ[Û‹Ü™\š[™Ë\XØ][Ûˆ[™˜[Y][Ûˆœ›İÜÙ\ˆL‘KYÙK\Ù[Xİ[Ûˆ[š]\İË˜]]™HŞ\İ[KYX[ÙÈL‘H™\XÙY›Üˆİ\œ™[šY[ÈŸ\İŞXÛ\Ëš˜]˜XŞXÛKÜ™[Ü™\š[™È[\ˆ™Z]š[Üˆ[[]]X›HÛİ\˜ÙH™XİÜˆÜ™\š[™È[™\XØ]K\™\Ù\˜][Ûˆ\İÈ™\XÙY‚“›È›İÈ\ÈX\šÙY[HZYÜ˜]YY\™[H™XØ]\ÙH[ˆ[\[Y[][Û‹Y]Z[˜]˜B\İ™XØ[YHØœÛÛ]Kˆ™X]\™K[YÙ\ˆİ]\È™[XZ[œÈHÛÛ\][Ûˆ]]Üš]K‚
+­r‡^Ñf¥–Ø¦{]lyÊ'vÃ®¶›­# Merge feature and legacy-test traceability
+
+- Updated: 2026-08-03
+- Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
+- Current checkpoint: P4.7 filename footer overlay
+
+This ledger distinguishes a verified behavior from a complete Merge feature.
+Rows remain partial until every policy named by the phase-one specification has
+executable evidence.
+
+## Feature ledger
+
+| ID | Required behavior | Status | Current evidence | Remaining work |
+| --- | --- | --- | --- | --- |
+| MERGE-001 | Multiple inputs, ordering and duplicates | Verified | Rust planner/service tests; real QPDF/MuPDF ordered and duplicate-page contract | Add stress/performance thresholds during hardening |
+| MERGE-002 | Per-input page ranges | Verified | Parser properties plus real disjoint, reordered, bounded and open-ended-to-last-page selections | Add only stress/performance coverage during hardening |
+| MERGE-003 | Bookmark policies | Partial | All four typed policies are verified with QPDF JSON: discard, one entry, retained relevant hierarchy, and retained hierarchy under a document entry | Define/verify non-page destinations, actions, style, color and open-state fidelity |
+| MERGE-004 | AcroForm policies | Partial | Form-bearing input is rejected before output creation | Rename fields, merge, flatten and discard |
+| MERGE-005 | Table of contents | Planned | None | Filename and document-title modes |
+| MERGE-006 | Blank page after odd input | Verified | Real QPDF/MuPDF contract verifies per-source insertion, final-source insertion, source-matched MediaBox/CropBox/rotation, empty text extraction, inherited `/Pages` geometry and bookmark destination offset remapping; browser E2E verifies the control | Add only stress/performance coverage during hardening |
+| MERGE-007 | Filename footer | Partial | Real QPDF/MuPDF contract verifies a per-output-page source filename overlay, source geometry preservation and blank-page omission; browser E2E verifies the explicit control | Embedded Unicode font, non-ASCII filename fidelity, visual baseline and footer collision policy |
+| MERGE-008 | Page normalization | Partial | `None` preserves MediaBox, CropBox and rotation across mixed geometry | Same width and orientation-aware same width |
+| MERGE-009 | Single valid output | Verified baseline | QPDF structure/page count, MuPDF text/render, atomic output and system-dialog flow | Revalidate for every advanced-policy combination |
+
+The P4.3 geometry fixture contains portrait, landscape, cropped, offset and
+rotated pages plus source document metadata. The real-engine contract selects
+those pages out of order, appends an open-ended `2-` selection through the last
+page of another source, reads through a Unicode long source path and writes
+through a Unicode long output path. It verifies:
+
+- page-origin text order;
+- exact MediaBox and CropBox arrays;
+- 90Â° and 270Â° rotations;
+- a valid five-page output;
+- no implicit inheritance of one source document's Info dictionary.
+
+The last item records current safe baseline behavior, not the final
+table-of-contents or document-metadata product policy.
+
+## Filename footer policy
+
+The current P4.7 implementation generates a private one-page-per-output-page
+overlay after QPDF page assembly. Each overlay page copies the contributing
+source page's MediaBox, CropBox and rotation, and places the source filename
+near the lower-left media-box origin. Generated odd-page blanks deliberately
+receive no footer. The overlay is applied before any bookmark reconstruction,
+so output outline destinations continue to refer to the final page objects.
+
+The first contract slice uses a built-in Helvetica/WinAnsi resource and
+therefore preserves ASCII filenames only. Non-ASCII names are replaced with a
+visible fallback marker rather than being silently emitted as invalid PDF
+literal bytes. Unicode font embedding and collision-aware placement remain
+explicit follow-up work under MERGE-007.
+
+## Document-level bookmark policy
+
+ADR-021 defines document entries and ADR-022 defines source-outline retention. PincerPDF reconstructs a new
+outline tree only after QPDF has assembled the selected pages, using the actual
+output page object references rather than source references.
+
+Windows real-engine evidence proves:
+
+- source file base names become ordered top-level titles;
+- the first entry targets output page 1;
+- the second entry targets output page 2 when the first source contributes one
+  selected page;
+- duplicate source rows remain distinct entries;
+- the result passes QPDF structural validation; and
+- the complete catalog survives the JSON update while the trailer is not
+  replaced.
+
+The real-engine source-outline contract additionally selects source pages 2-3
+from a nested-outline fixture. It prunes excluded `Chapter 1`, retains
+`Chapter 2` at output page 1 and its `Appendix` child at output page 2. The
+grouped policy places that retained hierarchy below the fixture base-name entry
+at output page 2 after a preceding plain source. `MERGE-003` stays Partial only
+because non-page destinations and outline presentation attributes remain out of
+scope.
+
+## Legacy test migration
+
+| Upstream test | Legacy intent | Current target | Disposition |
+| --- | --- | --- | --- |
+| `MergeOptionsPaneTest.java` | Advanced option defaults and selection | Browser advanced-policy E2E plus future policy-specific component tests | Partial |
+| `MergeParametersBuilderTest.java` | Convert validated UI state to merge parameters | Typed desktop DTO, `MergeRequest` validation, ordered real-engine contracts | Replaced; advanced fields pending |
+| `MergeSelectionPaneTest.java` | Source selection, ordering, duplication and validation | Browser E2E, page-selection unit tests, native system-dialog E2E | Replaced for current fields |
+| `TestCycles.java` | Cycle/reordering helper behavior | Immutable source vector ordering and duplicate-preservation tests | Replaced |
+
+No row is marked fully migrated merely because an implementation-detail Java
+test became obsolete. Feature-ledger status remains the completion authority.

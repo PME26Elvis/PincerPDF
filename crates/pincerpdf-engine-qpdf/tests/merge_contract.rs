@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{^Ïy 'v√Æ∂õ≠#![forbid(unsafe_code)]
+≠rá^—f•ñÿ¶{]ly 'v√Æ∂õ≠#![forbid(unsafe_code)]
 //! Real QPDF/MuPDF contract tests for the first Merge-core checkpoint.
 
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
@@ -98,6 +98,7 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     let plain = fixtures.join("plain-three-pages.pdf");
     let bookmarks = fixtures.join("bookmarks.pdf");
     let form = fixtures.join("acroform.pdf");
+    let inherited_geometry = fixtures.join("geometry-inherited.pdf");
     let work = unique_directory();
     let retain_evidence = std::env::var_os("PINCERPDF_MERGE_EVIDENCE_DIR").is_some();
     if work.exists() {
@@ -252,6 +253,38 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
         String::from_utf8_lossy(&geometry_blank_text.stdout)
             .trim()
             .is_empty()
+    );
+
+    let inherited_blank_output = work.join("inherited-geometry-blanks.pdf");
+    let inherited_blank_request = MergeRequest::new(
+        [
+            MergeSource::new(&inherited_geometry)
+                .with_selection("1".parse().expect("valid inherited selection")),
+            MergeSource::new(&plain).with_selection("2".parse().expect("valid selection")),
+        ],
+        &inherited_blank_output,
+    )
+    .expect("valid inherited geometry request");
+    service
+        .execute(
+            &inherited_blank_request,
+            &MergeExecutionOptions {
+                add_blank_page_if_odd: true,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("inherited geometry blank insertion succeeds");
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/MediaBox"),
+        "[ 0 0 420 620 ]"
+    );
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/CropBox"),
+        "[ 20 30 400 580 ]"
+    );
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/Rotate"),
+        "180"
     );
 
     let bookmarked_blank_output = work.join("odd-page-bookmarks.pdf");

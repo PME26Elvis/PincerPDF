@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{^Ïy 'v√Æ∂õ≠# Project State
+≠rá^—f•ñÿ¶{]ly 'v√Æ∂õ≠# Project State
 
 - Updated: 2026-08-03
 - Phase: P4 ‚Äî Merge vertical slice (P4.7 filename footer overlay)
@@ -455,7 +455,8 @@ Local Windows evidence is green:
 
 - real QPDF/MuPDF contract: six-page output, blank page at output page 4,
   source-matched `[0 0 612 792]` MediaBox with 90-degree rotation, empty
-  MuPDF text extraction, and one-entry destinations at pages 1 and 5;
+  MuPDF text extraction, inherited `/Pages` geometry coverage, and one-entry
+  destinations at pages 1 and 5;
 - complete workspace Rust tests and compilation; and
 - 10/10 Chromium E2E scenarios, including the accessible control and its
   enabled state alongside bookmark policies.
