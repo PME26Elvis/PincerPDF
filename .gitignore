@@ -8,6 +8,7 @@
 /pnpm-lock.yaml
 /.pincer-local/
 /.artifacts/
+/apps/pincerpdf-ui/.artifacts/
 /test-results/
 /playwright-report/
 /screenshots-actual/

@@ -170,8 +170,11 @@ test("reports deterministic retained-bookmark policy states", async ({ page }) =
 
 test("reports the deterministic filename table-of-contents policy", async ({ page }) => {
   await page.getByTestId("add-merge-sources").click();
+  await expect(page.getByTestId("merge-source-row")).toHaveCount(2);
   await page.getByTestId("choose-merge-output").click();
+  await expect(page.getByTestId("merge-output-path")).toHaveText("merged-document.pdf");
   await page.getByTestId("merge-advanced-toggle").click();
+  await expect(page.getByTestId("merge-advanced-panel")).toBeVisible();
   await page.getByTestId("toc-policy-file-names").check();
   await page.getByTestId("run-merge").click();
 
