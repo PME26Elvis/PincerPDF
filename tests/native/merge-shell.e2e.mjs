@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{m¨y 'v√Æ∂õ≠import assert from "node:assert/strict";
+import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
