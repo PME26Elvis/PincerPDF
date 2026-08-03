@@ -1,7 +1,3 @@
-Exit code: 0
-Wall time: 0.8 seconds
-Total output lines: 3487
-Output:
 #![forbid(unsafe_code)]
 #![allow(clippy::module_name_repetitions)]
 //! Process-isolated QPDF adapter for proven `PincerPDF` capabilities.
