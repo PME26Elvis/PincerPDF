@@ -1,7 +1,10 @@
+Exit code: 0
+Wall time: 0.6 seconds
+Output:
 # Project State
 
 - Updated: 2026-08-03
-- Phase: P5 — Split family (P5.1 planner, materializer and desktop slice)
+- Phase: P5 — Split family (P5.2 metadata safety and parity hardening)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -32,9 +35,11 @@
 - CI-generated Cargo/npm locks and tracked application icon committed.
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 - P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
-- P5.1 split planner, QPDF materializer, trusted Tauri commands and deterministic browser workspace implemented locally; the portable/native evidence gate is still open.
+- P5.1 split planner, QPDF materializer, trusted Tauri commands and deterministic browser workspace implemented and evidence-verified.
 - P5.1 native command-boundary contract now covers three finalized outputs from registered path tokens and an explicit nested-bookmark depth request; Split desktop/compact screenshot checkpoints are wired into the browser acceptance suite.
 - P5.1 materialization now reconstructs surviving source outline hierarchy for every output part, remaps page destinations through the exact ordered page vector, prunes dangling leaves, and verifies the rebuilt outline with QPDF before atomic finalization.
+- P5.1 split evidence is green on the current PR head: native command-boundary outputs, nested bookmark depth, reconstructed outline destinations, Linux portable checks, and desktop/compact screenshot baselines all passed.
+- Split outline reconstruction now fails closed with `capability_unavailable` for named destinations, unresolved/action-backed entries, and ambiguous duplicate-page destination identity; Merge's documented first-occurrence duplicate policy is unchanged.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
@@ -526,23 +531,36 @@ same parent but uses a compact hidden name so QPDF can open it without changing
 the final output path. The Unicode/long-path geometry contract is green on the
 local Windows toolchain after this adjustment.
 
+## P5.1 latest split evidence
+
+The current P5.1 PR head passed the Linux quality run `126`, PDF engine
+capability probe run `85`, and Application shell run `103`. The native Split
+command-boundary contract passed with registered opaque path tokens, nested
+bookmark depth, page-count conservation, reconstructed surviving outlines and
+atomic output cleanup. The application-shell artifact is `8850378380` with
+digest `sha256:389e734c1c9c1a78e064a465bd428773f51086543e15d34ad7996972e8ebbdc2`.
+Its desktop and compact screenshot baselines were inspected after resetting
+the page scroll position before each full-page capture; no clipping, overlap or
+unexpected sidebar displacement was observed. No Python runtime was used in
+the local development or validation loop.
+
 ## Exact next actions
 
-1. Run the updated application-shell and native command contracts for the Split
-   workspace, then capture desktop/compact screenshot evidence.
-2. Retain Linux Actions evidence for the split command boundary and its
-   page-conservation/atomic-output contract, including nested bookmark depth
-   and reconstructed output outlines.
-3. Add dedicated policy fixtures for named destinations, actions, outline
-   presentation attributes, and duplicate-page destination identity.
-4. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
+1. Add dedicated real-engine fixtures for named destinations, action-backed
+   outlines, and outline presentation attributes so safe preservation policies
+   can replace the current fail-closed gates.
+2. Extend Split contract evidence for Unicode outline titles and duplicate-page
+   identity once the fixture policy is defined.
+3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 
 ## Completion status
 
 P0 through P3, P4.1 Merge core and P4.2 Merge desktop acceptance are complete.
-P4 remains in progress at the parity-corpus checkpoint and P5.1 is now in
-progress at the engine-independent planner boundary. Portable/native-command
-tests, browser E2E, Windows visual checkpoints, production-protocol WebView2
-E2E, Linux milestone evidence, atomic-replacement recovery and real
-system-dialog automation are green.
+P4 remains in progress at the parity-corpus checkpoint. P5.1 split planner,
+materializer and desktop evidence are complete; P5.2 is in progress on
+metadata-safety and parity fixtures. Portable/native-command tests, browser
+E2E, Windows visual checkpoints, production-protocol WebView2 E2E, Linux
+milestone evidence, atomic-replacement recovery and real system-dialog
+automation are green.
+
