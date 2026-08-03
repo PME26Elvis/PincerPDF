@@ -88,6 +88,8 @@ pub struct EngineIdentity {
 pub struct PdfMetadata {
     /// Number of pages reported by the engine.
     pub page_count: u32,
+    /// Optional document title from the source information dictionary.
+    pub document_title: Option<String>,
     /// Whether the source is encrypted.
     pub encrypted: bool,
     /// Declared PDF version, if available.

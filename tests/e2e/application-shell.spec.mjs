@@ -181,6 +181,18 @@ test("reports the deterministic filename table-of-contents policy", async ({ pag
   await expect(page.getByTestId("merge-result-summary")).toContainText("10 pages");
 });
 
+test("reports the deterministic document-title table-of-contents policy", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await expect(page.getByTestId("merge-source-row")).toHaveCount(2);
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await expect(page.getByTestId("merge-advanced-panel")).toBeVisible();
+  await page.getByTestId("toc-policy-document-titles").check();
+  await page.getByTestId("run-merge").click();
+
+  await expect(page.getByTestId("merge-result-summary")).toContainText("10 pages");
+});
+
 test("supports a manual reduced-motion override", async ({ page }) => {
   const shell = page.getByTestId("app-shell");
   const toggle = page.getByTestId("motion-toggle");

@@ -95,6 +95,8 @@ pub enum MergeTocPolicy {
     None,
     /// List source filenames and their first output pages.
     FileNames,
+    /// List source metadata titles and their first output pages.
+    DocumentTitles,
 }
 
 /// Complete Merge intent crossing the IPC boundary.

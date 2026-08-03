@@ -56,6 +56,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-022-source-outline-reconstruction.md",
     "docs/architecture/adr/ADR-023-filename-footer-overlay.md",
     "docs/architecture/adr/ADR-024-filename-table-of-contents.md",
+    "docs/architecture/adr/ADR-025-document-title-table-of-contents.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -312,6 +313,8 @@ def verify_merge_core_contract() -> None:
         "write_toc_pdf",
         "toc_entries",
         "MergeTocPolicy",
+        "DocumentTitles",
+        "qdf_document_title",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -429,6 +432,7 @@ def verify_merge_desktop_contract() -> None:
         "Entry::Occupied",
         "native_command_boundary_merges_only_registered_paths",
         "MergeTocPolicy::FileNames",
+        "MergeTocPolicy::DocumentTitles",
     ):
         if token not in commands:
             fail(f"P4.2 trusted desktop command contract missing: {token}")
@@ -457,8 +461,10 @@ def verify_merge_desktop_contract() -> None:
         'data-testid="bookmark-policy-retain-as-one-entry"',
         'data-testid="toc-policy-none"',
         'data-testid="toc-policy-file-names"',
+        'data-testid="toc-policy-document-titles"',
         "One entry per document",
         "List source filenames",
+        "List document titles",
         "Retain relevant source hierarchy",
         "Reject before processing",
     ):
@@ -475,6 +481,7 @@ def verify_merge_desktop_contract() -> None:
         "advanced safety policies",
         "one-entry-per-document bookmark policy",
         "filename table-of-contents policy",
+        "document-title table-of-contents policy",
         "retained-bookmark policy states",
         "merge-bookmark-policy-desktop.png",
         "merge-retained-bookmark-policy-desktop.png",

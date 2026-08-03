@@ -313,6 +313,7 @@ fn execute_merge(
         toc_policy: match request.toc_policy {
             MergeTocPolicy::None => EngineTocPolicy::None,
             MergeTocPolicy::FileNames => EngineTocPolicy::FileNames,
+            MergeTocPolicy::DocumentTitles => EngineTocPolicy::DocumentTitles,
         },
         control: ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation),
     };

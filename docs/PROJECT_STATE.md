@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-08-03
-- Phase: P4 — Merge vertical slice (P4.8 filename table of contents)
+- Phase: P4 — Merge vertical slice (P4.8 table of contents modes)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -490,25 +490,29 @@ uses Helvetica/WinAnsi and replaces non-ASCII filename characters with a
 visible fallback marker. Unicode font embedding, collision-aware placement and
 visual golden evidence remain required before MERGE-007 is Verified.
 
-## P4.8 filename table-of-contents evidence
+## P4.8 table-of-contents evidence
 
-The Merge request, desktop DTO, Leptos workspace and QPDF adapter now carry a
-`MergeTocPolicy::FileNames` option. It prepends a generated one-or-more-page
-contents document, lists each source filename with its first output page, and
-shifts document-level bookmark destinations after the inserted pages. The
-contents pages use fixed A4 geometry and the same bounded, process-isolated QPDF
-assembly boundary as the rest of Merge.
+The Merge request, desktop DTO, Leptos workspace and QPDF adapter now carry
+explicit `MergeTocPolicy::FileNames` and `MergeTocPolicy::DocumentTitles`
+options. Both prepend a generated one-or-more-page contents document and shift
+document-level bookmark destinations after the inserted pages. Document-title
+mode reads a non-empty PDF information-dictionary `/Title`, with a deterministic
+filename fallback. Contents pages use fixed A4 geometry and the same bounded,
+process-isolated QPDF assembly boundary as the rest of Merge.
 
 Local Windows evidence is green:
 
-- real QPDF/MuPDF contract: a seven-page output with a valid contents page,
-  both source filenames, page numbers 2 and 5, and matching bookmark targets;
+- real QPDF/MuPDF contract: seven-page filename and document-title outputs with
+  valid contents pages, source labels, page numbers and matching bookmark
+  targets; document-title mode verifies a metadata title and a filename
+  fallback;
 - warning-denied focused Rust checks; and
 - browser advanced-policy E2E coverage for the explicit filename contents
   control and its state retention.
 
-This remains Partial: document-title mode, Unicode font embedding and a visual
-golden baseline are still required before MERGE-005 becomes Verified.
+This remains Partial: Unicode font embedding and a visual golden baseline are
+still required before MERGE-005 becomes Verified. ADR-025 records the measured
+metadata-title decoding and fallback policy.
 
 Windows path-length hardening is included in this slice: when a requested
 destination is close to `MAX_PATH`, the atomic temporary sibling keeps the
@@ -521,7 +525,7 @@ local Windows toolchain after this adjustment.
 1. Retain Linux compatibility evidence and integrate the validated P4.8 source
    head through the connector workflow.
 2. Add broader inherited MediaBox/CropBox geometry corpus coverage and a
-   Unicode-font footer slice.
+   Unicode-font footer/contents slice.
 3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy
    gaps while all other seven tools remain visibly gated.
 

@@ -197,6 +197,30 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     assert_eq!(toc_outlines["outlines"][0]["destpageposfrom1"], 2);
     assert_eq!(toc_outlines["outlines"][1]["destpageposfrom1"], 5);
 
+    let title_toc_output = work.join("document-title-table-of-contents.pdf");
+    let title_toc_request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("geometry-metadata.pdf")),
+            MergeSource::new(&plain),
+        ],
+        &title_toc_output,
+    )
+    .expect("valid document-title table-of-contents request");
+    let title_toc_report = service
+        .execute(
+            &title_toc_request,
+            &MergeExecutionOptions {
+                toc_policy: MergeTocPolicy::DocumentTitles,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("document-title table of contents merge succeeds");
+    assert_eq!(title_toc_report.page_count, 7);
+    qpdf_check(&title_toc_output);
+    let title_toc_text = mutool_text(&title_toc_output);
+    assert!(title_toc_text.contains("Geometry metadata source"));
+    assert!(title_toc_text.contains("PincerPDF fixture"));
+
     let blank_output = work.join("odd-page-blanks.pdf");
     let blank_request = MergeRequest::new(
         [
