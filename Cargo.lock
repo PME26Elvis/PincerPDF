@@ -2705,6 +2705,7 @@ dependencies = [
  "pincerpdf-engine-qpdf",
  "pincerpdf-filesystem",
  "pincerpdf-merge",
+ "pincerpdf-split",
  "serde",
  "tauri",
  "tauri-build",

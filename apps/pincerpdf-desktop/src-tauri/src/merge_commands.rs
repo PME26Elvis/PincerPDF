@@ -32,7 +32,7 @@ pub struct DesktopState {
 }
 
 impl DesktopState {
-    fn register_path(&self, path: PathBuf) -> Result<String, CommandError> {
+    pub(crate) fn register_path(&self, path: PathBuf) -> Result<String, CommandError> {
         let token = format!(
             "path-{}",
             self.next_path_token.fetch_add(1, Ordering::Relaxed) + 1
@@ -41,14 +41,14 @@ impl DesktopState {
         Ok(token)
     }
 
-    fn resolve_path(&self, token: &str) -> Result<PathBuf, CommandError> {
+    pub(crate) fn resolve_path(&self, token: &str) -> Result<PathBuf, CommandError> {
         self.paths()?
             .get(token)
             .cloned()
             .ok_or_else(|| CommandError::new("invalid_path_token", "The selected file expired."))
     }
 
-    fn begin_task(
+    pub(crate) fn begin_task(
         &self,
         operation_id: &str,
         cancellation: CancellationToken,
@@ -61,7 +61,7 @@ impl DesktopState {
         {
             return Err(CommandError::new(
                 "invalid_operation_id",
-                "The Merge operation identifier is invalid.",
+                "The operation identifier is invalid.",
             ));
         }
         let mut tasks = self.tasks()?;
@@ -72,18 +72,18 @@ impl DesktopState {
             }
             Entry::Occupied(_) => Err(CommandError::new(
                 "operation_conflict",
-                "A Merge operation with this identifier is already running.",
+                "An operation with this identifier is already running.",
             )),
         }
     }
 
-    fn finish_task(&self, operation_id: &str) {
+    pub(crate) fn finish_task(&self, operation_id: &str) {
         if let Ok(mut tasks) = self.tasks() {
             tasks.remove(operation_id);
         }
     }
 
-    fn cancel_task(&self, operation_id: &str) -> Result<bool, CommandError> {
+    pub(crate) fn cancel_task(&self, operation_id: &str) -> Result<bool, CommandError> {
         let tasks = self.tasks()?;
         let Some(token) = tasks.get(operation_id) else {
             return Ok(false);

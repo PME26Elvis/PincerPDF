@@ -79,6 +79,38 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.match(engineStatus, /11\.3\.0/);
   });
 
+  it("exposes the Split command boundary without accepting unregistered paths", async () => {
+    const result = await browser.executeAsync((done) => {
+      window.__TAURI__.core
+        .invoke("run_split", {
+          request: {
+            operationId: "native-split-contract",
+            sourceToken: "not-registered",
+            outputDirectoryToken: "not-registered",
+            rule: "everyPage",
+            fixedPageCount: null,
+            pageRanges: null,
+            maxOutputBytes: null,
+          },
+        })
+        .then((value) => done({ ok: true, value }))
+        .catch((error) => done({ ok: false, error }));
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(JSON.stringify(result.error), /invalid_path_token/);
+    await browser.execute(() =>
+      document
+        .querySelector('[data-testid="tool-nav-split"]')
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+    );
+    await browser.pause(250);
+    const splitWorkspace = await browser.execute(
+      () => document.querySelector('[data-testid="split-workspace"]') !== null,
+    );
+    assert.equal(splitWorkspace, true);
+  });
+
   it("keeps seven tool gates independent from available Merge", async () => {
     const navigation = await browser.executeAsync((done) => {
       const buttons = [

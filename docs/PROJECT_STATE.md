@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-08-03
-- Phase: P5 — Split family (P5.1 engine-independent planner)
+- Phase: P5 — Split family (P5.1 planner, materializer and desktop slice)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -32,6 +32,7 @@
 - CI-generated Cargo/npm locks and tracked application icon committed.
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 - P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
+- P5.1 split planner, QPDF materializer, trusted Tauri commands and deterministic browser workspace implemented locally; the portable/native evidence gate is still open.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
@@ -525,12 +526,14 @@ local Windows toolchain after this adjustment.
 
 ## Exact next actions
 
-1. Retain Linux Actions evidence for the new split materializer and its
+1. Run the updated application-shell and native command contracts for the Split
+   workspace, then capture desktop/compact screenshot evidence.
+2. Retain Linux Actions evidence for the split command boundary and its
    page-conservation/atomic-output contract.
-2. Extend the QPDF bookmark-boundary contract beyond the verified top-level
+3. Extend the QPDF bookmark-boundary contract beyond the verified top-level
    page-target policy; the first conservative split-by-size estimator and
    materialization bound are now locally verified.
-3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
+4. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 
 ## Completion status

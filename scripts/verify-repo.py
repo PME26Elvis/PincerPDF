@@ -29,9 +29,11 @@ REQUIRED_FILES = (
     ".github/workflows/merge-core.yml",
     "apps/pincerpdf-ui/index.html",
     "apps/pincerpdf-ui/src/merge_workspace.rs",
+    "apps/pincerpdf-ui/src/split_workspace.rs",
     "apps/pincerpdf-ui/src/native_bridge.rs",
     "apps/pincerpdf-ui/styles.css",
     "apps/pincerpdf-desktop/src-tauri/src/merge_commands.rs",
+    "apps/pincerpdf-desktop/src-tauri/src/split_commands.rs",
     "apps/pincerpdf-desktop/src-tauri/tauri.conf.json",
     "apps/pincerpdf-desktop/src-tauri/capabilities/default.json",
     "apps/pincerpdf-desktop/src-tauri/icons/icon.ico",
@@ -247,12 +249,12 @@ def verify_shell_contract() -> None:
         fail("both system and manual reduced-motion policies are required")
     if "Skip to main content" not in source or 'id="main-content"' not in source:
         fail("skip-link accessibility contract is incomplete")
-    if 'Array(7).fill("Not implemented")' not in tests:
-        fail("E2E must keep all seven post-Merge tools explicitly gated")
+    if 'Array(6).fill("Not implemented")' not in tests:
+        fail("E2E must keep all six post-Split tools explicitly gated")
     if 'data-wasm-opt="0"' not in index:
         fail("P3 must disable the measured-incompatible Trunk wasm-opt post-link pass")
-    if '"1 available · 7 planned"' not in source or '"Available"' not in source:
-        fail("P4.2 Merge availability and remaining independent gates are not visible")
+    if '"2 available · 6 planned"' not in source or '"Available"' not in source:
+        fail("P5 Split availability and remaining independent gates are not visible")
 
     windows = config.get("app", {}).get("windows", [])
     if len(windows) != 1 or windows[0].get("label") != "main":
@@ -474,7 +476,13 @@ def verify_merge_desktop_contract() -> None:
     commands = (
         ROOT / "apps/pincerpdf-desktop/src-tauri/src/merge_commands.rs"
     ).read_text(encoding="utf-8")
+    split_commands = (ROOT / "apps/pincerpdf-desktop/src-tauri/src/split_commands.rs").read_text(
+        encoding="utf-8"
+    )
     host = (ROOT / "apps/pincerpdf-desktop/src-tauri/src/main.rs").read_text(
+        encoding="utf-8"
+    )
+    split_ui = (ROOT / "apps/pincerpdf-ui/src/split_workspace.rs").read_text(
         encoding="utf-8"
     )
     ui = (ROOT / "apps/pincerpdf-ui/src/merge_workspace.rs").read_text(
@@ -521,12 +529,28 @@ def verify_merge_desktop_contract() -> None:
             fail(f"P4.2 trusted desktop command contract missing: {token}")
 
     for token in (
+        "pub async fn pick_split_source",
+        "pub async fn pick_split_destination",
+        "pub async fn run_split",
+        "pub fn cancel_split",
+        "inspect_bookmark_boundaries",
+        "estimate_page_sizes",
+        "plan_split",
+    ):
+        if token not in split_commands:
+            fail(f"P5 Split trusted desktop command contract missing: {token}")
+
+    for token in (
         "tauri_plugin_dialog::init()",
         "merge_engine_status",
         "pick_merge_sources",
         "pick_merge_destination",
         "run_merge",
         "cancel_merge",
+        "pick_split_source",
+        "pick_split_destination",
+        "run_split",
+        "cancel_split",
     ):
         if token not in host:
             fail(f"P4.2 Tauri composition missing: {token}")
@@ -554,11 +578,22 @@ def verify_merge_desktop_contract() -> None:
         if token not in ui:
             fail(f"P4.2 Merge UI contract missing: {token}")
 
+    for token in (
+        'data-testid="split-workspace"',
+        'data-testid="choose-split-source"',
+        'data-testid="split-rule-bookmarks"',
+        'data-testid="split-rule-size"',
+        'data-testid="run-split"',
+        "complete_browser_split_after_delay",
+    ):
+        if token not in split_ui:
+            fail(f"P5 Split UI contract missing: {token}")
+
     if '__TAURI__", "core"' not in bridge or "serde_json" not in bridge:
         fail("P4.2 Rust/WASM bridge is not wired to typed Tauri command messages")
 
     for token in (
-        "one available Merge tool",
+        "Merge and Split",
         "ordered Merge plan",
         "running and completed Merge states",
         "advanced safety policies",
@@ -569,6 +604,7 @@ def verify_merge_desktop_contract() -> None:
         "merge-bookmark-policy-desktop.png",
         "merge-retained-bookmark-policy-desktop.png",
         "merge-completed-compact.png",
+        "deterministic Split workspace",
     ):
         if token not in tests:
             fail(f"P4.2 E2E acceptance contract missing: {token}")
@@ -626,6 +662,7 @@ def verify_native_webview_contract() -> None:
         "window.__TAURI__.core",
         '"merge_engine_status"',
         '"cancel_merge"',
+        '"run_split"',
         '"bookmark-policy-one-entry"',
         '"bookmark-policy-retain"',
         '"bookmark-policy-retain-as-one-entry"',

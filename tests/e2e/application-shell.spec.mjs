@@ -13,18 +13,38 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId("merge-workspace")).toBeVisible();
 });
 
-test("exposes one available Merge tool and keeps seven independent gates", async ({ page }) => {
+test("exposes Merge and Split while keeping six independent gates", async ({ page }) => {
   const tools = page.locator('[data-testid^="tool-nav-"]');
   await expect(tools).toHaveCount(8);
-  await expect(page.locator(".tool-state.is-ready")).toHaveText("Available");
-  await expect(page.locator(".tool-state:not(.is-ready)")).toHaveCount(7);
+  await expect(page.locator(".tool-state.is-ready")).toHaveCount(2);
+  await expect(page.locator(".tool-state.is-ready")).toHaveText(["Available", "Available"]);
+  await expect(page.locator(".tool-state:not(.is-ready)")).toHaveCount(6);
   await expect(page.locator(".tool-state:not(.is-ready)")).toHaveText(
-    Array(7).fill("Not implemented"),
+    Array(6).fill("Not implemented"),
   );
   await expect(page.getByTestId("add-merge-sources")).toBeEnabled();
   await expect(page.getByTestId("merge-engine-status")).toContainText(
     "Browser verification mode",
   );
+});
+
+test("runs the deterministic Split workspace across its core rule controls", async ({ page }) => {
+  await page.getByTestId("tool-nav-split").click();
+  await expect(page.getByTestId("split-workspace")).toBeVisible();
+  await page.getByTestId("choose-split-source").click();
+  await page.getByTestId("choose-split-output").click();
+  await expect(page.getByTestId("run-split")).toBeEnabled();
+
+  await page.getByTestId("split-rule-fixed").check();
+  await page.getByTestId("split-fixed-count").fill("2");
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-task-status")).toContainText("Verifying and splitting");
+  await expect(page.getByTestId("split-result-summary")).toContainText("6 pages");
+  await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
+
+  await page.getByTestId("split-rule-bookmarks").check();
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("2 parts");
 });
 
 test("changes to a gated workspace without implying parity", async ({ page }) => {

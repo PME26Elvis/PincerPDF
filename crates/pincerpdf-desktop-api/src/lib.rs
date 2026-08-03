@@ -59,6 +59,89 @@ pub struct PickedMergeDestination {
     pub display_path: String,
 }
 
+/// One source returned by the trusted native Split file picker.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PickedSplitSource {
+    /// Opaque session token resolved only by the native host.
+    pub path_token: String,
+    /// User-facing file name.
+    pub file_name: String,
+    /// User-facing path that must never be treated as authority.
+    pub display_path: String,
+    /// Page count when inspection succeeded without a password.
+    pub page_count: Option<u32>,
+    /// Whether the source has a usable top-level bookmark outline.
+    pub has_bookmarks: bool,
+    /// Safe per-source problem when the file cannot be accepted immediately.
+    pub issue: Option<CommandError>,
+}
+
+/// Destination directory returned by the trusted native Split picker.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PickedSplitDestination {
+    /// Opaque session token resolved only by the native host.
+    pub path_token: String,
+    /// User-facing directory path.
+    pub display_path: String,
+}
+
+/// Split rule selected by the UI or internal desktop adapter.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum SplitRuleKind {
+    /// Emit one output for every source page.
+    #[default]
+    EveryPage,
+    /// Emit consecutive outputs containing at most a fixed number of pages.
+    FixedPageCount,
+    /// Split using explicit semicolon-separated page ranges.
+    Ranges,
+    /// Split using validated top-level bookmark boundaries.
+    Bookmarks,
+    /// Split using conservative serialized-size estimates.
+    BySize,
+}
+
+/// Complete Split intent crossing the IPC boundary.
+#[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitRunRequest {
+    /// Client-generated operation identifier used for cancellation.
+    pub operation_id: String,
+    /// Opaque source token issued by the current native session.
+    pub source_token: String,
+    /// Opaque output-directory token issued by the current native session.
+    pub output_directory_token: String,
+    /// Selected high-level split rule.
+    pub rule: SplitRuleKind,
+    /// Required for `fixedPageCount`.
+    pub fixed_page_count: Option<u32>,
+    /// Required for `ranges`, using the planner's semicolon-separated syntax.
+    pub page_ranges: Option<String>,
+    /// Optional positive byte limit for `bySize`.
+    pub max_output_bytes: Option<u64>,
+}
+
+/// Verified result returned after all Split outputs are atomically finalized.
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SplitRunResult {
+    /// User-facing finalized output paths in plan order.
+    pub outputs: Vec<String>,
+    /// Number of finalized output parts.
+    pub part_count: usize,
+    /// Number of source pages inspected for the operation.
+    pub page_count: u32,
+    /// Configured size limit when the by-size rule was used.
+    pub size_limit_bytes: Option<u64>,
+    /// Concrete adapter identifier.
+    pub engine_id: String,
+    /// Human-readable adapter version.
+    pub engine_version: String,
+}
+
 /// One ordered Merge input crossing the IPC boundary.
 #[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -181,6 +264,8 @@ mod tests {
         fn assert_serializable<T: Serialize>() {}
         assert_serializable::<MergeInputRequest>();
         assert_serializable::<MergeRunRequest>();
+        assert_serializable::<SplitRunRequest>();
+        assert_serializable::<SplitRunResult>();
     }
 
     #[test]

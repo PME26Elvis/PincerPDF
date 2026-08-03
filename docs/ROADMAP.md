@@ -7,7 +7,7 @@
 | P2 | PDF engine capability spike | Complete | Engine responsibility split supported by executable structural/render evidence and ADR-013. |
 | P3 | Application shell and design system | Complete | Tauri/Leptos shell, accessibility basics, five browser E2E checks, and desktop/compact visual checkpoints pass. |
 | P4 | Merge vertical slice | In progress | Merge parity and assigned legacy-test rows have passing evidence. |
-| P5 | Split family | In progress | Engine-independent split planner is deterministic; QPDF output adapter and corpus gates remain. |
+| P5 | Split family | In progress | Planner, QPDF materializer, trusted desktop commands and deterministic browser workspace are implemented; real desktop/corpus gates remain. |
 | P6 | Remaining PDF tools | Planned | All eight PDF tools reach verified functional parity. |
 | P7 | Desktop completeness | Planned | Non-tool original features are implemented or explicitly replaced. |
 | P8 | Hardening | Planned | Reliability, security, accessibility, performance and corpus gates meet RC thresholds. |
@@ -28,4 +28,4 @@
 
 ## Current P5 checkpoints
 
-- **P5.1 — Split planner/materializer: In progress.** `pincerpdf-split` plans every-page, fixed-count, explicit range, validated bookmark-boundary and conservative size-bounded outputs without engine or filesystem side effects. The QPDF adapter materializes each part with page-count conservation, size-limit verification, hidden sibling outputs and atomic finalization; the real contract is green locally and Linux Actions evidence is green. QPDF top-level outline extraction now feeds the bookmark planner; nested-outline policy, destination remapping and split UI remain gated.
+- **P5.1 — Split planner/materializer: In progress.** `pincerpdf-split` plans every-page, fixed-count, explicit range, validated bookmark-boundary and conservative size-bounded outputs without engine or filesystem side effects. The QPDF adapter materializes each part with page-count conservation, size-limit verification, hidden sibling outputs and atomic finalization; the real contract is green locally and Linux Actions evidence is green. QPDF top-level outline extraction now feeds the bookmark planner. The trusted Tauri Split command boundary and deterministic Leptos workspace now cover source/output selection, every-page/fixed/range/bookmark/size rule DTOs, cancellation and result states; native desktop and screenshot evidence remain the exit gate.
