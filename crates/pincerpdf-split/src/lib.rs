@@ -17,6 +17,17 @@ pub enum SplitRule {
     FixedPageCount(NonZeroU32),
     /// Emit the explicitly selected ranges as separate outputs.
     Ranges(Vec<PageSelection>),
+    /// Start a new output at each ordered top-level bookmark boundary.
+    Bookmarks(Vec<BookmarkBoundary>),
+}
+
+/// A validated bookmark boundary supplied by an engine adapter.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct BookmarkBoundary {
+    /// User-visible bookmark title retained for downstream UI and naming.
+    pub title: String,
+    /// One-based source page at which this output starts.
+    pub page: PageNumber,
 }
 
 impl FromStr for SplitRule {
@@ -70,6 +81,8 @@ pub struct SplitPart {
     pub ordinal: u32,
     /// Exact source page order for this output.
     pub pages: Vec<PageNumber>,
+    /// Optional bookmark title that introduced this output.
+    pub label: Option<String>,
     /// Stable filename stem before the `.pdf` extension.
     pub filename_stem: String,
 }
@@ -95,6 +108,20 @@ pub enum SplitPlanError {
     },
     /// A range referenced a page beyond the source.
     Selection(ResolveSelectionError),
+    /// No bookmark boundaries were supplied.
+    NoBookmarks,
+    /// A bookmark boundary referenced a page beyond the source.
+    BookmarkOutOfBounds {
+        /// Zero-based boundary index.
+        ordinal: usize,
+        /// Referenced page outside the inspected document.
+        page: PageNumber,
+    },
+    /// Bookmark boundaries must be strictly ascending.
+    BookmarkOrder {
+        /// Zero-based boundary index that violated ascending order.
+        ordinal: usize,
+    },
     /// An output ordinal overflowed the supported one-based range.
     TooManyParts,
 }
@@ -107,6 +134,21 @@ impl fmt::Display for SplitPlanError {
                 write!(formatter, "split range {ordinal} selected no pages")
             }
             Self::Selection(error) => error.fmt(formatter),
+            Self::NoBookmarks => {
+                formatter.write_str("bookmark split requires at least one boundary")
+            }
+            Self::BookmarkOutOfBounds { ordinal, page } => {
+                write!(
+                    formatter,
+                    "bookmark boundary {ordinal} references page {page} outside the document"
+                )
+            }
+            Self::BookmarkOrder { ordinal } => {
+                write!(
+                    formatter,
+                    "bookmark boundary {ordinal} is not strictly after the previous boundary"
+                )
+            }
             Self::TooManyParts => {
                 formatter.write_str("split output count exceeded the supported range")
             }
@@ -140,6 +182,7 @@ pub fn plan_split(
     let page_groups = match rule {
         SplitRule::EveryPage => (1..=total_pages)
             .map(|page| numbered_range(page, page))
+            .map(|pages| pages.map(|pages| (pages, None)))
             .collect::<Result<Vec<_>, _>>()?,
         SplitRule::FixedPageCount(count) => {
             let count = count.get();
@@ -150,7 +193,7 @@ pub fn plan_split(
                         .saturating_add(count)
                         .saturating_sub(1)
                         .min(total_pages);
-                    numbered_range(start, end)
+                    numbered_range(start, end).map(|pages| (pages, None))
                 })
                 .collect::<Result<Vec<_>, _>>()?
         }
@@ -162,19 +205,47 @@ pub fn plan_split(
                 if pages.is_empty() {
                     return Err(SplitPlanError::EmptyRange { ordinal });
                 }
-                Ok(pages)
+                Ok((pages, None))
             })
             .collect::<Result<Vec<_>, SplitPlanError>>()?,
+        SplitRule::Bookmarks(boundaries) => {
+            if boundaries.is_empty() {
+                return Err(SplitPlanError::NoBookmarks);
+            }
+            for (ordinal, boundary) in boundaries.iter().enumerate() {
+                if boundary.page.get() > total_pages {
+                    return Err(SplitPlanError::BookmarkOutOfBounds {
+                        ordinal,
+                        page: boundary.page,
+                    });
+                }
+                if ordinal > 0 && boundary.page <= boundaries[ordinal - 1].page {
+                    return Err(SplitPlanError::BookmarkOrder { ordinal });
+                }
+            }
+            boundaries
+                .iter()
+                .enumerate()
+                .map(|(ordinal, boundary)| {
+                    let end = boundaries
+                        .get(ordinal + 1)
+                        .map_or(total_pages, |next| next.page.get().saturating_sub(1));
+                    numbered_range(boundary.page.get(), end)
+                        .map(|pages| (pages, Some(boundary.title.clone())))
+                })
+                .collect::<Result<Vec<_>, _>>()?
+        }
     };
     let stem = source_stem(&source);
     let parts = page_groups
         .into_iter()
         .enumerate()
-        .map(|(index, pages)| {
+        .map(|(index, (pages, label))| {
             let ordinal = u32::try_from(index + 1).map_err(|_| SplitPlanError::TooManyParts)?;
             Ok(SplitPart {
                 ordinal,
                 pages,
+                label,
                 filename_stem: format!("{stem}-{ordinal:03}"),
             })
         })
@@ -283,6 +354,48 @@ mod tests {
         assert!(matches!(
             plan_split("report.pdf", 4, &SplitRule::Ranges(ranges)),
             Err(SplitPlanError::Selection(_))
+        ));
+    }
+
+    #[test]
+    fn bookmark_boundaries_partition_to_document_end_and_retain_labels() {
+        let boundaries = vec![
+            BookmarkBoundary {
+                title: "Intro".to_owned(),
+                page: PageNumber::new(1).expect("page"),
+            },
+            BookmarkBoundary {
+                title: "Chapter 2".to_owned(),
+                page: PageNumber::new(3).expect("page"),
+            },
+        ];
+        let plan = plan_split("book.pdf", 4, &SplitRule::Bookmarks(boundaries))
+            .expect("valid bookmark plan");
+        assert_eq!(
+            plan.parts
+                .iter()
+                .map(|part| part.pages.iter().map(|page| page.get()).collect::<Vec<_>>())
+                .collect::<Vec<_>>(),
+            vec![vec![1, 2], vec![3, 4]]
+        );
+        assert_eq!(plan.parts[1].label.as_deref(), Some("Chapter 2"));
+    }
+
+    #[test]
+    fn bookmark_boundaries_must_be_strictly_ascending() {
+        let boundaries = vec![
+            BookmarkBoundary {
+                title: "A".to_owned(),
+                page: PageNumber::new(2).expect("page"),
+            },
+            BookmarkBoundary {
+                title: "B".to_owned(),
+                page: PageNumber::new(2).expect("page"),
+            },
+        ];
+        assert!(matches!(
+            plan_split("book.pdf", 3, &SplitRule::Bookmarks(boundaries)),
+            Err(SplitPlanError::BookmarkOrder { ordinal: 1 })
         ));
     }
 

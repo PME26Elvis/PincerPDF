@@ -420,6 +420,8 @@ def verify_split_planner_contract() -> None:
         "EveryPage",
         "FixedPageCount",
         "Ranges(Vec<PageSelection>)",
+        "Bookmarks(Vec<BookmarkBoundary>)",
+        "pub struct BookmarkBoundary",
         "pub struct SplitPlan",
         "pub fn plan_split",
         "numbered_range",
