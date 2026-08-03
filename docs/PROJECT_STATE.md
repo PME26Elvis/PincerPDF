@@ -178,6 +178,13 @@ encrypted text_sha256=a031c751b8eebb99dd75f2060e53a72ddf3854c7d034792f851d4fa81e
 
 The evidence summarizer now writes canonical LF UTF-8 bytes so host newline policy cannot create false semantic differences. Windows validation also exposed and fixed platform assumptions around Unix-only temporary-directory modes, cancellation-test signals, durable file handles and directory syncing. The development bootstrap loads Visual Studio before prepending the pinned D-drive tools, preventing compiler setup from silently hiding QPDF, MuPDF, Cargo or Trunk.
 
+The bootstrap now probes the D-drive target/temp directories before use and falls
+back to the repository `target-local`/`tmp` pair when Windows denies those
+directories. This keeps local Trunk, Cargo and Playwright runs reproducible even
+when the configured secondary-drive folders are read-only. The filename
+table-of-contents browser scenario passed 1/1 against the locally generated
+Leptos bundle served from the deterministic static test server.
+
 Linux remains the compatibility oracle for process/filesystem boundaries, WebKitGTK rendering, milestone integration and release evidence. MuPDF is `1.21.0` locally because the official `1.21.1` Windows release was source-only; Linux evidence remains pinned to `1.21.1`.
 
 ## P4.2 Merge-desktop evidence
