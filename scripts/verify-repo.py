@@ -465,7 +465,7 @@ def verify_split_planner_contract() -> None:
             fail(f"P5.1 real-engine split contract is missing: {token}")
     for token in (
         "parse_source_bookmarks_rejecting_ambiguous_duplicates",
-        "capability_unavailable",
+        "ErrorCode::CapabilityUnavailable",
         "destination identity is ambiguous",
     ):
         if token not in qpdf_source:
