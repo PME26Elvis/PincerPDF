@@ -522,7 +522,6 @@ def verify_merge_desktop_contract() -> None:
         "spawn_blocking",
         "Entry::Occupied",
         "native_command_boundary_merges_only_registered_paths",
-        "native_command_boundary_splits_only_registered_paths",
         "MergeTocPolicy::FileNames",
         "MergeTocPolicy::DocumentTitles",
     ):
@@ -537,6 +536,7 @@ def verify_merge_desktop_contract() -> None:
         "inspect_bookmark_boundaries",
         "estimate_page_sizes",
         "plan_split",
+        "native_command_boundary_splits_only_registered_paths",
     ):
         if token not in split_commands:
             fail(f"P5 Split trusted desktop command contract missing: {token}")
