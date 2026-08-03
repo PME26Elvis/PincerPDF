@@ -3201,6 +3201,39 @@ mod tests {
     }
 
     #[test]
+    fn source_bookmark_parser_preserves_unicode_titles_and_hierarchy() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("unicode-bookmarks.pdf"),
+            document_title: "unicode-bookmarks.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(2).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"第一章 — 導言 📄",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "kids":[{
+              "title":"節 1.1 · 概要",
+              "dest":["4 0 R","/Fit"],
+              "destpageposfrom1":2,
+              "kids":[]
+            }]
+          }]
+        }"#;
+
+        let plan = parse_source_bookmarks(source, &input, 1).expect("unicode plan");
+        assert_eq!(plan[0].title, "第一章 — 導言 📄");
+        assert_eq!(plan[0].page_position, Some(1));
+        assert_eq!(plan[0].children[0].title, "節 1.1 · 概要");
+        assert_eq!(plan[0].children[0].page_position, Some(2));
+    }
+
+    #[test]
     fn source_bookmark_parser_rejects_named_destination_leaves() {
         let input = MergeEngineInput {
             source: PathBuf::from("named-destination.pdf"),
