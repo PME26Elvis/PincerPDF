@@ -456,14 +456,23 @@ def verify_split_planner_contract() -> None:
         "split_materialization_conserves_pages_and_finalizes_outputs",
         "qpdf_outline_boundaries_feed_bookmark_split_planner",
         "qpdf_page_size_estimates_feed_size_split_and_bound_outputs",
+        "split_materialization_reconstructs_surviving_bookmarks",
     ):
         if token not in split_contract:
             fail(f"P5.1 real-engine split contract is missing: {token}")
+    for token in (
+        "parse_source_bookmarks_rejecting_ambiguous_duplicates",
+        "capability_unavailable",
+        "destination identity is ambiguous",
+    ):
+        if token not in qpdf_source:
+            fail(f"P5.2 split metadata safety contract missing: {token}")
     if not any(
         marker in roadmap
         for marker in (
             "P5.1 — Split planner: In progress",
             "P5.1 — Split planner/materializer: In progress",
+            "P5.1 — Split planner/materializer: Complete",
         )
     ):
         fail("P5.1 roadmap status is missing")
@@ -852,3 +861,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
