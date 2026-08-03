@@ -352,7 +352,9 @@ fn validation_message(rule: SplitRuleKind) -> &'static str {
         SplitRuleKind::EveryPage => "Choose a valid source and output folder.",
         SplitRuleKind::FixedPageCount => "Enter a positive page count.",
         SplitRuleKind::Ranges => "Enter at least one page range.",
-        SplitRuleKind::Bookmarks => "The source must contain usable bookmarks at the selected depth.",
+        SplitRuleKind::Bookmarks => {
+            "The source must contain usable bookmarks at the selected depth."
+        }
         SplitRuleKind::BySize => "Enter a positive output-size limit.",
     }
 }
@@ -404,3 +406,4 @@ fn complete_browser_split_after_delay(
             .set_timeout_with_callback_and_timeout_and_arguments_0(callback.unchecked_ref(), 650);
     }
 }
+
