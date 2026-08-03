@@ -33,6 +33,7 @@
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 - P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
 - P5.1 split planner, QPDF materializer, trusted Tauri commands and deterministic browser workspace implemented locally; the portable/native evidence gate is still open.
+- P5.1 native command-boundary contract now passes locally with three finalized outputs from a registered source token and a registered output directory; Split desktop/compact screenshot checkpoints are wired into the browser acceptance suite.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
