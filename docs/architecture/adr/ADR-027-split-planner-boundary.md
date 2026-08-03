@@ -1,6 +1,3 @@
-Exit code: 0
-Wall time: 0.6 seconds
-Output:
 # ADR-027: Engine-independent Split planner boundary
 
 - Status: Accepted for P5.1
