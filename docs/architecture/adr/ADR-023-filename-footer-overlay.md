@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{mÏy 'v√Æ∂õ≠# ADR-023: Geometry-matched filename footer overlay
+# ADR-023: Geometry-matched filename footer overlay
 
 - Status: Accepted for P4.7 partial parity
 - Date: 2026-08-03
@@ -28,8 +28,13 @@ desktop DTO and Leptos advanced-safety control. The default remains disabled.
 
 ## Known limits
 
-The first implementation uses Helvetica with WinAnsi encoding. ASCII filenames
-are verified by the real QPDF/MuPDF contract; non-ASCII characters use a
-visible fallback marker rather than invalid PDF bytes. Unicode font embedding,
-collision-aware placement, configurable typography and a visual golden
-baseline remain follow-up work before MERGE-007 can become Verified.
+The overlay still uses Helvetica with WinAnsi encoding, so Unicode font
+embedding and non-ASCII filename fidelity remain open. Placement now asks
+`MuPDF` for bounded structured-text boxes and selects a quiet bottom or top
+band when one is available. If the optional text extractor is unavailable, the
+adapter falls back to the original deterministic geometry-only position. This
+is a bounded collision-avoidance policy, not a claim of full semantic layout
+under forms, annotations, images or rotated writing modes.
+
+Configurable typography, embedded Unicode fonts and a visual golden baseline
+remain follow-up work before MERGE-007 can become Verified.

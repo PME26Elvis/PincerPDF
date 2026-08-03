@@ -18,7 +18,7 @@ executable evidence.
 | MERGE-004 | AcroForm policies | Partial | Form-bearing input is rejected before output creation | Rename fields, merge, flatten and discard |
 | MERGE-005 | Table of contents | Partial | Real QPDF/MuPDF contract verifies generated filename and metadata-title contents pages, source first-page numbers, filename fallback and bookmark offsets; browser E2E verifies both explicit policies | Unicode typography and visual golden baseline |
 | MERGE-006 | Blank page after odd input | Verified | Real QPDF/MuPDF contract verifies per-source insertion, final-source insertion, source-matched MediaBox/CropBox/rotation, empty text extraction, inherited `/Pages` geometry and bookmark destination offset remapping; browser E2E verifies the control | Add only stress/performance coverage during hardening |
-| MERGE-007 | Filename footer | Partial | Real QPDF/MuPDF contract verifies a per-output-page source filename overlay, source geometry preservation and blank-page omission; browser E2E verifies the explicit control | Embedded Unicode font, non-ASCII filename fidelity, visual baseline and footer collision policy |
+| MERGE-007 | Filename footer | Partial | Real QPDF/MuPDF contract verifies a per-output-page source filename overlay, source geometry preservation, blank-page omission and text-aware top/bottom quiet-band placement; browser E2E verifies the explicit control | Embedded Unicode font, non-ASCII filename fidelity, annotation/form/image collision semantics and visual baseline |
 | MERGE-008 | Page normalization | Partial | `None` preserves MediaBox, CropBox and rotation across mixed geometry | Same width and orientation-aware same width |
 | MERGE-009 | Single valid output | Verified baseline | QPDF structure/page count, MuPDF text/render, atomic output and system-dialog flow | Revalidate for every advanced-policy combination |
 
@@ -41,16 +41,18 @@ table-of-contents or document-metadata product policy.
 
 The current P4.7 implementation generates a private one-page-per-output-page
 overlay after QPDF page assembly. Each overlay page copies the contributing
-source page's MediaBox, CropBox and rotation, and places the source filename
-near the lower-left media-box origin. Generated odd-page blanks deliberately
+source page's MediaBox, CropBox and rotation. `MuPDF` structured-text bounds
+are used when available to avoid an occupied bottom band by choosing a
+deterministic quiet top or bottom band; generated odd-page blanks deliberately
 receive no footer. The overlay is applied before any bookmark reconstruction,
 so output outline destinations continue to refer to the final page objects.
 
 The first contract slice uses a built-in Helvetica/WinAnsi resource and
 therefore preserves ASCII filenames only. Non-ASCII names are replaced with a
 visible fallback marker rather than being silently emitted as invalid PDF
-literal bytes. Unicode font embedding and collision-aware placement remain
-explicit follow-up work under MERGE-007.
+literal bytes. Embedded Unicode fonts and semantic collision handling for
+forms, annotations, images and rotated writing remain explicit follow-up work
+under MERGE-007.
 
 ## Document-level bookmark policy
 

@@ -32,6 +32,8 @@ static NEXT_TEMP_ID: AtomicU64 = AtomicU64::new(1);
 pub struct QpdfConfig {
     /// QPDF executable name or path.
     pub executable: PathBuf,
+    /// `MuPDF` text extractor used for collision-aware overlay placement.
+    pub text_executable: PathBuf,
     /// Limits used for discovery and inspection commands.
     pub inspection_control: ExecutionControl,
 }
@@ -40,6 +42,7 @@ impl Default for QpdfConfig {
     fn default() -> Self {
         Self {
             executable: PathBuf::from("qpdf"),
+            text_executable: PathBuf::from("mutool"),
             inspection_control: ExecutionControl::new(
                 Duration::from_secs(30),
                 64 * 1024,
@@ -328,6 +331,42 @@ impl QpdfAdapter {
             crop_box: geometry.crop_box,
             rotate: geometry.rotate,
         })
+    }
+
+    /// Reads bounded `MuPDF` structured-text output so footer placement can avoid
+    /// the page's occupied bottom band. A missing renderer is deliberately a
+    /// non-fatal capability downgrade: the deterministic geometry-only position
+    /// remains safe and keeps QPDF-only installations usable.
+    fn page_text_bounds(
+        &self,
+        source: &Path,
+        page: PageNumber,
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Option<TextBounds> {
+        let page = page.get().to_string();
+        let capture = run_process(
+            &self.config.text_executable,
+            &[
+                OsString::from("draw"),
+                OsString::from("-F"),
+                OsString::from("stext"),
+                qpdf_path(source),
+                OsString::from(&page),
+            ],
+            vec![
+                "draw".to_owned(),
+                "-F".to_owned(),
+                "stext".to_owned(),
+                source.display().to_string(),
+                page,
+            ],
+            control,
+        )
+        .ok()?;
+        let bounds = parse_stext_bounds(&capture.evidence.stdout);
+        evidence.push(capture.evidence);
+        bounds
     }
 
     fn add_bookmark_plan(
@@ -664,13 +703,13 @@ impl MergeEnginePort for QpdfAdapter {
             {
                 let title = document_bookmark_title(&input.document_title);
                 for page in &source.pages {
+                    let geometry =
+                        self.page_geometry(&source.path, *page, control, &mut evidence)?;
+                    let text_bounds =
+                        self.page_text_bounds(&source.path, *page, control, &mut evidence);
                     footer_pages.push(FooterOverlayPage {
-                        geometry: self.page_geometry(
-                            &source.path,
-                            *page,
-                            control,
-                            &mut evidence,
-                        )?,
+                        position: Some(footer_position_with_text(&geometry, text_bounds)),
+                        geometry,
                         text: Some(title.clone()),
                     });
                 }
@@ -678,6 +717,7 @@ impl MergeEnginePort for QpdfAdapter {
                     footer_pages.push(FooterOverlayPage {
                         geometry: blank_page.geometry.clone(),
                         text: None,
+                        position: None,
                     });
                 }
             }
@@ -1650,6 +1690,15 @@ struct GeneratedBlankPage {
 struct FooterOverlayPage {
     geometry: PdfPageGeometry,
     text: Option<String>,
+    position: Option<(f64, f64)>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TextBounds {
+    /// Top-most text coordinate reported by `MuPDF` (top-origin page space).
+    top: f64,
+    /// Bottom-most text coordinate reported by `MuPDF` (top-origin page space).
+    bottom: f64,
 }
 
 struct TocEntry {
@@ -1761,7 +1810,9 @@ fn write_footer_overlay(path: &Path, pages: &[FooterOverlayPage]) -> io::Result<
             "{page_object} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [{media_box}]{crop_box}{rotate} /Resources << /Font << /F1 {font_object} 0 R >> >> /Contents {content_object} 0 R >>\nendobj\n"
         ));
         let stream = page.text.as_deref().map_or_else(String::new, |text| {
-            let (x, y) = footer_position(&page.geometry);
+            let (x, y) = page
+                .position
+                .unwrap_or_else(|| footer_position(&page.geometry));
             format!(
                 "BT /F1 8 Tf {x:.2} {y:.2} Td ({}) Tj ET\n",
                 pdf_literal(text)
@@ -1803,6 +1854,82 @@ fn footer_position(geometry: &PdfPageGeometry) -> (f64, f64) {
     };
     let parse = |value: &str| value.parse::<f64>().unwrap_or(0.0);
     (parse(&box_values[0]) + 24.0, parse(&box_values[1]) + 18.0)
+}
+
+const FOOTER_QUIET_BAND: f64 = 36.0;
+
+fn footer_position_with_text(
+    geometry: &PdfPageGeometry,
+    text_bounds: Option<TextBounds>,
+) -> (f64, f64) {
+    let box_values = geometry.crop_box.as_ref().or(geometry.media_box.as_ref());
+    let Some(box_values) = box_values else {
+        return footer_position(geometry);
+    };
+    let parse = |value: &str| value.parse::<f64>().unwrap_or(0.0);
+    let x0 = parse(&box_values[0]);
+    let y0 = parse(&box_values[1]);
+    let y1 = parse(&box_values[3]);
+    let bottom = (x0 + 24.0, y0 + 18.0);
+    let Some(bounds) = text_bounds else {
+        return bottom;
+    };
+
+    // MuPDF reports structured-text boxes in a top-origin coordinate system;
+    // PDF overlay coordinates use the opposite origin. Keep a 36pt quiet band
+    // around either edge and use whichever edge has more available clearance.
+    let content_low = y1 - bounds.bottom;
+    let content_high = y1 - bounds.top;
+    let bottom_clearance = content_low - y0;
+    let top_clearance = y1 - content_high;
+    if bottom_clearance >= FOOTER_QUIET_BAND || bottom_clearance >= top_clearance {
+        return bottom;
+    }
+    if top_clearance >= FOOTER_QUIET_BAND {
+        return (x0 + 24.0, y1 - 24.0);
+    }
+
+    // A page with text touching both edges has no collision-free band. Pick the
+    // roomier edge deterministically; semantic text remains visible and the
+    // evidence layer records that placement was bounded by page geometry.
+    if top_clearance > bottom_clearance {
+        (x0 + 24.0, y1 - 24.0)
+    } else {
+        bottom
+    }
+}
+
+fn parse_stext_bounds(text: &str) -> Option<TextBounds> {
+    let mut bounds = None;
+    for line in text.lines() {
+        let Some(start) = line.find("bbox=\"") else {
+            continue;
+        };
+        let values = line[start + 6..]
+            .split_once('"')
+            .map(|(value, _)| value)
+            .and_then(|value| {
+                let values = value
+                    .split_whitespace()
+                    .map(str::parse::<f64>)
+                    .collect::<Result<Vec<_>, _>>()
+                    .ok()?;
+                (values.len() == 4).then_some(values)
+            });
+        let Some(values) = values else {
+            continue;
+        };
+        if !values.iter().all(|value| value.is_finite()) {
+            continue;
+        }
+        let entry = bounds.get_or_insert(TextBounds {
+            top: values[1],
+            bottom: values[3],
+        });
+        entry.top = entry.top.min(values[1]);
+        entry.bottom = entry.bottom.max(values[3]);
+    }
+    bounds
 }
 
 fn pdf_literal(text: &str) -> String {
@@ -2314,6 +2441,45 @@ mod tests {
             rotate: None,
         };
         assert_eq!(footer_position(&geometry), (44.0, 48.0));
+    }
+
+    #[test]
+    fn footer_position_moves_to_top_when_bottom_band_is_occupied() {
+        let geometry = PdfPageGeometry {
+            media_box: Some([
+                "0".to_owned(),
+                "0".to_owned(),
+                "600".to_owned(),
+                "800".to_owned(),
+            ]),
+            crop_box: None,
+            rotate: None,
+        };
+        let bounds = TextBounds {
+            top: 60.0,
+            bottom: 790.0,
+        };
+        assert_eq!(
+            footer_position_with_text(&geometry, Some(bounds)),
+            (24.0, 776.0)
+        );
+    }
+
+    #[test]
+    fn structured_text_bounds_are_bounded_to_block_boxes() {
+        let text = r#"<page id="page1">
+<block bbox="72 52.65 168.01 77.38">
+<line bbox="72 702 200 720">
+</line>
+</block>
+</page>"#;
+        assert_eq!(
+            parse_stext_bounds(text),
+            Some(TextBounds {
+                top: 52.65,
+                bottom: 720.0,
+            })
+        );
     }
 
     #[test]

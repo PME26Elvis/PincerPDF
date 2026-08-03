@@ -487,8 +487,11 @@ Local Windows evidence is green:
 
 This is intentionally Partial rather than complete parity. The first overlay
 uses Helvetica/WinAnsi and replaces non-ASCII filename characters with a
-visible fallback marker. Unicode font embedding, collision-aware placement and
-visual golden evidence remain required before MERGE-007 is Verified.
+visible fallback marker. The adapter now asks `MuPDF` for bounded structured
+text and selects a deterministic quiet top/bottom band when available, while
+falling back safely when the optional extractor cannot run. Unicode font
+embedding, semantic form/annotation/image collision handling and visual golden
+evidence remain required before MERGE-007 is Verified.
 
 ## P4.8 table-of-contents evidence
 
@@ -525,7 +528,8 @@ local Windows toolchain after this adjustment.
 1. Retain Linux compatibility evidence and integrate the validated P4.8 source
    head through the connector workflow.
 2. Add broader inherited MediaBox/CropBox geometry corpus coverage and a
-   Unicode-font footer/contents slice.
+   Unicode-font footer/contents slice; expand footer collision evidence beyond
+   text-only quiet-band placement.
 3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy
    gaps while all other seven tools remain visibly gated.
 
