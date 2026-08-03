@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+≠rá^—f•ñÿ¶{_,y 'v√Æ∂õ≠#![forbid(unsafe_code)]
 //! Stable, serializable messages shared by the desktop host and Leptos UI.
 
 use serde::{Deserialize, Serialize};
@@ -80,6 +80,10 @@ pub enum MergeBookmarkPolicy {
     Discard,
     /// Emit one top-level entry for each ordered source row.
     OneEntryPerDocument,
+    /// Retain the relevant source outline hierarchy at the output root.
+    Retain,
+    /// Retain each relevant source outline hierarchy below one source entry.
+    RetainAsOneEntryPerDocument,
 }
 
 /// Complete Merge intent crossing the IPC boundary.
@@ -96,6 +100,10 @@ pub struct MergeRunRequest {
     pub replace_existing: bool,
     /// Explicit output bookmark behavior.
     pub bookmark_policy: MergeBookmarkPolicy,
+    /// Whether to add a blank page after each odd-page source.
+    pub add_blank_page_if_odd: bool,
+    /// Whether each output page receives its source filename as a footer.
+    pub add_filename_footer: bool,
 }
 
 /// Verified result returned after atomic finalization.

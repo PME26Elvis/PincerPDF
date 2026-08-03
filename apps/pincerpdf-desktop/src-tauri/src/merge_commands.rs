@@ -1,4 +1,4 @@
-#![forbid(unsafe_code)]
+­r‡^Ñf¥–Ø¦{^ìyÊ'vÃ®¶›­#![forbid(unsafe_code)]
 //! Trusted desktop boundary for the P4.2 Merge workspace.
 
 use pincerpdf_desktop_api::{
@@ -295,6 +295,10 @@ fn execute_merge(
     let bookmark_policy = match request.bookmark_policy {
         MergeBookmarkPolicy::Discard => BookmarkPolicy::Discard,
         MergeBookmarkPolicy::OneEntryPerDocument => BookmarkPolicy::OneEntryPerDocument,
+        MergeBookmarkPolicy::Retain => BookmarkPolicy::Retain,
+        MergeBookmarkPolicy::RetainAsOneEntryPerDocument => {
+            BookmarkPolicy::RetainAsOneEntryPerDocument
+        }
     };
     let output = state.resolve_path(&request.output_token)?;
     let merge_request = build_merge_request(state, request.sources, output)?;
@@ -303,6 +307,8 @@ fn execute_merge(
     let options = MergeExecutionOptions {
         output_policy,
         bookmark_policy,
+        add_blank_page_if_odd: request.add_blank_page_if_odd,
+        add_filename_footer: request.add_filename_footer,
         control: ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation),
     };
     let report = MergeService::new(&engine)
@@ -509,6 +515,8 @@ mod tests {
                 output_token: destination,
                 replace_existing: false,
                 bookmark_policy: MergeBookmarkPolicy::OneEntryPerDocument,
+                add_blank_page_if_odd: false,
+                add_filename_footer: false,
             },
             CancellationToken::default(),
         )

@@ -1,4 +1,4 @@
-# Roadmap
+­r‡^Ñf¥–Ø¦{^¬yÊ'vÃ®¶›­# Roadmap
 
 | Phase | Name | Status | Exit gate |
 | --- | --- | --- | --- |
@@ -19,5 +19,8 @@
 - **P4.1 â€” Merge core: Complete.** Engine-independent request/orchestration, process-isolated QPDF execution, password redaction, timeout/cancellation, semantic verification, atomic finalization and real QPDF/MuPDF evidence are green.
 - **P4.2 â€” Merge desktop slice: Complete.** The trusted Tauri command boundary, shared DTOs, accessible Merge workspace, deterministic browser adapter, real desktop-command contract, eight browser E2E scenarios, four Windows visual checkpoints, three production-protocol WebView2 E2E scenarios, Windows replacement recovery tests, coordinate-free real system-dialog E2E, and the Linux milestone lane are green.
 - **P4.3 â€” Merge parity corpus: Complete.** Windows and Linux evidence is green for mixed MediaBox/CropBox/rotation, safe source-metadata discard, Unicode/long paths, open-ended-to-last-page ranges and the durable feature/legacy-test ledger.
-- **P4.4 â€” Document-level bookmarks: In progress.** Explicit discard and one-entry-per-document policies cross the UI, desktop and engine boundaries. Real Windows QPDF/MuPDF, native-command, browser, production WebView2 and real system-dialog evidence is green; Linux compatibility remains.
-- Source-outline retention/remapping, form collision handling, table of contents, footer, normalization/compression and full legacy parity remain later P4 checkpoints.
+- **P4.4 â€” Document-level bookmarks: Complete.** Explicit discard and one-entry-per-document policies crossed the UI, desktop and engine boundaries and were integrated as `main@7a5f49e034a9098eae0794d6e38f7b751506a0ee` after Windows and Linux evidence passed.
+- **P4.5 â€” Relevant source outlines: In progress.** `Retain` and `RetainAsOneEntryPerDocument` reconstruct only source hierarchy whose destinations survive the page selection. Windows real-engine evidence is green; full local cross-stack and Linux review evidence remain the exit gate.
+- **P4.6 â€” Odd-page blank insertion: Complete.** Each odd-page source, including the final source, receives a verified blank page whose MediaBox, CropBox and rotation match the source's final selected page; bookmark destination offsets are remapped.
+- **P4.7 â€” Filename footer overlay: Partial.** An explicit UI/DTO policy applies a geometry-matched source filename overlay to every non-blank output page and leaves generated blanks empty; ASCII QPDF/MuPDF contract evidence is green.
+- Form collision handling, table of contents, Unicode footer fonts, collision-aware footer placement, normalization/compression and full legacy parity remain later P4 work.

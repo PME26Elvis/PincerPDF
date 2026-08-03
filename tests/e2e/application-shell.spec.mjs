@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+­r‡^Ñf¥–Ø¦{mlyÊ'vÃ®¶›­import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -91,12 +91,36 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
   );
   const discardBookmarks = page.getByTestId("bookmark-policy-discard");
   const oneEntryBookmarks = page.getByTestId("bookmark-policy-one-entry");
+  const retainBookmarks = page.getByTestId("bookmark-policy-retain");
+  const retainAsOneEntry = page.getByTestId(
+    "bookmark-policy-retain-as-one-entry",
+  );
   await expect(discardBookmarks).toBeChecked();
   await expect(oneEntryBookmarks).not.toBeChecked();
+  await expect(retainBookmarks).not.toBeChecked();
+  await expect(retainAsOneEntry).not.toBeChecked();
+  const blankPageIfOdd = page.getByTestId("blank-page-if-odd");
+  await expect(blankPageIfOdd).not.toBeChecked();
+  await blankPageIfOdd.check();
+  await expect(blankPageIfOdd).toBeChecked();
+  const filenameFooter = page.getByTestId("filename-footer");
+  await expect(filenameFooter).not.toBeChecked();
+  await filenameFooter.check();
+  await expect(filenameFooter).toBeChecked();
   await oneEntryBookmarks.check();
+  await expect(blankPageIfOdd).toBeChecked();
+  await expect(filenameFooter).toBeChecked();
   await expect(oneEntryBookmarks).toBeChecked();
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "One entry per document",
+  );
+  await retainBookmarks.check();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "Retain relevant source hierarchy",
+  );
+  await retainAsOneEntry.check();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "Retain under one entry per document",
   );
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "Reject before processing",
@@ -121,6 +145,19 @@ test("reports the deterministic one-entry-per-document bookmark policy", async (
   await page.getByTestId("bookmark-policy-one-entry").check();
   await page.getByTestId("run-merge").click();
 
+  await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+});
+
+test("reports deterministic retained-bookmark policy states", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await page.getByTestId("bookmark-policy-retain").check();
+  await page.getByTestId("run-merge").click();
+  await expect(page.getByTestId("merge-result-summary")).toContainText("1 bookmarks");
+
+  await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
+  await page.getByTestId("run-merge").click();
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
 });
 
@@ -166,6 +203,13 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   await page.getByTestId("bookmark-policy-one-entry").check();
   await page.screenshot({
     path: `${screenshotDir}/merge-bookmark-policy-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
+  await page.screenshot({
+    path: `${screenshotDir}/merge-retained-bookmark-policy-desktop.png`,
     fullPage: true,
     animations: "disabled",
   });

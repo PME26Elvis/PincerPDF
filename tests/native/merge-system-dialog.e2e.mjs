@@ -1,346 +1,143 @@
-import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
-import { execFile, spawn } from "node:child_process";
-import {
-  mkdir,
-  readFile,
-  rm,
-  writeFile,
-} from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
-import { promisify } from "node:util";
+­r‡^Ñf¥–Ø¦{kr‰İ°ë­¦ëZ[\Ü\ÜÙ\œ›ÛH››ÙN˜\ÜÙ\ÜİšXİÂš[\ÜÈÜ™X]R\ÚHœ›ÛH››ÙN˜Ü\ÈÂš[\ÜÈ^XÑš[KÜ]ÛˆHœ›ÛH››ÙN˜Ú[Ü›ØÙ\ÜÈÂš[\ÜÂˆZÙ\‹ˆ™XYš[Kˆ›KˆÜš]Qš[KŸHœ›ÛH››ÙN™œËÜ›ÛZ\Ù\ÈÂš[\ÜÈ\›˜[YK™\ÛÛ™HHœ›ÛH››ÙNœ]Âš[\ÜÈš[UT“Ô]Hœ›ÛH››ÙN\›Âš[\ÜÈ›ÛZ\ÚYHHœ›ÛH››ÙN][Â‚˜ÛÛœİ^XÑš[P\Ş[˜ÈH›ÛZ\ÚYJ^XÑš[JNÂ˜ÛÛœİ™\ÜÚ]ÜT›ÛİH™\ÛÛ™Jˆ\›˜[YJš[UT“Ô]
+[\Ü›Y]K\›
+JKˆ‹‹ˆ‹ˆ‹‹ˆ‹ŠNÂ˜ÛÛœİ[˜X›YBˆ›ØÙ\ÜËœ]›Ü›HOOHÚ[ŒÌˆˆ	‰‚ˆ›ØÙ\ÜË™[‹”SÑT”—ÔÖTÕSWÑPSÑ×ÑL‘HOOHŒHÂ˜ÛÛœİ\ØÜšX™TŞ\İ[QX[ÙÈH[˜X›YÈ\ØÜšX™Hˆ\ØÜšX™KœÚÚ\Â˜ÛÛœİš^\™T›ÛİH›ØÙ\ÜË™[‹”SÑT”—ÔÖTÕSWÑPSÑ×Ñ’VT‘TÎÂ˜ÛÛœİİ]]›ÛİH›ØÙ\ÜË™[‹”SÑT”—ÔÖTÕSWÑPSÑ×ÓÕUUÑTÂ‚™[˜İ[Ûˆ[›ÚÙQX[ÙÊXİ[Û‹]ÈH×KÛÛ™š\›Sİ™\Üš]HH˜[ÙJHÂˆÛÛœİ[\ˆH™\ÛÛ™Jˆ™\ÜÚ]ÜT›ÛİˆœØÜš\È‹ˆš[›ÚÙWİÚ[™İÜ×Ùš[WÙX[ÙËœH‹ˆ
+NÂˆÛÛœİ\™İ[Y[Ó\İHÂˆ[\‹ˆ‹KXXİ[Ûˆ‹ˆXİ[Û‹ˆ‹K\]ËZœÛÛˆ‹ˆ”ÓÓ‹œİš[™ÚYJ]ÊKˆNÂˆYˆ
+ÛÛ™š\›Sİ™\Üš]JHÂˆ\™İ[Y[Ó\İœ\Ú
+‹KXÛÛ™š\›K[İ™\Üš]HŠNÂˆBˆÛÛœİ]Û”Ú]TXÚØYÙ\ÈH™\ÛÛ™Jˆ›ØÙ\ÜË™[‹”SÑT”—ÑU—Ô“ÓÕÏÈ‘—[˜Ù\”‹Y]ˆ‹ˆœ]Ûˆ‹ˆœÚ]K\XÚØYÙ\È‹ˆ
+NÂˆÛÛœİÚ[HÜ]ÛŠœ]Û‹™^H‹\™İ[Y[Ó\İÂˆ[ˆÂˆ‹‹œ›ØÙ\ÜË™[‹ˆUÓ”UˆÂˆ]Û”Ú]TXÚØYÙ\Ëˆ›ØÙ\ÜË™[‹”UÓ”UˆBˆ™š[\Š›ÛÛX[ŠBˆš›Ú[ŠÈŠKˆKˆÚ[™İÜÒYNˆYKˆİ[ÎˆÈšYÛ›Ü™H‹œ\H‹œ\H—KˆJNÂˆ™]\›ˆ™]È›ÛZ\ÙJ
+XØÙ\™Z™Xİ
+HOˆÂˆ]İİ]HˆÂˆ]İ\œˆHˆÂˆÚ[œİİ]›ÛŠ™]H‹
+Ú[šÊHOˆÂˆİİ]
+ÏHÚ[šÎÂˆJNÂˆÚ[œİ\œ‹›ÛŠ™]H‹
+Ú[šÊHOˆÂˆİ\œˆ
+ÏHÚ[šÎÂˆJNÂˆÚ[›Û˜ÙJ™\œ›Üˆ‹™Z™Xİ
+NÂˆÚ[›Û˜ÙJ™^]‹
+ÛÙJHOˆÂˆYˆ
+ÛÙHOOH
+HÂˆÛÛœİœÛÛ“[™HHİİ]š[J
+KœÜ]
+××‹İJK˜]
+LJNÂˆXØÙ\
+”ÓÓ‹œ\œÙJœÛÛ“[™JJNÂˆH[ÙHÂˆ™Z™Xİ
+ˆ™]È\œ›ÜŠˆš[KYX[ÙÈ[\ˆ^]Y	ØÛÙ_Nˆ	Üİ\œˆİİ]Xˆ
+Kˆ
+NÂˆBˆJNÂˆJNÂŸB‚˜\Ş[˜È[˜İ[ÛˆÛXÚÊ\İY
+HÂˆÛÛœİÛXÚÙYH]ØZ]œ›İÜÙ\‹™^Xİ]J
+Y
+HOˆÂˆÛÛœİ\™Ù]HØİ[Y[œ]Y\TÙ[XİÜŠÙ]K]\İYH‰ÚYH—X
+NÂˆYˆ
+]\™Ù]
+HÂˆ™]\›ˆ˜[ÙNÂˆBˆ\™Ù]™\Ü]Ú]™[
+™]È[İ\ÙQ]™[
+˜ÛXÚÈ‹ÈX˜›\ÎˆYHJJNÂˆ™]\›ˆYNÂˆK\İY
+NÂˆ\ÜÙ\™\]X[
+ÛXÚÙYYKÛÛ›Û	İ\İYH]\İ^\İ™Y›Ü™HÛXÚÚ[™Ø
+NÂŸB‚˜\Ş[˜È[˜İ[ÛˆØZ]›Ü”İ]J™XYİ]K™YXØ]K\ØÜš\[ÛŠHÂˆ]]\İİ]NÂˆ›Üˆ
+]][\HÈ][\ŒÈ][\
+ÏHJHÂˆ]\İİ]HH]ØZ]œ›İÜÙ\‹™^Xİ]J™XYİ]JNÂˆYˆ
+™YXØ]J]\İİ]JJHÂˆ™]\›ˆ]\İİ]NÂˆBˆ]ØZ]œ›İÜÙ\‹œ]\ÙJL
+NÂˆBˆ›İÈ™]È\œ›ÜŠˆ[YYİ]ØZ][™È›Üˆ	Ù\ØÜš\[ÛŸNÈ]\İIÒ”ÓÓ‹œİš[™ÚYJ]\İİ]J_Xˆ
+NÂŸB‚™[˜İ[ÛˆÚLMŠ]\ÊHÂˆ™]\›ˆÜ™X]R\Ú
+œÚLMˆŠK\]J]\ÊK™YÙ\İ
+š^ŠNÂŸB‚™\ØÜšX™TŞ\İ[QX[ÙÊ”[˜Ù\”ˆÚ[™İÜÈŞ\İ[KYX[ÙÈY\™ÙHXØÙ\[˜ÙH‹
 
-const execFileAsync = promisify(execFile);
-const repositoryRoot = resolve(
-  dirname(fileURLToPath(import.meta.url)),
-  "..",
-  "..",
-);
-const enabled =
-  process.platform === "win32" &&
-  process.env.PINCERPDF_SYSTEM_DIALOG_E2E === "1";
-const describeSystemDialog = enabled ? describe : describe.skip;
-const fixtureRoot = process.env.PINCERPDF_SYSTEM_DIALOG_FIXTURES;
-const outputRoot = process.env.PINCERPDF_SYSTEM_DIALOG_OUTPUT_DIR;
+HOˆÂˆ™Y›Ü™J\Ş[˜È
 
-function invokeDialog(action, paths = [], confirmOverwrite = false) {
-  const helper = resolve(
-    repositoryRoot,
-    "scripts",
-    "invoke_windows_file_dialog.py",
-  );
-  const argumentsList = [
-    helper,
-    "--action",
-    action,
-    "--paths-json",
-    JSON.stringify(paths),
-  ];
-  if (confirmOverwrite) {
-    argumentsList.push("--confirm-overwrite");
-  }
-  const pythonSitePackages = resolve(
-    process.env.PINCERPDF_DEV_ROOT ?? "D:\\PincerPDF-dev",
-    "python",
-    "site-packages",
-  );
-  const child = spawn("python.exe", argumentsList, {
-    env: {
-      ...process.env,
-      PYTHONPATH: [
-        pythonSitePackages,
-        process.env.PYTHONPATH,
-      ]
-        .filter(Boolean)
-        .join(";"),
-    },
-    windowsHide: true,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  return new Promise((accept, reject) => {
-    let stdout = "";
-    let stderr = "";
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk;
-    });
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk;
-    });
-    child.once("error", reject);
-    child.once("exit", (code) => {
-      if (code === 0) {
-        const jsonLine = stdout.trim().split(/\r?\n/u).at(-1);
-        accept(JSON.parse(jsonLine));
-      } else {
-        reject(
-          new Error(
-            `file-dialog helper exited ${code}: ${stderr || stdout}`,
-          ),
-        );
-      }
-    });
-  });
-}
+HOˆÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-async function click(testId) {
-  const clicked = await browser.execute((id) => {
-    const target = document.querySelector(`[data-testid="${id}"]`);
-    if (!target) {
-      return false;
-    }
-    target.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    return true;
-  }, testId);
-  assert.equal(clicked, true, `control ${testId} must exist before clicking`);
-}
+HOˆ
+Âˆ[™Ú[™N‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙKY[™Ú[™K\İ]\È—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ[İ[Y‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK]ÛÜšÜÜXÙH—IÊHOOH[ˆJKˆ
+İ]JHOˆİ]K›[İ[Y	‰ˆİ]K™[™Ú[™Kš[˜ÛY\ÊŒLKŒËŒŠKˆ›[İ[Y˜]]™HY\™ÙHÛÜšÜÜXÙH[™Tˆ\ØÛİ™\H‹ˆ
+NÂˆJNÂ‚ˆ]
+˜Ø[˜Ù[ÈØY™[KÙ[XİÈ™X[š[\Ë™\šYšY\Èİ]][™™XÛİ™\œÈœ›ÛHÛÛ™›Xİ‹\Ş[˜È
 
-async function waitForState(readState, predicate, description) {
-  let latestState;
-  for (let attempt = 0; attempt < 200; attempt += 1) {
-    latestState = await browser.execute(readState);
-    if (predicate(latestState)) {
-      return latestState;
-    }
-    await browser.pause(100);
-  }
-  throw new Error(
-    `Timed out waiting for ${description}; latest=${JSON.stringify(latestState)}`,
-  );
-}
+HOˆÂˆ\ÜÙ\›ÚÊš^\™T›Ûİ”SÑT”—ÔÖTÕSWÑPSÑ×Ñ’VT‘TÈ\È™\]Z\™YŠNÂˆ\ÜÙ\›ÚÊİ]]›Ûİ”SÑT”—ÔÖTÕSWÑPSÑ×ÓÕUUÑTˆ\È™\]Z\™YŠNÂˆ]ØZ]ZÙ\Šİ]]›ÛİÈ™Xİ\œÚ]™NˆYHJNÂˆÛÛœİZ[ˆH™\ÛÛ™Jš^\™T›ÛİœZ[‹]™YK\YÙ\ËœˆŠNÂˆÛÛœİ›ÛÚÛX\šÜÈH™\ÛÛ™Jš^\™T›Ûİ˜›ÛÚÛX\šÜËœˆŠNÂˆÛÛœİİ]]H™\ÛÛ™Jİ]]›Ûİ›Y\™ÙYYœ›ÛK\Ş\İ[KYX[ÙËœˆŠNÂˆ]ØZ]›Jİ]]È›Ü˜ÙNˆYHJNÂ‚ˆÛÛœİØ[˜Ù[X[ÙÈH[›ÚÙQX[ÙÊØ[˜Ù[ŠNÂˆ]ØZ]ÛXÚÊ˜Y[Y\™ÙK\Ûİ\˜Ù\ÈŠNÂˆÛÛœİØ[˜Ù[]šY[˜ÙHH]ØZ]Ø[˜Ù[X[ÙÎÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×HÛİ\˜ÙHXÚÙ\ˆØ[˜Ù[][Ûˆ[›ÚÙYŠNÂˆ\ÜÙ\™\]X[
+Ø[˜Ù[]šY[˜ÙK˜Xİ[Û‹Ø[˜Ù[ŠNÂˆÛÛœİØ[˜Ù[Yİ]HH]ØZ]ØZ]›Ü”İ]Jˆ
 
-function sha256(bytes) {
-  return createHash("sha256").update(bytes).digest("hex");
-}
+HOˆÂˆÛÛœİY]ÛˆHØİ[Y[œ]Y\TÙ[XİÜŠˆ	ÖÙ]K]\İYH˜Y[Y\™ÙK\Ûİ\˜Ù\È—IËˆ
+NÂˆ™]\›ˆÂˆY\ØX›Y‚ˆJY]Ûˆ[œİ[˜Ù[ÙˆS]Û‘[[Y[
+HY]Û‹™\ØX›YˆÛİ[ˆØİ[Y[œ]Y\TÙ[XİÜ[
+ˆ	ÖÙ]K]\İYH›Y\™ÙK\Ûİ\˜ÙK\›İÈ—IËˆ
+K›[™İˆNÂˆKˆ
+İ]JHOˆİ]K˜Ûİ[OOH	‰ˆ\İ]K˜Y\ØX›Yˆ˜Ø[˜Ù[YÛİ\˜ÙHXÚÙ\ˆÈ™\Ù\™H[™™\İÜ™HH[\Hİ]H‹ˆ
+NÂˆ\ÜÙ\™\]X[
+Ø[˜Ù[Yİ]K˜Ûİ[
+NÂ‚ˆÛÛœİÜ[‘X[ÙÈH[›ÚÙQX[ÙÊ“Ü[ˆ‹ÜZ[‹›ÛÚÛX\šÜ×JNÂˆ]ØZ]ÛXÚÊ˜Y[Y\™ÙK\Ûİ\˜Ù\ÈŠNÂˆÛÛœİÜ[‘]šY[˜ÙHH]ØZ]Ü[‘X[ÙÎÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×HÛİ\˜ÙHÙ[Xİ[ÛˆÛÛ[X[™ÜİYŠNÂˆ\ÜÙ\™Y\\]X[
+Ü[‘]šY[˜ÙKœ]ËÜZ[‹›ÛÚÛX\šÜ×JNÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
-  before(async () => {
-    await waitForState(
-      () => ({
-        engine:
-          document.querySelector('[data-testid="merge-engine-status"]')
-            ?.textContent ?? "",
-        mounted:
-          document.querySelector('[data-testid="merge-workspace"]') !== null,
-      }),
-      (state) => state.mounted && state.engine.includes("11.3.0"),
-      "mounted native Merge workspace and QPDF discovery",
-    );
-  });
+HOˆ
+ÂˆY\ØX›Y‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH˜Y[Y\™ÙK\Ûİ\˜Ù\È—IÊBˆË™\ØX›YÏÈYKˆÛİ[ˆØİ[Y[œ]Y\TÙ[XİÜ[
+ˆ	ÖÙ]K]\İYH›Y\™ÙK\Ûİ\˜ÙK\›İÈ—IËˆ
+K›[™İˆYÙ\Î‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK\YÙK]İ[—IÊBˆË^ÛÛ[ÏÈˆ‹ˆİ]\Î‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK]\ÚË\İ]\È—IÊBˆË^ÛÛ[ÏÈˆ‹ˆJKˆ
+İ]JHO‚ˆİ]K˜Ûİ[OOHˆ	‰‚ˆİ]KœYÙ\Ëš[J
+HOOHˆˆ	‰‚ˆ\İ]K˜Y\ØX›YˆÛÈ[œÜXİYÛİ\˜ÙH›İÜÈ‹ˆ
+NÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×HÛÈÛİ\˜ÙH›İÜÈ[œÜXİY[™XÚÙ\ˆ™\İÜ™YŠNÂ‚ˆÛÛœİØ]™QX[ÙÈH[›ÚÙQX[ÙÊ”Ø]™H‹Ûİ]]JNÂˆ]ØZ]ÛXÚÊ˜ÚÛÜÙK[Y\™ÙK[İ]]ŠNÂˆÛÛœİØ]™Q]šY[˜ÙHH]ØZ]Ø]™QX[ÙÎÂˆ\ÜÙ\™Y\\]X[
+Ø]™Q]šY[˜ÙKœ]ËÛİ]]JNÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×H\İ[˜][ÛˆÙ[Xİ[ÛˆÛÛ[X[™ÜİYŠNÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-  it("cancels safely, selects real files, verifies output, and recovers from conflict", async () => {
-    assert.ok(fixtureRoot, "PINCERPDF_SYSTEM_DIALOG_FIXTURES is required");
-    assert.ok(outputRoot, "PINCERPDF_SYSTEM_DIALOG_OUTPUT_DIR is required");
-    await mkdir(outputRoot, { recursive: true });
-    const plain = resolve(fixtureRoot, "plain-three-pages.pdf");
-    const bookmarks = resolve(fixtureRoot, "bookmarks.pdf");
-    const output = resolve(outputRoot, "merged-from-system-dialog.pdf");
-    await rm(output, { force: true });
+HO‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK[İ]]\]—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ
+˜[YJHOˆ˜[YKš[˜ÛY\Ê›Y\™ÙYYœ›ÛK\Ş\İ[KYX[ÙËœˆŠKˆœ™YÚ\İ\™YØ]™H\İ[˜][Ûˆ‹ˆ
+NÂ‚ˆ]ØZ]ÛXÚÊ›Y\™ÙKXY˜[˜ÙY]ÙÙÛHŠNÂˆÛÛœİ›ÛÚÛX\šÔÛXŞQ[˜X›YH]ØZ]œ›İÜÙ\‹™^Xİ]J
 
-    const cancelDialog = invokeDialog("Cancel");
-    await click("add-merge-sources");
-    const cancelEvidence = await cancelDialog;
-    console.log("[system-dialog] source picker cancellation invoked");
-    assert.equal(cancelEvidence.action, "Cancel");
-    const cancelledState = await waitForState(
-      () => {
-        const addButton = document.querySelector(
-          '[data-testid="add-merge-sources"]',
-        );
-        return {
-          addDisabled:
-            !(addButton instanceof HTMLButtonElement) || addButton.disabled,
-          count: document.querySelectorAll(
-            '[data-testid="merge-source-row"]',
-          ).length,
-        };
-      },
-      (state) => state.count === 0 && !state.addDisabled,
-      "cancelled source picker to preserve and restore the empty state",
-    );
-    assert.equal(cancelledState.count, 0);
+HOˆÂˆÛÛœİÛ™Q[HHØİ[Y[œ]Y\TÙ[XİÜŠˆ	ÖÙ]K]\İYH˜›ÛÚÛX\šË\ÛXŞK[Û™KY[H—IËˆ
+NÂˆYˆ
+JÛ™Q[H[œİ[˜Ù[ÙˆS[œ][[Y[
+JHÂˆ™]\›ˆ˜[ÙNÂˆBˆÛ™Q[K˜ÚXÚÙYHYNÂˆÛ™Q[K™\Ü]Ú]™[
+™]È]™[
+˜Ú[™ÙH‹ÈX˜›\ÎˆYHJJNÂˆ™]\›ˆÛ™Q[K˜ÚXÚÙYÂˆJNÂˆ\ÜÙ\™\]X[
+›ÛÚÛX\šÔÛXŞQ[˜X›YYJNÂ‚ˆ]ØZ]ÛXÚÊœ[‹[Y\™ÙHŠNÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-    const openDialog = invokeDialog("Open", [plain, bookmarks]);
-    await click("add-merge-sources");
-    const openEvidence = await openDialog;
-    console.log("[system-dialog] source selection command posted");
-    assert.deepEqual(openEvidence.paths, [plain, bookmarks]);
-    await waitForState(
-      () => ({
-        addDisabled:
-          document.querySelector('[data-testid="add-merge-sources"]')
-            ?.disabled ?? true,
-        count: document.querySelectorAll(
-          '[data-testid="merge-source-row"]',
-        ).length,
-        pages:
-          document.querySelector('[data-testid="merge-page-total"]')
-            ?.textContent ?? "",
-        status:
-          document.querySelector('[data-testid="merge-task-status"]')
-            ?.textContent ?? "",
-      }),
-      (state) =>
-        state.count === 2 &&
-        state.pages.trim() === "6" &&
-        !state.addDisabled,
-      "two inspected source rows",
-    );
-    console.log("[system-dialog] two source rows inspected and picker restored");
+HO‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK]\ÚË\İ]\È—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ
+˜[YJHOˆ˜[YKš[˜ÛY\Ê“Y\™ÙYˆÜ™X]YŠKˆ™\šYšYYš\œİY\™ÙH™\İ[‹ˆ
+NÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×Hš\œİÚ^\YÙHY\™ÙHÛÛ\]YŠNÂˆÛÛœİš\œİ\ˆH]ØZ]^XÑš[P\Ş[˜Êœ\‹™^H‹Âˆ‹K\ÚİË[œYÙ\È‹ˆİ]]ˆJNÂˆ\ÜÙ\™\]X[
+š\œİ\‹œİİ]š[J
+KˆŠNÂˆÛÛœİš\œİİ][™RœÛÛˆH]ØZ]^XÑš[P\Ş[˜Êœ\‹™^H‹Âˆ‹KZœÛÛLˆ‹ˆ‹KZœÛÛ‹ZÙ^O[İ][™\È‹ˆİ]]ˆJNÂˆÛÛœİš\œİİ][™\ÈH”ÓÓ‹œ\œÙJš\œİİ][™RœÛÛ‹œİİ]
+K›İ][™\ÎÂˆ\ÜÙ\™Y\\]X[
+ˆš\œİİ][™\Ë›X\
 
-    const saveDialog = invokeDialog("Save", [output]);
-    await click("choose-merge-output");
-    const saveEvidence = await saveDialog;
-    assert.deepEqual(saveEvidence.paths, [output]);
-    console.log("[system-dialog] destination selection command posted");
-    await waitForState(
-      () =>
-        document.querySelector('[data-testid="merge-output-path"]')
-          ?.textContent ?? "",
-      (value) => value.includes("merged-from-system-dialog.pdf"),
-      "registered save destination",
-    );
+È]K\İYÙ\ÜÙœ›ÛLHJHOˆ
+Âˆ]KˆYÙNˆ\İYÙ\ÜÙœ›ÛLKˆJJKˆÂˆÈ]NˆœZ[‹]™YK\YÙ\È‹YÙNˆHKˆÈ]Nˆ˜›ÛÚÛX\šÜÈ‹YÙNˆKˆKˆ
+NÂˆÛÛœİš\œİ]\ÈH]ØZ]™XYš[Jİ]]
+NÂˆ\ÜÙ\™\]X[
+š\œİ]\ËœİX˜\œ˜^JJKÔİš[™Ê˜\ØÚZHŠK‰T‹HŠNÂ‚ˆÛÛœİÙ[[™[HY™™\‹™œ›ÛJœ[˜Ù\œ‹XÛÛ™›Xİ\Ù[[™[‹]ŠNÂˆ]ØZ]Üš]Qš[Jİ]]Ù[[™[
+NÂˆÛÛœİÛÛ™›XİX[ÙÈH[›ÚÙQX[ÙÊ”Ø]™H‹Ûİ]]KYJNÂˆ]ØZ]ÛXÚÊ˜ÚÛÜÙK[Y\™ÙK[İ]]ŠNÂˆÛÛœİÛÛ™›XİX[ÙÑ]šY[˜ÙHH]ØZ]ÛÛ™›XİX[ÙÎÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×H^\İ[™È\İ[˜][Ûˆ™\Ù[XİYŠNÂˆ\ÜÙ\™\]X[
+ÛÛ™›XİX[ÙÑ]šY[˜ÙK˜ÛÛ™š\›X][Û’[™YYJNÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-    await click("merge-advanced-toggle");
-    const bookmarkPolicyEnabled = await browser.execute(() => {
-      const oneEntry = document.querySelector(
-        '[data-testid="bookmark-policy-one-entry"]',
-      );
-      if (!(oneEntry instanceof HTMLInputElement)) {
-        return false;
-      }
-      oneEntry.checked = true;
-      oneEntry.dispatchEvent(new Event("change", { bubbles: true }));
-      return oneEntry.checked;
-    });
-    assert.equal(bookmarkPolicyEnabled, true);
+HO‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK[İ]]\]—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ
+˜[YJHOˆ˜[YKš[˜ÛY\Ê›Y\™ÙYYœ›ÛK\Ş\İ[KYX[ÙËœˆŠKˆœ™\Ù[XİY^\İ[™È\İ[˜][Ûˆ‹ˆ
+NÂ‚ˆ]ØZ]ÛXÚÊœ[‹[Y\™ÙHŠNÂˆÛÛœİÛÛ™›Xİİ]\ÈH]ØZ]ØZ]›Ü”İ]Jˆ
 
-    await click("run-merge");
-    await waitForState(
-      () =>
-        document.querySelector('[data-testid="merge-task-status"]')
-          ?.textContent ?? "",
-      (value) => value.includes("Merged PDF created"),
-      "verified first merge result",
-    );
-    console.log("[system-dialog] first six-page merge completed");
-    const firstQpdf = await execFileAsync("qpdf.exe", [
-      "--show-npages",
-      output,
-    ]);
-    assert.equal(firstQpdf.stdout.trim(), "6");
-    const firstOutlineJson = await execFileAsync("qpdf.exe", [
-      "--json=2",
-      "--json-key=outlines",
-      output,
-    ]);
-    const firstOutlines = JSON.parse(firstOutlineJson.stdout).outlines;
-    assert.deepEqual(
-      firstOutlines.map(({ title, destpageposfrom1 }) => ({
-        title,
-        page: destpageposfrom1,
-      })),
-      [
-        { title: "plain-three-pages.pdf", page: 1 },
-        { title: "bookmarks.pdf", page: 4 },
-      ],
-    );
-    const firstBytes = await readFile(output);
-    assert.equal(firstBytes.subarray(0, 5).toString("ascii"), "%PDF-");
+HO‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK]\ÚË\İ]\È—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ
+˜[YJHO‚ˆ˜[YKš[˜ÛY\Ê›İ]][™XYH^\İÈŠHˆ˜[YKš[˜ÛY\Êœ™\XÙ[Y[\È\ØX›YŠKˆœØY™H^\İ[™Ë[İ]]ÛÛ™›Xİ‹ˆ
+NÂˆ\ÜÙ\›X]Ú
+ÛÛ™›Xİİ]\ËÛİ]][™XYH^\İß™\XÙ[Y[\È\ØX›YÊNÂˆ\ÜÙ\™\]X[
+ÚLMŠ]ØZ]™XYš[Jİ]]
+JKÚLMŠÙ[[™[
+JNÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×HY˜][ÛÛ™›Xİ™\Ù\™YÙ[[™[]\ÈŠNÂ‚ˆÛÛœİ™\XÙ[Y[[˜X›YH]ØZ]œ›İÜÙ\‹™^Xİ]J
 
-    const sentinel = Buffer.from("pincerpdf-conflict-sentinel", "utf8");
-    await writeFile(output, sentinel);
-    const conflictDialog = invokeDialog("Save", [output], true);
-    await click("choose-merge-output");
-    const conflictDialogEvidence = await conflictDialog;
-    console.log("[system-dialog] existing destination reselected");
-    assert.equal(conflictDialogEvidence.confirmationHandled, true);
-    await waitForState(
-      () =>
-        document.querySelector('[data-testid="merge-output-path"]')
-          ?.textContent ?? "",
-      (value) => value.includes("merged-from-system-dialog.pdf"),
-      "reselected existing destination",
-    );
+HOˆÂˆÛÛœİÚXÚØ›ŞHØİ[Y[œ]Y\TÙ[XİÜŠˆ	ÖÙ]K]\İYHœ™\XÙKY^\İ[™Ë[İ]]—IËˆ
+NÂˆYˆ
+JÚXÚØ›Ş[œİ[˜Ù[ÙˆS[œ][[Y[
+JHÂˆ™]\›ˆ˜[ÙNÂˆBˆÚXÚØ›Ş˜ÚXÚÙYHYNÂˆÚXÚØ›Ş™\Ü]Ú]™[
+™]È]™[
+˜Ú[™ÙH‹ÈX˜›\ÎˆYHJJNÂˆ™]\›ˆÚXÚØ›Ş˜ÚXÚÙYÂˆJNÂˆ\ÜÙ\™\]X[
+™\XÙ[Y[[˜X›YYJNÂ‚ˆ]ØZ]ÛXÚÊœ[‹[Y\™ÙHŠNÂˆ]ØZ]ØZ]›Ü”İ]Jˆ
 
-    await click("run-merge");
-    const conflictStatus = await waitForState(
-      () =>
-        document.querySelector('[data-testid="merge-task-status"]')
-          ?.textContent ?? "",
-      (value) =>
-        value.includes("output already exists") ||
-        value.includes("replacement is disabled"),
-      "safe existing-output conflict",
-    );
-    assert.match(conflictStatus, /output already exists|replacement is disabled/);
-    assert.equal(sha256(await readFile(output)), sha256(sentinel));
-    console.log("[system-dialog] default conflict preserved sentinel bytes");
-
-    const replacementEnabled = await browser.execute(() => {
-      const checkbox = document.querySelector(
-        '[data-testid="replace-existing-output"]',
-      );
-      if (!(checkbox instanceof HTMLInputElement)) {
-        return false;
-      }
-      checkbox.checked = true;
-      checkbox.dispatchEvent(new Event("change", { bubbles: true }));
-      return checkbox.checked;
-    });
-    assert.equal(replacementEnabled, true);
-
-    await click("run-merge");
-    await waitForState(
-      () =>
-        document.querySelector('[data-testid="merge-task-status"]')
-          ?.textContent ?? "",
-      (value) => value.includes("Merged PDF created"),
-      "successful atomic replacement",
-    );
-    const replacementQpdf = await execFileAsync("qpdf.exe", [
-      "--check",
-      output,
-    ]);
-    assert.match(replacementQpdf.stdout, /No syntax or stream encoding errors/);
-    const replacementPages = await execFileAsync("qpdf.exe", [
-      "--show-npages",
-      output,
-    ]);
-    assert.equal(replacementPages.stdout.trim(), "6");
-    const replacementBytes = await readFile(output);
-    assert.equal(
-      replacementBytes.subarray(0, 5).toString("ascii"),
-      "%PDF-",
-    );
-    assert.notEqual(sha256(replacementBytes), sha256(sentinel));
-    console.log("[system-dialog] atomic replacement produced a valid six-page PDF");
-
-    const evidence = {
-      cancellation: cancelEvidence,
-      conflictDialog: conflictDialogEvidence,
-      conflictPreservedSha256: sha256(sentinel),
-      firstOutputSha256: sha256(firstBytes),
-      firstOutlines: firstOutlines.map(
-        ({ title, destpageposfrom1 }) => ({
-          title,
-          page: destpageposfrom1,
-        }),
-      ),
-      open: openEvidence,
-      output,
-      replacementQpdfCheck: true,
-      replacementOutputSha256: sha256(replacementBytes),
-      replacementPages: 6,
-      save: saveEvidence,
-    };
-    await writeFile(
-      resolve(outputRoot, "system-dialog-evidence.json"),
-      `${JSON.stringify(evidence, null, 2)}\n`,
-      "utf8",
-    );
-    await browser.saveScreenshot(
-      resolve(outputRoot, "system-dialog-merge-completed.png"),
-    );
-  });
-});
+HO‚ˆØİ[Y[œ]Y\TÙ[XİÜŠ	ÖÙ]K]\İYH›Y\™ÙK]\ÚË\İ]\È—IÊBˆË^ÛÛ[ÏÈˆ‹ˆ
+˜[YJHOˆ˜[YKš[˜ÛY\Ê“Y\™ÙYˆÜ™X]YŠKˆœİXØÙ\ÜÙ[]ÛZXÈ™\XÙ[Y[‹ˆ
+NÂˆÛÛœİ™\XÙ[Y[\ˆH]ØZ]^XÑš[P\Ş[˜Êœ\‹™^H‹Âˆ‹KXÚXÚÈ‹ˆİ]]ˆJNÂˆ\ÜÙ\›X]Ú
+™\XÙ[Y[\‹œİİ]Ó›ÈŞ[^Üˆİ™X[H[˜ÛÙ[™È\œ›ÜœËÊNÂˆÛÛœİ™\XÙ[Y[YÙ\ÈH]ØZ]^XÑš[P\Ş[˜Êœ\‹™^H‹Âˆ‹K\ÚİË[œYÙ\È‹ˆİ]]ˆJNÂˆ\ÜÙ\™\]X[
+™\XÙ[Y[YÙ\Ëœİİ]š[J
+KˆŠNÂˆÛÛœİ™\XÙ[Y[]\ÈH]ØZ]™XYš[Jİ]]
+NÂˆ\ÜÙ\™\]X[
+ˆ™\XÙ[Y[]\ËœİX˜\œ˜^JJKÔİš[™Ê˜\ØÚZHŠKˆ‰T‹H‹ˆ
+NÂˆ\ÜÙ\››İ\]X[
+ÚLMŠ™\XÙ[Y[]\ÊKÚLMŠÙ[[™[
+JNÂˆÛÛœÛÛK›ÙÊ–ÜŞ\İ[KYX[Ù×H]ÛZXÈ™\XÙ[Y[›ÙXÙYH˜[YÚ^\YÙHˆŠNÂ‚ˆÛÛœİ]šY[˜ÙHHÂˆØ[˜Ù[][ÛˆØ[˜Ù[]šY[˜ÙKˆÛÛ™›XİX[ÙÎˆÛÛ™›XİX[ÙÑ]šY[˜ÙKˆÛÛ™›Xİ™\Ù\™YÚLMˆÚLMŠÙ[[™[
+Kˆš\œİİ]]ÚLMˆÚLMŠš\œİ]\ÊKˆš\œİİ][™\Îˆš\œİİ][™\Ë›X\
+ˆ
+È]K\İYÙ\ÜÙœ›ÛLHJHOˆ
+Âˆ]KˆYÙNˆ\İYÙ\ÜÙœ›ÛLKˆJKˆ
+KˆÜ[ˆÜ[‘]šY[˜ÙKˆİ]]ˆ™\XÙ[Y[\ÚXÚÎˆYKˆ™\XÙ[Y[İ]]ÚLMˆÚLMŠ™\XÙ[Y[]\ÊKˆ™\XÙ[Y[YÙ\Îˆ‹ˆØ]™NˆØ]™Q]šY[˜ÙKˆNÂˆ]ØZ]Üš]Qš[Jˆ™\ÛÛ™Jİ]]›ÛİœŞ\İ[KYX[ÙËY]šY[˜ÙKšœÛÛˆŠKˆ	Ò”ÓÓ‹œİš[™ÚYJ]šY[˜ÙK[Š_W˜ˆ]‹ˆ
+NÂˆ]ØZ]œ›İÜÙ\‹œØ]™TØÜ™Y[œÚİ
+ˆ™\ÛÛ™Jİ]]›ÛİœŞ\İ[KYX[ÙË[Y\™ÙKXÛÛ\]Yœ™ÈŠKˆ
+NÂˆJNÂŸJNÂ

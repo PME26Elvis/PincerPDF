@@ -1,7 +1,7 @@
-# Project State
+­r‡^Ñf¥–Ø¦{^ìyÊ'vÃ®¶›­# Project State
 
-- Updated: 2026-07-31
-- Phase: P4 â€” Merge vertical slice (P4.4 document-level bookmarks)
+- Updated: 2026-08-03
+- Phase: P4 â€” Merge vertical slice (P4.7 filename footer overlay)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -336,9 +336,9 @@ on exact source head `11d46ce2d2ca3df8a0cf5e9e2f87ee1f4ed7d675`:
 
 This closes the P4.3 Windows/Linux parity-corpus checkpoint.
 
-## P4.4 document-level bookmark evidence
+## P4.4 document-level bookmark evidence (integrated)
 
-ADR-021 accepts the first non-discard Merge bookmark policy. The shared DTO,
+ADR-021 accepted the first non-discard Merge bookmark policy. The shared DTO,
 Leptos workspace, trusted desktop command, application service and QPDF adapter
 now carry an explicit choice between `Discard` and `OneEntryPerDocument`;
 discard remains the default.
@@ -415,15 +415,79 @@ sha256=bc1bf55202027b9ed3049b8f95e5be721ebb4a175ca7556c72aef50242f627de
 pages=6
 ```
 
-Linux compatibility evidence remains the final exit gate before P4.4 is
-integrated.
+P4.4 was squash-integrated as `main@7a5f49e034a9098eae0794d6e38f7b751506a0ee`
+after its Linux quality, Merge core and application-shell workflows succeeded.
+
+## P4.5 relevant source-outline evidence
+
+ADR-022 adds `Retain` and `RetainAsOneEntryPerDocument` alongside the existing
+`Discard` and `OneEntryPerDocument` policies. The QPDF adapter reads bounded
+source-outline JSON before page assembly, prunes excluded leaves, retains
+containers with retained descendants, and rebuilds the output tree using actual
+output page object references. Source titles use file base names, and a
+deliberately duplicated selected source page targets its first output occurrence.
+
+Local Windows evidence is green:
+
+- format, warning-denied Clippy and the complete portable Rust workspace suite;
+- a real QPDF/MuPDF contract that verifies a root-retained hierarchy (`Chapter
+  2` then `Appendix`) and the grouped hierarchy under the source base-name;
+- recursive evidence summarization for all three outline-generating policies.
+- 10/10 deterministic Chromium browser E2E scenarios, including both retained
+  policy states and an inspected 1440px retained-policy visual checkpoint;
+- 4/4 production-protocol WebView2 scenarios; and
+- the coordinate-free real Windows open/save-dialog regression flow.
+
+The remaining P4.5 exit work is the path-scoped Linux review evidence before
+integration. The local release build can be reused by native suites; this
+avoids treating repeated link time as a test result.
+
+## P4.6 odd-page blank insertion evidence
+
+The Merge request, desktop IPC DTO, Leptos workspace and QPDF adapter now carry
+`add_blank_page_if_odd`. The adapter creates a private valid blank PDF matching
+the final selected page's MediaBox, CropBox and rotation, then adds it after
+every source whose resolved selection has an odd length, including the final
+source. Bookmark planning advances by the inserted page so document entries
+remain accurate.
+
+Local Windows evidence is green:
+
+- real QPDF/MuPDF contract: six-page output, blank page at output page 4,
+  source-matched `[0 0 612 792]` MediaBox with 90-degree rotation, empty
+  MuPDF text extraction, and one-entry destinations at pages 1 and 5;
+- complete workspace Rust tests and compilation; and
+- 10/10 Chromium E2E scenarios, including the accessible control and its
+  enabled state alongside bookmark policies.
+
+## P4.7 filename footer overlay evidence
+
+The Merge request, desktop IPC DTO, Leptos workspace and QPDF adapter now carry
+`add_filename_footer`. When enabled, QPDF first assembles the selected pages
+and then receives a private one-page-per-output-page overlay. Each non-blank
+overlay page contains its source filename and copies the source MediaBox,
+CropBox and rotation; generated odd-page blanks are intentionally left empty.
+Bookmark reconstruction remains the final metadata step.
+
+Local Windows evidence is green:
+
+- real QPDF/MuPDF contract: four-page output, source filenames extracted on
+  all four contributing pages, valid structure and no page-count drift;
+- warning-denied workspace Clippy and all portable Rust tests; and
+- browser advanced-policy E2E coverage for the explicit footer control and its
+  state retention while bookmark policies change.
+
+This is intentionally Partial rather than complete parity. The first overlay
+uses Helvetica/WinAnsi and replaces non-ASCII filename characters with a
+visible fallback marker. Unicode font embedding, collision-aware placement and
+visual golden evidence remain required before MERGE-007 is Verified.
 
 ## Exact next actions
 
-1. Retain Linux compatibility evidence and integrate P4.4 only on the exact
-   validated source head.
-2. Define source-outline retention and destination-remapping semantics without
-   relying on QPDF's measured dangling-outline behavior.
+1. Retain Linux compatibility evidence and integrate the validated P4.5/P4.7
+   source head through the connector workflow.
+2. Add broader inherited MediaBox/CropBox geometry corpus coverage and a
+   Unicode-font footer slice.
 3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy
    gaps while all other seven tools remain visibly gated.
 

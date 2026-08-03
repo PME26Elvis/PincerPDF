@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+­r‡^Ñf¥–Ø¦{m¬yÊ'vÃ®¶›­#!/usr/bin/env python3
 """Dependency-free structural verification for restricted bootstrap environments."""
 
 from __future__ import annotations
@@ -52,6 +52,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-019-windows-atomic-replacement.md",
     "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
     "docs/architecture/adr/ADR-021-document-level-bookmark-reconstruction.md",
+    "docs/architecture/adr/ADR-022-source-outline-reconstruction.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -296,9 +297,10 @@ def verify_merge_core_contract() -> None:
         "builder.mode(0o700)",
         "child.kill()",
         "qdf_catalog_has_key",
-        "add_document_bookmarks",
+        "add_bookmark_plan",
         "--update-from-json=<private-bookmark-plan>",
-        "verify_document_bookmarks",
+        "verify_bookmark_plan",
+        "parse_source_bookmarks",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -314,7 +316,9 @@ def verify_merge_core_contract() -> None:
         '"pages/5/Rotate"',
         '"trailer/Info"',
         "merge_one_entry_per_document",
-        '"plain-three-pages.pdf"',
+        "merge_retained_source_bookmarks",
+        "merge_retained_bookmarks_under_document_entries",
+        '"plain-three-pages"',
         '"destpageposfrom1"',
     ):
         if token not in contract:
@@ -350,7 +354,13 @@ def verify_merge_core_contract() -> None:
     summarizer = (ROOT / "scripts/summarize-merge-evidence.py").read_text(
         encoding="utf-8"
     )
-    for token in ("one-entry-bookmarks.pdf", "one_entry_per_document", "outline_summary"):
+    for token in (
+        "one-entry-bookmarks.pdf",
+        "retained-source-bookmarks.pdf",
+        "retained-under-document-bookmarks.pdf",
+        "retain_as_one_entry_per_document",
+        "outline_summary",
+    ):
         if token not in summarizer:
             fail(f"document-level bookmark evidence summary missing: {token}")
 
@@ -426,7 +436,10 @@ def verify_merge_desktop_contract() -> None:
         "Discard and report",
         'data-testid="bookmark-policy-discard"',
         'data-testid="bookmark-policy-one-entry"',
+        'data-testid="bookmark-policy-retain"',
+        'data-testid="bookmark-policy-retain-as-one-entry"',
         "One entry per document",
+        "Retain relevant source hierarchy",
         "Reject before processing",
     ):
         if token not in ui:
@@ -441,7 +454,9 @@ def verify_merge_desktop_contract() -> None:
         "running and completed Merge states",
         "advanced safety policies",
         "one-entry-per-document bookmark policy",
+        "retained-bookmark policy states",
         "merge-bookmark-policy-desktop.png",
+        "merge-retained-bookmark-policy-desktop.png",
         "merge-completed-compact.png",
     ):
         if token not in tests:
@@ -501,7 +516,9 @@ def verify_native_webview_contract() -> None:
         '"merge_engine_status"',
         '"cancel_merge"',
         '"bookmark-policy-one-entry"',
-        "both explicit bookmark policies",
+        '"bookmark-policy-retain"',
+        '"bookmark-policy-retain-as-one-entry"',
+        "all four explicit bookmark policies",
         '"native-startup.json"',
         '"native-startup.html"',
         '"native-merge-empty-windows.png"',

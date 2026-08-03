@@ -1,4 +1,4 @@
-import assert from "node:assert/strict";
+­r‡^Ñf¥–Ø¦{m¬yÊ'vÃ®¶›­import assert from "node:assert/strict";
 import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -123,7 +123,7 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.equal(navigation.mergeWorkspace, true);
   });
 
-  it("exposes both explicit bookmark policies in the production WebView", async () => {
+  it("exposes all four explicit bookmark policies in the production WebView", async () => {
     const policies = await browser.executeAsync((done) => {
       document
         .querySelector('[data-testid="merge-advanced-toggle"]')
@@ -135,9 +135,17 @@ describe("PincerPDF native WebView2 Merge shell", () => {
         const oneEntry = document.querySelector(
           '[data-testid="bookmark-policy-one-entry"]',
         );
+        const retain = document.querySelector(
+          '[data-testid="bookmark-policy-retain"]',
+        );
+        const retainAsOneEntry = document.querySelector(
+          '[data-testid="bookmark-policy-retain-as-one-entry"]',
+        );
         if (
           !(discard instanceof HTMLInputElement) ||
-          !(oneEntry instanceof HTMLInputElement)
+          !(oneEntry instanceof HTMLInputElement) ||
+          !(retain instanceof HTMLInputElement) ||
+          !(retainAsOneEntry instanceof HTMLInputElement)
         ) {
           done({ controlsPresent: false });
           return;
@@ -149,6 +157,8 @@ describe("PincerPDF native WebView2 Merge shell", () => {
             controlsPresent: true,
             discardChecked: discard.checked,
             oneEntryChecked: oneEntry.checked,
+            retainPresent: retain instanceof HTMLInputElement,
+            retainAsOneEntryPresent: retainAsOneEntry instanceof HTMLInputElement,
             summary:
               document.querySelector(
                 '[data-testid="merge-advanced-panel"]',
@@ -159,8 +169,10 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     });
 
     assert.equal(policies.controlsPresent, true);
-    assert.equal(policies.discardChecked, false);
-    assert.equal(policies.oneEntryChecked, true);
+  assert.equal(policies.discardChecked, false);
+  assert.equal(policies.oneEntryChecked, true);
+  assert.equal(policies.retainPresent, true);
+  assert.equal(policies.retainAsOneEntryPresent, true);
     assert.match(policies.summary, /One entry per document/);
   });
 

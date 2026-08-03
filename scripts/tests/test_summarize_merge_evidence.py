@@ -1,86 +1,21 @@
-"""Regression tests for the P4.1 Merge evidence summarizer."""
-
-from __future__ import annotations
-
-import importlib.util
-import unittest
-from pathlib import Path
-
-
-SCRIPT = Path(__file__).parents[1] / "summarize-merge-evidence.py"
-SPEC = importlib.util.spec_from_file_location("summarize_merge_evidence", SCRIPT)
-if SPEC is None or SPEC.loader is None:
-    raise RuntimeError(f"cannot load {SCRIPT}")
-MODULE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODULE)
-
-
-class FirstNonEmptyLineTests(unittest.TestCase):
-    """Cover version tools that choose different output streams."""
-
-    def test_prefers_stdout_when_present(self) -> None:
-        self.assertEqual(
-            MODULE.first_non_empty_line("\nqpdf version 11.3.0\n", "ignored"),
-            "qpdf version 11.3.0",
-        )
-
-    def test_falls_back_to_stderr(self) -> None:
-        self.assertEqual(
-            MODULE.first_non_empty_line("", "\nmutool version 1.21.1\n"),
-            "mutool version 1.21.1",
-        )
-
-    def test_rejects_missing_version_output(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "no version output"):
-            MODULE.first_non_empty_line("", " \n ")
-
-
-class CanonicalTextTests(unittest.TestCase):
-    """Keep semantic evidence hashes independent of host newline policy."""
-
-    def test_normalizes_windows_newlines(self) -> None:
-        self.assertEqual(MODULE.canonical_text("first\r\nsecond\r\n"), b"first\nsecond\n")
-
-    def test_normalizes_legacy_mac_newlines(self) -> None:
-        self.assertEqual(MODULE.canonical_text("first\rsecond\r"), b"first\nsecond\n")
-
-    def test_preserves_intentional_blank_lines(self) -> None:
-        self.assertEqual(MODULE.canonical_text("first\n\nsecond"), b"first\n\nsecond\n")
-
-
-class OutlineSummaryTests(unittest.TestCase):
-    """Keep only title, destination page and hierarchy evidence."""
-
-    def test_extracts_stable_outline_semantics(self) -> None:
-        self.assertEqual(
-            MODULE.outline_summary(
-                {
-                    "outlines": [
-                        {
-                            "title": "first.pdf",
-                            "destpageposfrom1": 1,
-                            "kids": [],
-                            "object": "19 0 R",
-                        },
-                        {
-                            "title": "second.pdf",
-                            "destpageposfrom1": 4,
-                            "kids": [{"title": "ignored child detail"}],
-                            "object": "20 0 R",
-                        },
-                    ]
-                }
-            ),
-            [
-                {"title": "first.pdf", "page": 1, "children": 0},
-                {"title": "second.pdf", "page": 4, "children": 1},
-            ],
-        )
-
-    def test_rejects_missing_outline_array(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "omitted"):
-            MODULE.outline_summary({})
-
-
-if __name__ == "__main__":
-    unittest.main()
+­r‡^Ñf¥–Ø¦{kr‰Ý°ë­¦ëHˆˆ”™YÜ™\ÜÚ[Ûˆ\ÝÈ›ÜˆHŒHY\™ÙH]šY[˜ÙHÝ[[X\š^™\‹ˆˆˆ‚‚™œ›ÛH×Ù]\™W×È[\Ü[››Ý][ÛœÂ‚š[\Ü[\ÜX‹][š[\Ü[š]\Ý™œ›ÛH]Xˆ[\Ü]‚‚”ÐÔ’TH]
+×Ùš[W×ÊKœ\™[ÖÌWHÈœÝ[[X\š^™K[Y\™ÙKY]šY[˜ÙKœH‚”ÔPÈH[\ÜX‹][œÜX×Ùœ›ÛWÙš[WÛØØ][ÛŠœÝ[[X\š^™WÛY\™ÙWÙ]šY[˜ÙH‹ÐÔ’T
+BšYˆÔPÈ\È›Û™HÜˆÔPË›ØY\ˆ\È›Û™N‚ˆ˜Z\ÙH[[YQ\œ›ÜŠˆ˜Ø[››ÝØYÔÐÔ’THŠB“SÑSHH[\ÜX‹][›[Ù[WÙœ›ÛWÜÜXÊÔPÊB”ÔPË›ØY\‹™^X×Û[Ù[JSÑSJB‚‚˜Û\ÜÈš\œÝ›Û‘[\S[™U\ÝÊ[š]\Ý•\ÝØ\ÙJN‚ˆˆˆÛÝ™\ˆ™\œÚ[ÛˆÛÛÈ]ÚÛÜÙHY™™\™[Ý]]Ý™X[\Ëˆˆˆ‚‚ˆYˆ\ÝÜ™Y™\œ×ÜÝÝ]ÝÚ[—Ü™\Ù[
+Ù[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+ˆSÑSK™š\œÝÛ›Û—Ù[\WÛ[™J—œ\ˆ™\œÚ[ÛˆLKŒËŒˆ‹šYÛ›Ü™YŠKˆœ\ˆ™\œÚ[ÛˆLKŒËŒ‹ˆ
+B‚ˆYˆ\ÝÙ˜[×Ø˜XÚ×Ý×ÜÝ\œŠÙ[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+ˆSÑSK™š\œÝÛ›Û—Ù[\WÛ[™Jˆ‹—›]]ÛÛ™\œÚ[ÛˆKŒŒKŒWˆŠKˆ›]]ÛÛ™\œÚ[ÛˆKŒŒKŒH‹ˆ
+B‚ˆYˆ\ÝÜ™Z™XÝ×ÛZ\ÜÚ[™×Ý™\œÚ[Û—ÛÝ]]
+Ù[ŠHOˆ›Û™N‚ˆÚ]Ù[‹˜\ÜÙ\˜Z\Ù\Ô™YÙ^
+[[YQ\œ›Ü‹››È™\œÚ[ÛˆÝ]]ŠN‚ˆSÑSK™š\œÝÛ›Û—Ù[\WÛ[™Jˆ‹ˆˆŠB‚‚˜Û\ÜÈØ[›ÛšXØ[^\ÝÊ[š]\Ý•\ÝØ\ÙJN‚ˆˆˆ’ÙY\Ù[X[XÈ]šY[˜ÙH\Ú\È[™\[™[ÙˆÜÝ™]Û[™HÛXÞKˆˆˆ‚‚ˆYˆ\ÝÛ›Ü›X[^™\×ÝÚ[™ÝÜ×Û™]Û[™\ÊÙ[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+SÑSK˜Ø[›ÛšXØ[Ý^
+™š\œÝ—œÙXÛÛ™—ˆŠKˆ™š\œÝœÙXÛÛ™ˆŠB‚ˆYˆ\ÝÛ›Ü›X[^™\×ÛYØXÞWÛXX×Û™]Û[™\ÊÙ[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+SÑSK˜Ø[›ÛšXØ[Ý^
+™š\œÝœÙXÛÛ™ˆŠKˆ™š\œÝœÙXÛÛ™ˆŠB‚ˆYˆ\ÝÜ™\Ù\™\×Ú[[[Û˜[Ø›[š×Û[™\ÊÙ[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+SÑSK˜Ø[›ÛšXØ[Ý^
+™š\œÝ—œÙXÛÛ™ŠKˆ™š\œÝ—œÙXÛÛ™ˆŠB‚‚˜Û\ÜÈÝ][™TÝ[[X\žU\ÝÊ[š]\Ý•\ÝØ\ÙJN‚ˆˆˆ’ÙY\]K\Ý[˜][ÛˆYÙH[™™XÝ\œÚ]™HY\˜\˜ÚH]šY[˜ÙKˆˆˆ‚‚ˆYˆ\ÝÙ^˜XÝ×ÜÝX›WÛÝ][™WÜÙ[X[XÜÊÙ[ŠHOˆ›Û™N‚ˆÙ[‹˜\ÜÙ\\]X[
+ˆSÑSK›Ý][™WÜÝ[[X\žJˆÂˆ›Ý][™\ÈŽˆÂˆÂˆ]HŽˆ™š\œÝ‹ˆ™\ÝYÙ\ÜÙœ›ÛLHŽˆKˆšÚYÈŽˆ×Kˆ›Øš™XÝŽˆŒNHˆ‹ˆKˆÂˆ]HŽˆœÙXÛÛ™‹ˆ™\ÝYÙ\ÜÙœ›ÛLHŽˆˆšÚYÈŽˆÂˆÂˆ]HŽˆ\[™^‹ˆ™\ÝYÙ\ÜÙœ›ÛLHŽˆKˆšÚYÈŽˆ×KˆBˆKˆ›Øš™XÝŽˆŒŒˆ‹ˆKˆBˆBˆ
+KˆÂˆÈ]HŽˆ™š\œÝ‹œYÙHŽˆK˜Ú[™[ˆŽˆ×_KˆÂˆ]HŽˆœÙXÛÛ™‹ˆœYÙHŽˆˆ˜Ú[™[ˆŽˆÞÈ]HŽˆ\[™^‹œYÙHŽˆK˜Ú[™[ˆŽˆ×_WKˆKˆKˆ
+B‚ˆYˆ\ÝÜ™Z™XÝ×ÛZ\ÜÚ[™×ÛÝ][™WØ\œ˜^JÙ[ŠHOˆ›Û™N‚ˆÚ]Ù[‹˜\ÜÙ\˜Z\Ù\Ô™YÙ^
+[[YQ\œ›Ü‹›ÛZ]YŠN‚ˆSÑSK›Ý][™WÜÝ[[X\žJßJB‚‚šYˆ×Û˜[YW×ÈOH—×ÛXZ[—×ÈŽ‚ˆ[š]\Ý›XZ[Š
+B
