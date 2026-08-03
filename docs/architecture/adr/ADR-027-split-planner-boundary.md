@@ -35,7 +35,9 @@ split rule, not only bookmark-boundary planning, so a page subset never claims
 bookmark preservation while silently emitting dangling destinations. When QPDF
 reports a named destination, unresolved destination, or action-backed outline,
 the adapter fails closed with `capability_unavailable` rather than silently
-dropping the entry.
+dropping the entry. Split-only output vectors that repeat a source page also
+fail closed when a surviving outline would have more than one valid output
+occurrence; Merge retains its separately documented first-occurrence policy.
 
 ## Invariants
 
@@ -54,7 +56,7 @@ dropping the entry.
 Named destination resolution, action preservation, outline style/color/open-
 state fidelity, and duplicate-page selections with ambiguous destination
 identity remain gated until dedicated real-engine fixtures define their safe
-policy. The parser now has an explicit safety gate for these inputs, so they
+policy. The parser now has explicit safety gates for these inputs, so they
 cannot be mistaken for successfully preserved bookmarks. The nested boundary
 selection, desktop depth control, and page-subset outline reconstruction are
 implemented and covered by the split contract. Split-by-size estimation is
