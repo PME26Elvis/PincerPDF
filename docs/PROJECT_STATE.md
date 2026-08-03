@@ -37,6 +37,7 @@
 - P5.1 materialization now reconstructs surviving source outline hierarchy for every output part, remaps page destinations through the exact ordered page vector, prunes dangling leaves, and verifies the rebuilt outline with QPDF before atomic finalization.
 - P5.1 split evidence is green on the current PR head: native command-boundary outputs, nested bookmark depth, reconstructed outline destinations, Linux portable checks, and desktop/compact screenshot baselines all passed.
 - Split outline reconstruction now fails closed with `capability_unavailable` for named destinations, unresolved/action-backed entries, and ambiguous duplicate-page destination identity; Merge's documented first-occurrence duplicate policy is unchanged.
+- Split bookmark materialization now carries QPDF expansion state, writes descendant-correct `/Count` values including the negative collapsed form, and has Rust unit coverage for exact Unicode titles and closed nested outlines. Real-engine Unicode/style fixtures remain a separate gate.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
