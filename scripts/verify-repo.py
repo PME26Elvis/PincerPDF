@@ -394,6 +394,33 @@ def verify_merge_core_contract() -> None:
             fail(f"document-level bookmark evidence summary missing: {token}")
 
 
+def verify_split_planner_contract() -> None:
+    """Verify the engine-independent P5.1 split planning boundary."""
+
+    split_source = (ROOT / "crates/pincerpdf-split/src/lib.rs").read_text(
+        encoding="utf-8"
+    )
+    cli_source = (ROOT / "apps/pincerpdf-cli/src/main.rs").read_text(encoding="utf-8")
+    roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+    for token in (
+        "pub enum SplitRule",
+        "EveryPage",
+        "FixedPageCount",
+        "Ranges(Vec<PageSelection>)",
+        "pub struct SplitPlan",
+        "pub fn plan_split",
+        "numbered_range",
+        "source_stem",
+    ):
+        if token not in split_source:
+            fail(f"P5.1 split planner contract missing: {token}")
+    for token in ("split-plan", "plan_split", "every-page"):
+        if token not in cli_source:
+            fail(f"P5.1 CLI smoke contract missing: {token}")
+    if "P5.1 — Split planner: In progress" not in roadmap:
+        fail("P5.1 roadmap status is missing")
+
+
 def verify_merge_desktop_contract() -> None:
     """Verify the trusted P4.2 command, UI, browser-adapter and safety contracts."""
 
@@ -716,6 +743,7 @@ def main() -> None:
     verify_dependency_locks()
     verify_shell_contract()
     verify_merge_core_contract()
+    verify_split_planner_contract()
     verify_merge_desktop_contract()
     verify_native_webview_contract()
     verify_windows_dialog_contract()
@@ -726,6 +754,7 @@ def main() -> None:
     print("dependency_locks=verified")
     print("application_shell=verified")
     print("merge_core=verified")
+    print("split_planner=verified")
     print("merge_desktop=verified")
     print("native_webview=verified")
     print("windows_system_dialog=verified")
