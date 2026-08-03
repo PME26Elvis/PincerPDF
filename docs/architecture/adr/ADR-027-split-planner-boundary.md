@@ -1,3 +1,6 @@
+Exit code: 0
+Wall time: 0.6 seconds
+Output:
 # ADR-027: Engine-independent Split planner boundary
 
 - Status: Accepted for P5.1
@@ -29,7 +32,10 @@ through each part's exact ordered page vector, prunes leaves whose destinations
 are not present, and rebuilds the surviving hierarchy against the output page
 objects before page-count and atomic-finalization checks. This applies to every
 split rule, not only bookmark-boundary planning, so a page subset never claims
-bookmark preservation while silently emitting dangling destinations.
+bookmark preservation while silently emitting dangling destinations. When QPDF
+reports a named destination, unresolved destination, or action-backed outline,
+the adapter fails closed with `capability_unavailable` rather than silently
+dropping the entry.
 
 ## Invariants
 
@@ -45,12 +51,15 @@ bookmark preservation while silently emitting dangling destinations.
 
 ## Deferred behavior
 
-Named destinations, action dictionaries, outline style/color/open-state
-fidelity, and duplicate-page selections with ambiguous destination identity
-remain gated until dedicated real-engine fixtures define their safe policy.
-The nested boundary selection, desktop depth control, and page-subset outline
-reconstruction are implemented and covered by the split contract. Split-by-size
-estimation is defined separately by ADR-028. Private QPDF staging may live on
+Named destination resolution, action preservation, outline style/color/open-
+state fidelity, and duplicate-page selections with ambiguous destination
+identity remain gated until dedicated real-engine fixtures define their safe
+policy. The parser now has an explicit safety gate for these inputs, so they
+cannot be mistaken for successfully preserved bookmarks. The nested boundary
+selection, desktop depth control, and page-subset outline reconstruction are
+implemented and covered by the split contract. Split-by-size estimation is
+defined separately by ADR-028. Private QPDF staging may live on
 a different filesystem from the selected output directory; the adapter copies
 into the same-volume hidden sibling before the final atomic rename so Linux
 containers and Windows volumes share the same correctness boundary.
+
