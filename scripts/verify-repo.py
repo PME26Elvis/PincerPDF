@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -669,13 +670,31 @@ def main() -> None:
         if manifest.get("lints", {}).get("workspace") is not True:
             fail(f"workspace lints not inherited: {member}")
 
-    for path in ROOT.rglob("*"):
-        if any(part in BANNED_TRACKED_PARTS for part in path.relative_to(ROOT).parts):
+    try:
+        tracked_rust = subprocess.run(
+            ["git", "ls-files", "-z", "--", "*.rs"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        ).stdout.split(b"\0")
+    except (OSError, subprocess.CalledProcessError) as error:
+        fail(f"cannot enumerate tracked Rust sources: {error}")
+
+    for relative_bytes in tracked_rust:
+        if not relative_bytes:
             continue
-        if path.is_file() and path.suffix == ".rs":
+        relative = Path(relative_bytes.decode("utf-8"))
+        if any(part in BANNED_TRACKED_PARTS for part in relative.parts):
+            continue
+        path = ROOT / relative
+        if not path.is_file():
+            fail(f"tracked Rust source is missing: {relative}")
+        try:
             text = path.read_text(encoding="utf-8")
-            if "#![forbid(unsafe_code)]" not in text:
-                fail(f"Rust source does not explicitly forbid unsafe code: {path.relative_to(ROOT)}")
+        except (OSError, UnicodeError) as error:
+            fail(f"cannot read tracked Rust source {relative}: {error}")
+        if "#![forbid(unsafe_code)]" not in text:
+            fail(f"Rust source does not explicitly forbid unsafe code: {relative}")
 
     verify_dependency_locks()
     verify_shell_contract()
