@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{n,y 'v√Æ∂õ≠#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Create a deterministic, secret-scanned summary for the P4.1 Merge contract."""
 
 from __future__ import annotations
