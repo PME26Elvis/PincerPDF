@@ -29,6 +29,7 @@ use std::time::{Duration, Instant};
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 
 static NEXT_TEMP_ID: AtomicU64 = AtomicU64::new(1);
+const SPLIT_SIZE_SAFETY_MARGIN_BYTES: u64 = 4096;
 
 /// Configuration for external QPDF execution.
 #[derive(Clone, Debug)]
@@ -405,12 +406,15 @@ impl QpdfAdapter {
                     )
                 })?
                 .len();
-            let estimated_bytes = NonZeroU64::new(bytes).ok_or_else(|| {
-                EngineError::new(
-                    ErrorCode::EngineFailure,
-                    format!("QPDF produced an empty split-size estimate for page {page}"),
-                )
-            })?;
+            let estimated_bytes = bytes
+                .checked_add(SPLIT_SIZE_SAFETY_MARGIN_BYTES)
+                .and_then(NonZeroU64::new)
+                .ok_or_else(|| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("QPDF produced an invalid split-size estimate for page {page}"),
+                    )
+                })?;
             estimates.push(PageSizeEstimate {
                 page: page_number,
                 estimated_bytes,
