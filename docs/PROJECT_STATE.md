@@ -527,8 +527,9 @@ local Windows toolchain after this adjustment.
 
 1. Retain Linux Actions evidence for the new split materializer and its
    page-conservation/atomic-output contract.
-2. Add explicit split-by-bookmarks and split-by-size planning only after their
-   source metadata and size-estimation policies are testable.
+2. Wire QPDF outline extraction into the validated bookmark-boundary planner,
+   then add split-by-size only after its metadata and size-estimation policies
+   are testable.
 3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 
