@@ -420,7 +420,7 @@ def verify_split_planner_contract() -> None:
     split_contract = (
         ROOT / "crates/pincerpdf-engine-qpdf/tests/split_contract.rs"
     ).read_text(encoding="utf-8")
-    cli_source = (ROOT / "apps/pincerpdf-cli/src/main.rs").read_text(encoding="utf-8")
+    qpdf_source = (\n        ROOT / "crates/pincerpdf-engine-qpdf/src/lib.rs"\n    ).read_text(encoding="utf-8")\n    cli_source = (ROOT / "apps/pincerpdf-cli/src/main.rs").read_text(encoding="utf-8")
     roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
     for token in (
         "pub enum SplitRule",
