@@ -139,4 +139,77 @@ fn split_materialization_reconstructs_surviving_bookmarks() {
 
 #[test]
 #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
-fn qpdf_o
+fn qpdf_outline_boundaries_feed_bookmark_split_planner() {
+    let source = fixture_root().join("bookmarks.pdf");
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let boundaries = adapter
+        .inspect_bookmark_boundaries(&source, &ExecutionControl::default())
+        .expect("inspect top-level bookmark boundaries");
+    assert_eq!(boundaries.len(), 2);
+    assert_eq!(boundaries[0].title, "Chapter 1");
+    assert_eq!(boundaries[0].depth, 0);
+    assert_eq!(boundaries[1].page.get(), 2);
+    let plan = plan_split(&source, 3, &SplitRule::Bookmarks(boundaries))
+        .expect("bookmark boundaries produce a split plan");
+    assert_eq!(plan.parts.len(), 2);
+    assert_eq!(plan.parts[0].pages.len(), 1);
+    assert_eq!(plan.parts[1].pages.len(), 2);
+
+    let nested = adapter
+        .inspect_bookmark_boundaries_at_depth(&source, 1, &ExecutionControl::default())
+        .expect("inspect nested bookmark boundaries");
+    assert_eq!(nested.len(), 1);
+    assert_eq!(nested[0].title, "Appendix");
+    assert_eq!(nested[0].page.get(), 3);
+    assert_eq!(nested[0].depth, 1);
+    let nested_plan = plan_split(&source, 3, &SplitRule::Bookmarks(nested))
+        .expect("nested bookmark boundary produces a split plan");
+    assert_eq!(nested_plan.parts.len(), 1);
+    assert_eq!(nested_plan.parts[0].pages.len(), 1);
+}
+
+#[test]
+#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+fn qpdf_page_size_estimates_feed_size_split_and_bound_outputs() {
+    let source = fixture_root().join("plain-three-pages.pdf");
+    let work = work_directory();
+    if work.exists() {
+        fs::remove_dir_all(&work).expect("remove stale split contract directory");
+    }
+    fs::create_dir_all(&work).expect("create split contract directory");
+
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let estimate_report = adapter
+        .estimate_page_sizes(&source, 3, &ExecutionControl::default())
+        .expect("estimate page sizes");
+    assert_eq!(estimate_report.estimates.len(), 3);
+    assert_eq!(estimate_report.evidence.len(), 3);
+    let max_bytes = estimate_report
+        .estimates
+        .iter()
+        .map(|estimate| estimate.estimated_bytes.get())
+        .max()
+        .and_then(NonZeroU64::new)
+        .expect("nonzero estimate limit");
+    let plan = plan_split(
+        &source,
+        3,
+        &SplitRule::BySize {
+            max_bytes,
+            page_estimates: estimate_report.estimates,
+        },
+    )
+    .expect("size estimates produce a plan");
+    let report = adapter
+        .split(&plan, &work, &ExecutionControl::default())
+        .expect("size-bounded split materialization succeeds");
+    assert_eq!(report.outputs.len(), plan.parts.len());
+    for output in &report.outputs {
+        assert!(
+            fs::metadata(output).expect("output metadata").len() <= max_bytes.get(),
+            "size-bounded output exceeded the estimate limit: {}",
+            output.display()
+        );
+    }
+    fs::remove_dir_all(work).expect("clean split contract directory");
+}
