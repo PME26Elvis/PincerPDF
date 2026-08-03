@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{]ly 'v√Æ∂õ≠#!/usr/bin/env python3
+≠rá^—f•ñÿ¶{N¨y 'v√Æ∂õ≠#!/usr/bin/env python3
 """Dependency-free structural verification for restricted bootstrap environments."""
 
 from __future__ import annotations
@@ -53,6 +53,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
     "docs/architecture/adr/ADR-021-document-level-bookmark-reconstruction.md",
     "docs/architecture/adr/ADR-022-source-outline-reconstruction.md",
+    "docs/architecture/adr/ADR-023-filename-footer-overlay.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
