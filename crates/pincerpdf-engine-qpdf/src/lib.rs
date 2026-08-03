@@ -3587,6 +3587,6 @@ mod tests {
         let update = build_bookmark_update(&layout, catalog, &expected).expect("bookmark update");
         let objects = update["qpdf"][1].as_object().expect("update objects");
         assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(3));
-        assert_eq!(objects["obj:9 0 R"]["value"]["/Count"], Value::from(-1));
+        assert_eq!(objects["obj:10 0 R"]["value"]["/Count"], Value::from(-1));
     }
 }
