@@ -16,9 +16,9 @@ The QPDF adapter supplies these estimates by materializing each page through
 the same `--empty --pages` path used by split outputs and measuring the
 temporary PDF bytes. This avoids pretending that source object spans are
 serialized output sizes. The resulting `SplitPlan` carries the byte limit;
-the estimator adds a fixed serialization safety margin, and the materializer
-checks every temporary output before atomic finalization and removes all
-outputs if a real result exceeds the estimate.
+the estimator adds a fixed 4096-byte serialization safety margin, and the
+materializer checks every temporary output before atomic finalization and
+removes all outputs if a real result exceeds the estimate.
 
 The internal CLI exposes the same path as `split <OUTPUT_DIR> <SOURCE.pdf>
 size:BYTES`; bookmark mode is available as `bookmarks`, while the existing
