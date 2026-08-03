@@ -78,8 +78,19 @@ fn split(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Erro
     let adapter = QpdfAdapter::discover()?;
     let metadata = adapter.inspect(&source, InspectOptions::default())?;
     let control = pincerpdf_merge::ExecutionControl::default();
-    let rule = if rule_text.eq_ignore_ascii_case("bookmarks") {
-        SplitRule::Bookmarks(adapter.inspect_bookmark_boundaries(&source, &control)?)
+    let rule = if rule_text.eq_ignore_ascii_case("bookmarks")
+        || rule_text
+            .strip_prefix("bookmarks:")
+            .is_some_and(|depth| depth.parse::<u32>().is_ok())
+    {
+        let depth = rule_text
+            .strip_prefix("bookmarks:")
+            .map(str::parse::<u32>)
+            .transpose()?
+            .unwrap_or(0);
+        SplitRule::Bookmarks(
+            adapter.inspect_bookmark_boundaries_at_depth(&source, depth, &control)?,
+        )
     } else if let Some(value) = rule_text.strip_prefix("size:") {
         let max_bytes = value
             .parse::<u64>()
@@ -185,8 +196,9 @@ fn print_help() {
         "  pincerpdf-cli split-plan <SOURCE.pdf> <TOTAL_PAGES> <every-page|every:N|RANGE;RANGE>"
     );
     println!(
-        "  pincerpdf-cli split <OUTPUT_DIR> <SOURCE.pdf> <bookmarks|size:BYTES|every-page|every:N|RANGE;RANGE>"
+        "  pincerpdf-cli split <OUTPUT_DIR> <SOURCE.pdf> <bookmarks[:DEPTH]|size:BYTES|every-page|every:N|RANGE;RANGE>"
     );
     println!("  pincerpdf-cli merge <OUTPUT.pdf> <SOURCE.pdf> <SOURCE.pdf> [SOURCE.pdf ...]");
     println!("  pincerpdf-cli --version");
 }
+
