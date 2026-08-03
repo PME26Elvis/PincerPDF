@@ -528,18 +528,7 @@ impl QpdfAdapter {
         let policy = request.bookmark_policy;
         let inputs = &request.inputs;
         let toc_pages = toc_page_count(request.toc_policy, inputs.len());
-        if …17381 tokens truncated…0o700);
-                builder
-            };
-            #[cfg(not(unix))]
-            let builder = fs::DirBuilder::new();
-            match builder.create(&directory) {
-                Ok(()) => {
-                    let path = directory.join(format!("payload.{extension}"));
-                    return Ok(Self { directory, path });
-                }
-                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
-                Err(error) => return Err(error),
+        if …17501 tokens truncated…rror),
             }
         }
         Err(io::Error::new(
@@ -1080,6 +1069,18 @@ mod tests {
         let boundaries = parse_bookmark_boundaries_at_depth(json, 1).expect("child boundary");
         assert_eq!(boundaries[0].title, "Section");
         assert_eq!(boundaries[0].page.get(), 2);
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_rejects_missing_selected_destination() {
+        let json = r#"{
+          "outlines": [{"title":"Chapter","destpageposfrom1":1,"kids":[
+            {"title":"Section","kids":[]}
+          ]}]
+        }"#;
+        let error = parse_bookmark_boundaries_at_depth(json, 1).expect_err("missing target");
+        assert!(error.to_string().contains("depth 1"));
+        assert!(error.to_string().contains("valid page destination"));
     }
 
     #[test]
