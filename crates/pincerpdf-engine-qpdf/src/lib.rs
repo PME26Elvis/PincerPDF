@@ -401,4 +401,751 @@ impl QpdfAdapter {
         let mut estimates = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
         let mut evidence = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
         for page in 1..=total_pages {
-            let temporary = TemporaryPath::new("split-size-estimÛ®töÚ$z{-®éÜj×Óâ&÷VæFVEFW‡B°¢ÆWB×WB&WF–æVBÒfV3£§v—F…ö66—G’†Æ–Ö—BæÖ–âƒƒ“"’“°¢ÆWB×WBG'Væ6FVBÒfÇ6S°¢ÆWB×WB'VffW"Ò³÷Sƒ²ƒ“%Ó°¢Æö÷°¢ÖF6‚&VFW"ç&VB‚f×WB'VffW"’°¢ö²ƒ’ÂW'"…ò’Óâ'&V²À¢ö²‡&VB’Óâ°¢ÆWB&VÖ–æ–ærÒÆ–Ö—Bç6GW&F–æu÷7V"‡&WF–æVBæÆVâ‚’“°¢ÆWB¶VWÒ&VÖ–æ–æræÖ–â‡&VB“°¢&WF–æVBæW‡FVæEög&öÕ÷6Æ–6R‚f'VffW%²âæ¶VWÒ“°¢G'Væ6FVBÃÒ¶VWÂ&VC°¢Ğ¢Ğ¢Ğ¢&÷VæFVEFW‡B°¢FW‡C¢7G&–æs£¦g&öÕ÷WFc…öÆ÷77’‚g&WF–æVB’çG&–Ò‚’çFõö÷væVB‚’À¢G'Væ6FVBÀ¢Ğ§Ğ ¦fâV×G•öWf–FVæ6R‡&öw&Ó¢eF‚Â&wVÖVçG3¢fV3Å7G&–æsâÂGW&F–öã¢GW&F–öâ’Óâ6öÖÖæDWf–FVæ6R°¢6öÖÖæDWf–FVæ6R°¢&öw&Ó¢&öw&ÒæF—7Æ’‚’çFõ÷7G&–ær‚’À¢&wVÖVçG2À¢W†—Eö6öFS¢æöæRÀ¢GW&F–öåö×3¢GW&F–öâæ5öÖ–ÆÆ—2‚’À¢7FF÷WC¢7G&–æs£¦æWr‚’À¢7FFW'#¢7G&–æs£¦æWr‚’À¢7FF÷WE÷G'Væ6FVC¢fÇ6RÀ¢7FFW'%÷G'Væ6FVC¢fÇ6RÀ¢Ğ§Ğ ¦fâWf–FVæ6R€¢&öw&Ó¢eF‚À¢&wVÖVçG3¢fV3Å7G&–æsâÀ¢7FGW3¢W†—E7FGW2À¢GW&F–öã¢GW&F–öâÀ¢7FF÷WC¢&÷VæFVEFW‡BÀ¢7FFW'#¢&÷VæFVEFW‡BÀ¢’Óâ6öÖÖæDWf–FVæ6R°¢6öÖÖæDWf–FVæ6R°¢&öw&Ó¢&öw&ÒæF—7Æ’‚’çFõ÷7G&–ær‚’À¢&wVÖVçG2À¢W†—Eö6öFS¢7FGW2æ6öFR‚’À¢GW&F–öåö×3¢GW&F–öâæ5öÖ–ÆÆ—2‚’À¢7FF÷WC¢7FF÷WBçFW‡BÀ¢7FFW'#¢7FFW'"çFW‡BÀ¢7FF÷WE÷G'Væ6FVC¢7FF÷WBçG'Væ6FVBÀ¢7FFW'%÷G'Væ6FVC¢7FFW'"çG'Væ6FVBÀ¢Ğ§Ğ ¦fâÖ÷&ö6W75öf–ÇW&R†f–ÇW&S¢e&ö6W74f–ÇW&RÂ77v÷&E÷7WÆ–VC¢&ööÂ’ÓâVæv–æTW'&÷"°¢ÆWB6öÖ&–æVBĞ¢f÷&ÖB‚'·Ò·Ò"Âf–ÇW&RæWf–FVæ6Rç7FF÷WBÂf–ÇW&RæWf–FVæ6Rç7FFW'"’çFõö66–•öÆ÷vW&66R‚“°¢ÆWB6öFRÒÖF6‚f–ÇW&Ræ¶–æB°¢&ö6W74f–ÇW&T¶–æC£¤6æ6VÆÆVBÓâW'&÷$6öFS£¤6æ6VÆÆVBÀ¢&ö6W74f–ÇW&T¶–æC£¥7vâÂ&ö6W74f–ÇW&T¶–æC£¥F–ÖVD÷WBÂ&ö6W74f–ÇW&T¶–æC£¤¦ö–âÓâ°¢W'&÷$6öFS£¤Væv–æTf–ÇW&P¢Ğ¢&ö6W74f–ÇW&T¶–æC£¤W†—@¢–b6öÖ&–æVBæ6öçF–ç2‚&–çfÆ–B77v÷&B"¢ÇÂ6öÖ&–æVBæ6öçF–ç2‚&–æ6÷'&V7B77v÷&B"¢ÇÂ6öÖ&–æVBæ6öçF–ç2‚'77v÷&B—2–æ6÷'&V7B"’Óà¢°¢W'&÷$6öFS£¤–æ6÷'&V7E77v÷&@¢Ğ¢&ö6W74f–ÇW&T¶–æC£¤W†—B–b6öÖ&–æVBæ6öçF–ç2‚'77v÷&B"’bb77v÷&E÷7WÆ–VBÓâ°¢W'&÷$6öFS£¥77v÷&E&WV—&V@¢Ğ¢&ö6W74f–ÇW&T¶–æC£¤W†—BÓâW'&÷$6öFS£¤Væv–æTf–ÇW&RÀ¢Ó°¢ÆWB6öÖÖæBÒf÷&ÖB€¢'·Ò·Ò"À¢f–ÇW&RæWf–FVæ6Rç&öw&ÒÀ¢f–ÇW&RæWf–FVæ6Ræ&wVÖVçG2æ¦ö–â‚""¢“°¢Væv–æTW'&÷#£¦æWr†6öFRÂf÷&ÖB‚'·Ó²6öÖÖæC¢¶6öÖÖæGÒ"Âf–ÇW&RæÖW76vR’§Ğ ¢5¶6fr‡FW7B•Ğ¦ÖöBFW7G2°¢W6R7WW#£¢£°¢5¶6fr‡Væ—‚•Ğ¢W6R–æ6W'FeöÖW&vS£¤6æ6VÆÆF–öåFö¶Vã° ¢5¶6fr‡Væ—‚•Ğ¢5·FW7EĞ¢fâ&÷VæFVEö6GW&UöG&–ç5ö'WE÷&WF–ç5ööæÇ•÷F†Uö6öæf–wW&VEöÆ–Ö—B‚’°¢ÆWB6öçG&öÂĞ¢W†V7WF–öä6öçG&öÃ£¦æWr„GW&F–öã£¦g&öÕ÷6V72ƒ"’ÂRÂ6æ6VÆÆF–öåFö¶Vã£¦FVfVÇB‚’“°¢ÆWB6GW&RÒ'Vå÷&ö6W72€¢Fƒ£¦æWr‚'6‚"’À¢e´÷57G&–æs£¦g&öÒ‚"Ö2"’Â÷57G&–æs£¦g&öÒ‚'&–çFb#3CScsƒ“"•ÒÀ¢fV2²"Ö2"çFõö÷væVB‚’Â'&–çFbÇFW7BÖFFâ"çFõö÷væVB‚•ÒÀ¢f6öçG&öÂÀ¢¢æW‡V7B‚'&ö6W727V66VVG2"“°¢76W'EöW†6GW&RæWf–FVæ6Rç7FF÷WBÂ##3CR"“°¢76W'B†6GW&RæWf–FVæ6Rç7FF÷WE÷G'Væ6FVB“°¢Ğ ¢5¶6fr‡Væ—‚•Ğ¢5·FW7EĞ¢fâF–ÖV÷WEö¶–ÆÇ5÷F†Uö6†–ÆE÷&ö6W72‚’°¢ÆWB6öçG&öÂÒW†V7WF–öä6öçG&öÃ£¦æWr€¢GW&F–öã£¦g&öÕöÖ–ÆÆ—2ƒC’À¢#BÀ¢6æ6VÆÆF–öåFö¶Vã£¦FVfVÇB‚’À¢“°¢ÆWBf–ÇW&RÒ'Vå÷&ö6W72€¢Fƒ£¦æWr‚'6‚"’À¢e´÷57G&–æs£¦g&öÒ‚"Ö2"’Â÷57G&–æs£¦g&öÒ‚'6ÆVW"•ÒÀ¢fV2²"Ö2"çFõö÷væVB‚’Â'6ÆVW"çFõö÷væVB‚•ÒÀ¢f6öçG&öÂÀ¢¢æW‡V7EöW'"‚'&ö6W72×W7BF–ÖR÷WB"“°¢76W'B†ÖF6†W2†f–ÇW&Ræ¶–æBÂ&ö6W74f–ÇW&T¶–æC£¥F–ÖVD÷WB’“°¢Ğ ¢5¶6fr‡Væ—‚•Ğ¢5·FW7EĞ¢fâ6æ6VÆÆF–öåö¶–ÆÇ5÷F†Uö6†–ÆE÷&ö6W72‚’°¢ÆWBFö¶VâÒ6æ6VÆÆF–öåFö¶Vã£¦FVfVÇB‚“°¢ÆWB6æ6VÆÆF–öâÒFö¶Vâæ6ÆöæR‚“°¢ÆWB†æFÆRÒF‡&VC£§7vâ†Ö÷fRÇÂ°¢F‡&VC£§6ÆVW„GW&F–öã£¦g&öÕöÖ–ÆÆ—2ƒC’“°¢6æ6VÆÆF–öâæ6æ6VÂ‚“°¢Ò“°¢ÆWB6öçG&öÂÒW†V7WF–öä6öçG&öÃ£¦æWr„GW&F–öã£¦g&öÕ÷6V72ƒ"’Â#BÂFö¶Vâ“°¢ÆWBf–ÇW&RÒ'Vå÷&ö6W72€¢Fƒ£¦æWr‚'6‚"’À¢e´÷57G&–æs£¦g&öÒ‚"Ö2"’Â÷57G&–æs£¦g&öÒ‚'6ÆVW"•ÒÀ¢fV2²"Ö2"çFõö÷væVB‚’Â'6ÆVW"çFõö÷væVB‚•ÒÀ¢f6öçG&öÂÀ¢¢æW‡V7EöW'"‚'&ö6W72×W7B&R6æ6VÆÆVB"“°¢†æFÆRæ¦ö–â‚’æW‡V7B‚&6æ6VÆÆF–öâF‡&VB¦ö–ç2"“°¢76W'B†ÖF6†W2†f–ÇW&Ræ¶–æBÂ&ö6W74f–ÇW&T¶–æC£¤6æ6VÆÆVB’“°¢Ğ ¢5·FW7EĞ¢fâvU÷7V6–f–6F–öå÷&W6W'fW5ö÷&FW%öæEöGWÆ–6FW2‚’°¢ÆWBvW2Ò°¢vTçVÖ&W#£¦æWrƒ2’æW‡V7B‚'fÆ–B"’À¢vTçVÖ&W#£¦æWrƒ’æW‡V7B‚'fÆ–B"’À¢vTçVÖ&W#£¦æWrƒ2’æW‡V7B‚'fÆ–B"’À¢Ó°¢76W'EöW‡vU÷7V6–f–6F–öâ‚gvW2’Â#2ÃÃ2"“°¢Ğ ¢5·FW7EĞ¢fâvUövVöÖWG'•÷'6W%ö66WG5ö&÷†W5÷&÷FF–öåöæE÷&VçE÷&VfW&Væ6R‚’°¢ÆWBvRÒ#ÃÂõG—RõvRõ&VçB""ôÖVF–&÷‚²ÓÓ#c"s“"Òô7&÷&÷‚²csÒõ&÷FFR#sãâ#°¢76W'EöW€¢'6U÷FeöçVÖ&W%ö'&’‡vRÂ"ôÖVF–&÷‚"’æW‡V7B‚&ÖVF–&÷‚"’À¢6öÖR…°¢"Ó"çFõö÷væVB‚’À¢"Ó#"çFõö÷væVB‚’À¢#c""çFõö÷væVB‚’À¢#s“""çFõö÷væVB‚’À¢Ò¢“°¢76W'EöW€¢'6U÷FeöçVÖ&W%ö'&’‡vRÂ"ô7&÷&÷‚"’æW‡V7B‚&7&÷&÷‚"’À¢6öÖR…°¢#"çFõö÷væVB‚’À¢#"çFõö÷væVB‚’À¢#c"çFõö÷væVB‚’À¢#s"çFõö÷væVB‚’À¢Ò¢“°¢76W'EöW€¢'6U÷Feö–çFVvW"‡vRÂ"õ&÷FFR"’æW‡V7B‚'&÷FF–öâ"’À¢6öÖRƒ#s¢“°¢76W'EöW€¢'6U÷Fe÷&VfW&Væ6R‡vRÂ"õ&VçB"’æW‡V7B‚'&VçB"’À¢6öÖR‚ƒ"Â’¢“°¢Ğ ¢5·FW7EĞ¢fâfö÷FW%÷÷6—F–öå÷&VfW'5÷F†U÷f—6–&ÆUö7&÷ö&÷‚‚’°¢ÆWBvVöÖWG'’ÒFevTvVöÖWG'’°¢ÖVF–ö&÷ƒ¢6öÖR…°¢"Ó"çFõö÷væVB‚’À¢"Ó#"çFõö÷væVB‚’À¢#c""çFõö÷væVB‚’À¢#s“""çFõö÷væVB‚’À¢Ò’À¢7&÷ö&÷ƒ¢6öÖR…°¢##"çFõö÷væVB‚’À¢#3"çFõö÷væVB‚’À¢#Sƒ"çFõö÷væVB‚’À¢#sc"çFõö÷væVB‚’À¢Ò’À¢&÷FFS¢æöæRÀ¢Ó°¢76W'EöW†fö÷FW%÷÷6—F–öâ‚fvVöÖWG'’’ÂƒCBãÂC‚ã’“°¢Ğ ¢5·FW7EĞ¢fâfö÷FW%÷÷6—F–öåöÖ÷fW5÷Fõ÷F÷÷v†Våö&÷GFöÕö&æEö—5öö67W–VB‚’°¢ÆWBvVöÖWG'’ÒFevTvVöÖWG'’°¢ÖVF–ö&÷ƒ¢6öÖR…°¢#"çFõö÷væVB‚’À¢#"çFõö÷væVB‚’À¢#c"çFõö÷væVB‚’À¢#ƒ"çFõö÷væVB‚’À¢Ò’À¢7&÷ö&÷ƒ¢æöæRÀ¢&÷FFS¢æöæRÀ¢Ó°¢ÆWB&÷VæG2ÒFW‡D&÷VæG2°¢F÷¢cãÀ¢&÷GFöÓ¢s“ãÀ¢Ó°¢76W'EöW€¢fö÷FW%÷÷6—F–öå÷v—F…÷FW‡B‚fvVöÖWG'’Â6öÖR†&÷VæG2’’À¢ƒ#BãÂssbã¢“°¢Ğ ¢5·FW7EĞ¢fâ7G'V7GW&VE÷FW‡Eö&÷VæG5ö&Uö&÷VæFVE÷Fõö&Æö6µö&÷†W2‚’°¢ÆWBFW‡BÒ"2#ÇvR–CÒ'vS#à£Æ&Æö6²&&÷ƒÒ#s"S"ãcRc‚ãsrã3‚#à£ÆÆ–æR&&÷ƒÒ#s"s"#s##à£ÂöÆ–æSà£Âö&Æö6³à£Â÷vSâ"3°¢76W'EöW€¢'6U÷7FW‡Eö&÷VæG2‡FW‡B’À¢6öÖR…FW‡D&÷VæG2°¢F÷¢S"ãcRÀ¢&÷GFöÓ¢s#ãÀ¢Ò¢“°¢Ğ ¢5·FW7EĞ¢fâFeöFö7VÖVçE÷F—FÆUöFV6öFW5öÆ—FW&ÅöæE÷WFceö†W…÷fÇVW2‚’°¢76W'EöW€¢FeöFö7VÖVçE÷F—FÆR†"#Bö&¥ÆãÃÂõF—FÆR…V'FW&Ç’ÅÂ†G&gEÅÂ’’ãåÆæVæFö&¢"’À¢6öÖR‚%V'FW&Ç’†G&gB’"çFõö÷væVB‚’¢“°¢76W'EöW€¢FeöFö7VÖVçE÷F—FÆR†"#Bö&¥ÆãÃÂõF—FÆRÄdTdcSc“dSc3âãåÆæVæFö&¢"’À¢6öÖR‚%–æ2"çFõö÷væVB‚’¢“°¢Ğ ¢5·FW7EĞ¢fâFeöFö7VÖVçE÷F—FÆUö–væ÷&W5öV×G•öæEöÖÆf÷&ÖVE÷fÇVW2‚’°¢76W'EöW‡FeöFö7VÖVçE÷F—FÆR†"#ÃÂõF—FÆR‚’ãâ"’ÂæöæR“°¢76W'EöW‡FeöFö7VÖVçE÷F—FÆR†"#ÃÂõF—FÆR‡VçFW&Ö–æFVBãâ"’ÂæöæR“°¢76W'EöW‡FeöFö7VÖVçE÷F—FÆR†"#ÃÂõF—FÆRÄtsâãâ"’ÂæöæR“°¢Ğ ¢5·FW7EĞ¢fâFö7VÖVçE÷F—FÆUö6öçFVçG5öfÆÇ5ö&6µ÷Fõöf–ÆVæÖR‚’°¢ÆWB–çWBÒÖW&vTVæv–æT–çWB°¢6÷W&6S¢F„'Vc£¦g&öÒ‚'&W÷'BçFb"’À¢Fö7VÖVçE÷F—FÆS¢'&W÷'BçFb"çFõö÷væVB‚’À¢ÖWFFF÷F—FÆS¢6öÖR‚""çFõö÷væVB‚’’À¢vW3¢fV2µvTçVÖ&W#£¦æWrƒ’æW‡V7B‚'fÆ–B"•ÒÀ¢77v÷&C¢æöæRÀ¢Ó°¢76W'EöW‡Fö5÷F—FÆR‚f–çWBÂÖW&vUFö5öÆ–7“£¤Fö7VÖVçEF—FÆW2’Â'&W÷'B"“°¢76W'EöW‡Fö5÷F—FÆR‚f–çWBÂÖW&vUFö5öÆ–7“£¤f–ÆTæÖW2’Â'&W÷'B"“°¢Ğ ¢5·FW7EĞ¢fâ6÷W&6Uö&öö¶Ö&µ÷Æå÷'VæW5öW†6ÇVFVEöÆVfW5öæEöÖ5÷6VÆV7FVE÷vW2‚’°¢ÆWB–çWBÒÖW&vTVæv–æT–çWB°¢6÷W&6S¢F„'Vc£¦g&öÒ‚&&öö¶Ö&·2çFb"’À¢Fö7VÖVçE÷F—FÆS¢&&öö¶Ö&·2çFb"çFõö÷væVB‚’À¢ÖWFFF÷F—FÆS¢æöæRÀ¢vW3¢fV2°¢vTçVÖ&W#£¦æWrƒ"’æW‡V7B‚'fÆ–B"’À¢vTçVÖ&W#£¦æWrƒ2’æW‡V7B‚'fÆ–B"’À¢ÒÀ¢77v÷&C¢æöæRÀ¢Ó°¢ÆWB6÷W&6RÒ"2'°¢&÷WFÆ–æW2#¢°¢²'F—FÆR#¢$6†FW""Â&FW7GvW÷6g&öÓ#£Â&¶–G2#¥µ×ÒÀ¢²'F—FÆR#¢$6†FW"""Â&FW7GvW÷6g&öÓ#£"Â&¶–G2#¥°¢²'F—FÆR#¢$VæF—‚"Â&FW7GvW÷6g&öÓ#£2Â&¶–G2#¥µ×Ğ¢×Ğ¢Ğ¢Ò"3° ¢76W'EöW€¢'6U÷6÷W&6Uö&öö¶Ö&·2‡6÷W&6RÂf–çWBÂB’æW‡V7B‚'6÷W&6RÆâ"’À¢fV2´&öö¶Ö&µÆäæöFR°¢F—FÆS¢$6†FW"""çFõö÷væVB‚’À¢vU÷÷6—F–öã¢6öÖRƒB’À¢6†–ÆG&Vã¢fV2´&öö¶Ö&µÆäæöFR°¢F—FÆS¢$VæF—‚"çFõö÷væVB‚’À¢vU÷÷6—F–öã¢6öÖRƒR’À¢6†–ÆG&Vã¢fV3£¦æWr‚’À¢ÕÒÀ¢ÕĞ¢“°¢76W'EöW†Fö7VÖVçEö&öö¶Ö&µ÷F—FÆR‚&&öö¶Ö&·2çFb"’Â&&öö¶Ö&·2"“°¢Ğ ¢5·FW7EĞ¢fâ&öö¶Ö&µö&÷VæF'•÷'6W%ö¶VW5ööæÇ•ö÷&FW&VE÷F÷öÆWfVÅ÷vU÷F&vWG2‚’°¢ÆWB§6öâÒ"2'°¢&÷WFÆ–æW2#¢°¢²'F—FÆR#¢$–çG&ò"Â&FW7GvW÷6g&öÓ#£Â&¶–G2#¥µ×ÒÀ¢²'F—FÆR#¢$6†FW"""Â&FW7GvW÷6g&öÓ#£2Â&¶–G2#¥°¢²'F—FÆR#¢$VæF—‚"Â&FW7GvW÷6g&öÓ#£BÂ&¶–G2#¥µ×Ğ¢×Ğ¢Ğ¢Ò"3°¢76W'EöW€¢'6Uö&öö¶Ö&µö&÷VæF&–W2†§6öâ’æW‡V7B‚'fÆ–B&÷VæF&–W2"’À¢fV2°¢&öö¶Ö&´&÷VæF'’°¢F—FÆS¢$–çG&ò"çFõö÷væVB‚’À¢vS¢vTçVÖ&W#£¦æWrƒ’æW‡V7B‚'vR"’À¢FWFƒ¢À¢ÒÀ¢&öö¶Ö&´&÷VæF'’°¢F—FÆS¢$6†FW"""çFõö÷væVB‚’À¢vS¢vTçVÖ&W#£¦æWrƒ2’æW‡V7B‚'vR"’À¢FWFƒ¢À¢ÒÀ¢Ğ¢“°¢Ğ ¢5·FW7EĞ¢fâ&öö¶Ö&µö&÷VæF'•÷'6W%÷6VÆV7G5öæW7FVEöFWF…öæE÷&W6W'fW5ö÷&FW"‚’°¢ÆWB§6öâÒ"2'°¢&÷WFÆ–æW2#¢°¢²'F—FÆR#¢$6†FW""Â&FW7GvW÷6g&öÓ#£Â&¶–G2#¥°¢²'F—FÆR#¢%6V7F–öâã"Â&FW7GvW÷6g&öÓ#£Â&¶–G2#¥µ×ÒÀ¢²'F—FÆR#¢%6V7F–öâã""Â&FW7GvW÷6g&öÓ#£"Â&¶–G2#¥µ×Ğ¢×ÒÀ¢²'F—FÆR#¢$6†FW"""Â&FW7GvW÷6g&öÓ#£2Â&¶–G2#¥°¢²'F—FÆR#¢%6V7F–öâ"ã"Â&FW7GvW÷6g&öÓ#£2Â&¶–G2#¥µ×Ğ¢×Ğ¢Ğ¢Ò"3°¢76W'EöW€¢'6Uö&öö¶Ö&µö&÷VæF&–W5öEöFWF‚†§6öâÂ’æW‡V7B‚&æW7FVB&÷VæF&–W2"’À¢fV2°¢&öö¶Ö&´&÷VæF'’°¢F—FÆS¢%6V7F–öâã"çFõö÷væVB‚’À¢vS¢vTçVÖ&W#£¦æWrƒ’æW‡V7B‚'vR"’À¢FWFƒ¢À¢ÒÀ¢&öö¶Ö&´&÷VæF'’°¢F—FÆS¢%6V7F–öâã""çFõö÷væVB‚’À¢vS¢vTçVÖ&W#£¦æWrƒ"’æW‡V7B‚'vR"’À¢FWFƒ¢À¢ÒÀ¢&öö¶Ö&´&÷VæF'’°¢F—FÆS¢%6V7F–öâ"ã"çFõö÷væVB‚’À¢vS¢vTçVÖ&W#£¦æWrƒ2’æW‡V7B‚'vR"’À¢FWFƒ¢À¢ÒÀ¢Ğ¢“°¢Ğ ¢5·FW7EĞ¢fâ&öö¶Ö&µö&÷VæF'•÷'6W%öÆÆ÷w5÷Vç&W6öÇfVEö–çFW&ÖVF–FUöFW7F–æF–öç2‚’°¢ÆWB§6öâÒ"2'°¢&÷WFÆ–æW2#¢·²'F—FÆR#¢$6†FW""Â&¶–G2#¥°¢²'F—FÆR#¢%6V7F–öâ"Â&FW7GvW÷6g&öÓ#£"Â&¶–G2#¥µ×Ğ¢×ÕĞ¢Ò"3°¢ÆWB&÷VæF&–W2Ò'6Uö&öö¶Ö&µö&÷VæF&–W5öEöFWF‚†§6öâÂ’æW‡V7B‚&6†–ÆB&÷VæF'’"“°¢76W'EöW†&÷VæF&–W5³ÒçF—FÆRÂ%6V7F–öâ"“°¢76W'EöW†&÷VæF&–W5³ÒçvRævWB‚’Â"“°¢Ğ ¢5·FW7EĞ¢fâ&öö¶Ö&µ÷WFFU÷&W6W'fW5ö6FÆöuöæEöFöW5öæ÷E÷&WÆ6U÷F†U÷G&–ÆW"‚’°¢ÆWBÆ–÷WBÒ÷WFÆ–æTÆ–÷WB°¢ÖWFFF¢§6öâ‡°¢&§6öçfW'6–öâ#¢"À¢'FgfW'6–öâ#¢#ãr"À¢&Ö†ö&¦V7F–B#¢p¢Ò’À¢Ö…öö&¦V7Eö–C¢rÀ¢6FÆöu÷&VfW&Væ6S¢#""çFõö÷væVB‚’À¢6FÆöuöö&¦V7C¢À¢6FÆöuövVæW&F–öã¢À¢vUöö&¦V7G3¢fV2²#2""çFõö÷væVB‚’Â#R""çFõö÷væVB‚’Â#r""çFõö÷væVB‚•ÒÀ¢Ó°¢ÆWB6FÆörÒ§6öâ‡°¢"õvW2#¢#"""À¢"õG—R#¢"ô6FÆör"À¢"ôÆær#¢'S¦Vâ ¢Ò¢æ5öö&¦V7B‚¢æW‡V7B‚&6FÆörö&¦V7B"¢æ6ÆöæR‚“°¢ÆWBW‡V7FVBÒfV2°¢&öö¶Ö&µÆäæöFR°¢F—FÆS¢&öæR"çFõö÷væVB‚’À¢vU÷÷6—F–öã¢6öÖRƒ’À¢6†–ÆG&Vã¢fV2´&öö¶Ö&µÆäæöFR°¢F—FÆS¢&6†–ÆB"çFõö÷væVB‚’À¢vU÷÷6—F–öã¢6öÖRƒ2’À¢6†–ÆG&Vã¢fV3£¦æWr‚’À¢ÕÒÀ¢ÒÀ¢&öö¶Ö&µÆäæöFR°¢F—FÆS¢'Gvò"çFõö÷væVB‚’À¢vU÷÷6—F–öã¢6öÖRƒ"’À¢6†–ÆG&Vã¢fV3£¦æWr‚’À¢ÒÀ¢Ó° ¢ÆWBWFFRÒ'V–ÆEö&öö¶Ö&µ÷WFFR‚fÆ–÷WBÂ6FÆörÂfW‡V7FVB’æW‡V7B‚&&öö¶Ö&²WFFR"“°¢ÆWBö&¦V7G2ÒWFFU²'Fb%Õ³Òæ5öö&¦V7B‚’æW‡V7B‚'WFFRö&¦V7G2"“° ¢76W'B‚ö&¦V7G2æ6öçF–ç5ö¶W’‚'G&–ÆW""’“°¢76W'EöW€¢ö&¦V7G5²&ö&££"%Õ²'fÇVR%Õ²"õvW2%ÒÀ¢fÇVS£¥7G&–ær‚#"""çFõö÷væVB‚’¢“°¢76W'EöW€¢ö&¦V7G5²&ö&££"%Õ²'fÇVR%Õ²"ôÆær%ÒÀ¢fÇVS£¥7G&–ær‚'S¦Vâ"çFõö÷væVB‚’¢“°¢76W'EöW†ö&¦V7G5²&ö&££‚"%Õ²'fÇVR%Õ²"ô6÷VçB%ÒÂfÇVS£¦g&öÒƒ"’“°¢76W'EöW€¢ö&¦V7G5²&ö&££’"%Õ²'fÇVR%Õ²"ôFW7B%Õ³ÒÀ¢fÇVS£¥7G&–ær‚#2""çFõö÷væVB‚’¢“°¢76W'EöW€¢ö&¦V7G5²&ö&££"%Õ²'fÇVR%Õ²"ôFW7B%Õ³ÒÀ¢fÇVS£¥7G&–ær‚#r""çFõö÷væVB‚’¢“°¢76W'EöW€¢ö&¦V7G5²&ö&££"%Õ²'fÇVR%Õ²"ôFW7B%Õ³ÒÀ¢fÇVS£¥7G&–ær‚#R""çFõö÷væVB‚’¢“°¢Ğ§Ğ 
+            let temporary = TemporaryPath::new("split-size-estimate", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot create private split-size estimate: {error}"),
+                )
+            })?;
+            let page_number = PageNumber::new(page).map_err(|_| {
+                EngineError::new(ErrorCode::InvalidInput, "split page number overflowed")
+            })?;
+            let page_spec = page_specification(&[page_number]);
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(source),
+                    OsString::from(&page_spec),
+                    OsString::from("--"),
+                    qpdf_path(temporary.path()),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    source.display().to_string(),
+                    page_spec,
+                    "--".to_owned(),
+                    "<private-split-size-estimate>".to_owned(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(capture.evidence);
+            let bytes = fs::metadata(temporary.path())
+                .map_err(|error| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("cannot inspect split-size estimate for page {page}: {error}"),
+                    )
+                })?
+                .len();
+            let estimated_bytes = bytes
+                .checked_add(SPLIT_SIZE_SAFETY_MARGIN_BYTES)
+                .and_then(NonZeroU64::new)
+                .ok_or_else(|| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("QPDF produced an invalid split-size estimate for page {page}"),
+                    )
+                })?;
+            estimates.push(PageSizeEstimate {
+                page: page_number,
+                estimated_bytes,
+            });
+        }
+        Ok(SplitSizeEstimateReport {
+            estimates,
+            evidence,
+        })
+    }
+
+    fn prepare_merge_sources(
+        &self,
+        inputs: &[MergeEngineInput],
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Result<Vec<PreparedSource>, EngineError> {
+        inputs
+            .iter()
+            .map(|input| {
+                if input.pages.is_empty() {
+                    return Err(EngineError::new(
+                        ErrorCode::InvalidInput,
+                        "QPDF merge input resolved to zero pages",
+                    ));
+                }
+                let Some(password) = input.password.as_ref() else {
+                    return Ok(PreparedSource {
+                        path: input.source.clone(),
+                        pages: input.pages.clone(),
+                        _password_file: None,
+                        _decrypted: None,
+                    });
+                };
+                let password_file = PasswordFile::create(password)
+                    .map_err(|error| EngineError::new(ErrorCode::Internal, error.to_string()))?;
+                let decrypted = TemporaryPath::new("decrypted-source", "pdf").map_err(|error| {
+                    EngineError::new(
+                        ErrorCode::Internal,
+                        format!("cannot create private decryption directory: {error}"),
+                    )
+                })?;
+                let capture = self.run_qpdf(
+                    &[
+                        password_file.argument(),
+                        OsString::from("--decrypt"),
+                        qpdf_path(&input.source),
+                        qpdf_path(decrypted.path()),
+                    ],
+                    vec![
+                        "--password-file=<redacted>".to_owned(),
+                        "--decrypt".to_owned(),
+                        input.source.display().to_string(),
+                        decrypted.path().display().to_string(),
+                    ],
+                    control,
+                    true,
+                )?;
+                evidence.push(capture.evidence);
+                Ok(PreparedSource {
+                    path: decrypted.path().to_path_buf(),
+                    pages: input.pages.clone(),
+                    _password_file: Some(password_file),
+                    _decrypted: Some(decrypted),
+                })
+            })
+            .collect()
+    }
+
+    fn bookmark_plan(
+        &self,
+        request: &MergeEngineRequest,
+        prepared: &[PreparedSource],
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Result<BookmarkPlan, EngineError> {
+        let policy = request.bookmark_policy;
+        let inputs = &request.inputs;
+        let toc_pages = toc_page_count(request.toc_policy, inputs.len());
+        if â€¦17381 tokens truncatedâ€¦0o700);
+                builder
+            };
+            #[cfg(not(unix))]
+            let builder = fs::DirBuilder::new();
+            match builder.create(&directory) {
+                Ok(()) => {
+                    let path = directory.join(format!("payload.{extension}"));
+                    return Ok(Self { directory, path });
+                }
+                Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+                Err(error) => return Err(error),
+            }
+        }
+        Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            "could not allocate a private PincerPDF temporary directory",
+        ))
+    }
+
+    fn path(&self) -> &Path {
+        &self.path
+    }
+}
+
+impl Drop for TemporaryPath {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.path);
+        let _ = fs::remove_dir(&self.directory);
+    }
+}
+
+struct BoundedText {
+    text: String,
+    truncated: bool,
+}
+
+#[derive(Debug)]
+struct ProcessCapture {
+    evidence: CommandEvidence,
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ProcessFailureKind {
+    Spawn,
+    Cancelled,
+    TimedOut,
+    Exit,
+    Join,
+}
+
+#[derive(Debug)]
+struct ProcessFailure {
+    kind: ProcessFailureKind,
+    evidence: Box<CommandEvidence>,
+    message: String,
+}
+
+fn run_process(
+    program: &Path,
+    args: &[OsString],
+    display_args: Vec<String>,
+    control: &ExecutionControl,
+) -> Result<ProcessCapture, ProcessFailure> {
+    let started = Instant::now();
+    let mut child = Command::new(program)
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|error| ProcessFailure {
+            kind: ProcessFailureKind::Spawn,
+            evidence: Box::new(empty_evidence(
+                program,
+                display_args.clone(),
+                started.elapsed(),
+            )),
+            message: format!("cannot start PDF engine: {error}"),
+        })?;
+
+    let stdout = child.stdout.take().expect("stdout was piped");
+    let stderr = child.stderr.take().expect("stderr was piped");
+    let limit = control.output_limit_bytes();
+    let stdout_reader = thread::spawn(move || read_bounded(stdout, limit));
+    let stderr_reader = thread::spawn(move || read_bounded(stderr, limit));
+
+    let mut forced_kind = None;
+    let status = loop {
+        if control.cancellation().is_cancelled() {
+            forced_kind = Some(ProcessFailureKind::Cancelled);
+            let _ = child.kill();
+            break child.wait();
+        }
+        if started.elapsed() >= control.timeout() {
+            forced_kind = Some(ProcessFailureKind::TimedOut);
+            let _ = child.kill();
+            break child.wait();
+        }
+        match child.try_wait() {
+            Ok(Some(status)) => break Ok(status),
+            Ok(None) => thread::sleep(Duration::from_millis(10)),
+            Err(error) => break Err(error),
+        }
+    };
+
+    let status = status.map_err(|error| ProcessFailure {
+        kind: ProcessFailureKind::Exit,
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
+        message: format!("cannot wait for PDF engine: {error}"),
+    })?;
+    let stdout = stdout_reader.join().map_err(|_| ProcessFailure {
+        kind: ProcessFailureKind::Join,
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
+        message: "PDF engine stdout reader panicked".to_owned(),
+    })?;
+    let stderr = stderr_reader.join().map_err(|_| ProcessFailure {
+        kind: ProcessFailureKind::Join,
+        evidence: Box::new(empty_evidence(
+            program,
+            display_args.clone(),
+            started.elapsed(),
+        )),
+        message: "PDF engine stderr reader panicked".to_owned(),
+    })?;
+    let evidence = evidence(
+        program,
+        display_args,
+        status,
+        started.elapsed(),
+        stdout,
+        stderr,
+    );
+
+    if let Some(kind) = forced_kind {
+        let message = match kind {
+            ProcessFailureKind::Cancelled => "PDF engine operation was cancelled",
+            ProcessFailureKind::TimedOut => "PDF engine operation timed out",
+            _ => "PDF engine operation was interrupted",
+        };
+        return Err(ProcessFailure {
+            kind,
+            evidence: Box::new(evidence),
+            message: message.to_owned(),
+        });
+    }
+    if status.success() {
+        Ok(ProcessCapture { evidence })
+    } else {
+        Err(ProcessFailure {
+            kind: ProcessFailureKind::Exit,
+            message: if evidence.stderr.is_empty() {
+                "PDF engine exited unsuccessfully".to_owned()
+            } else {
+                format!("PDF engine failed: {}", evidence.stderr)
+            },
+            evidence: Box::new(evidence),
+        })
+    }
+}
+
+fn read_bounded(mut reader: impl Read, limit: usize) -> BoundedText {
+    let mut retained = Vec::with_capacity(limit.min(8192));
+    let mut truncated = false;
+    let mut buffer = [0_u8; 8192];
+    loop {
+        match reader.read(&mut buffer) {
+            Ok(0) | Err(_) => break,
+            Ok(read) => {
+                let remaining = limit.saturating_sub(retained.len());
+                let keep = remaining.min(read);
+                retained.extend_from_slice(&buffer[..keep]);
+                truncated |= keep < read;
+            }
+        }
+    }
+    BoundedText {
+        text: String::from_utf8_lossy(&retained).trim().to_owned(),
+        truncated,
+    }
+}
+
+fn empty_evidence(program: &Path, arguments: Vec<String>, duration: Duration) -> CommandEvidence {
+    CommandEvidence {
+        program: program.display().to_string(),
+        arguments,
+        exit_code: None,
+        duration_ms: duration.as_millis(),
+        stdout: String::new(),
+        stderr: String::new(),
+        stdout_truncated: false,
+        stderr_truncated: false,
+    }
+}
+
+fn evidence(
+    program: &Path,
+    arguments: Vec<String>,
+    status: ExitStatus,
+    duration: Duration,
+    stdout: BoundedText,
+    stderr: BoundedText,
+) -> CommandEvidence {
+    CommandEvidence {
+        program: program.display().to_string(),
+        arguments,
+        exit_code: status.code(),
+        duration_ms: duration.as_millis(),
+        stdout: stdout.text,
+        stderr: stderr.text,
+        stdout_truncated: stdout.truncated,
+        stderr_truncated: stderr.truncated,
+    }
+}
+
+fn map_process_failure(failure: &ProcessFailure, password_supplied: bool) -> EngineError {
+    let combined =
+        format!("{} {}", failure.evidence.stdout, failure.evidence.stderr).to_ascii_lowercase();
+    let code = match failure.kind {
+        ProcessFailureKind::Cancelled => ErrorCode::Cancelled,
+        ProcessFailureKind::Spawn | ProcessFailureKind::TimedOut | ProcessFailureKind::Join => {
+            ErrorCode::EngineFailure
+        }
+        ProcessFailureKind::Exit
+            if combined.contains("invalid password")
+                || combined.contains("incorrect password")
+                || combined.contains("password is incorrect") =>
+        {
+            ErrorCode::IncorrectPassword
+        }
+        ProcessFailureKind::Exit if combined.contains("password") && !password_supplied => {
+            ErrorCode::PasswordRequired
+        }
+        ProcessFailureKind::Exit => ErrorCode::EngineFailure,
+    };
+    let command = format!(
+        "{} {}",
+        failure.evidence.program,
+        failure.evidence.arguments.join(" ")
+    );
+    EngineError::new(code, format!("{}; command: {command}", failure.message))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[cfg(unix)]
+    use pincerpdf_merge::CancellationToken;
+
+    #[cfg(unix)]
+    #[test]
+    fn bounded_capture_drains_but_retains_only_the_configured_limit() {
+        let control =
+            ExecutionControl::new(Duration::from_secs(2), 5, CancellationToken::default());
+        let capture = run_process(
+            Path::new("sh"),
+            &[OsString::from("-c"), OsString::from("printf 1234567890")],
+            vec!["-c".to_owned(), "printf <test-data>".to_owned()],
+            &control,
+        )
+        .expect("process succeeds");
+        assert_eq!(capture.evidence.stdout, "12345");
+        assert!(capture.evidence.stdout_truncated);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn timeout_kills_the_child_process() {
+        let control = ExecutionControl::new(
+            Duration::from_millis(40),
+            1024,
+            CancellationToken::default(),
+        );
+        let failure = run_process(
+            Path::new("sh"),
+            &[OsString::from("-c"), OsString::from("sleep 1")],
+            vec!["-c".to_owned(), "sleep 1".to_owned()],
+            &control,
+        )
+        .expect_err("process must time out");
+        assert!(matches!(failure.kind, ProcessFailureKind::TimedOut));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn cancellation_kills_the_child_process() {
+        let token = CancellationToken::default();
+        let cancellation = token.clone();
+        let handle = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(40));
+            cancellation.cancel();
+        });
+        let control = ExecutionControl::new(Duration::from_secs(2), 1024, token);
+        let failure = run_process(
+            Path::new("sh"),
+            &[OsString::from("-c"), OsString::from("sleep 1")],
+            vec!["-c".to_owned(), "sleep 1".to_owned()],
+            &control,
+        )
+        .expect_err("process must be cancelled");
+        handle.join().expect("cancellation thread joins");
+        assert!(matches!(failure.kind, ProcessFailureKind::Cancelled));
+    }
+
+    #[test]
+    fn page_specification_preserves_order_and_duplicates() {
+        let pages = [
+            PageNumber::new(3).expect("valid"),
+            PageNumber::new(1).expect("valid"),
+            PageNumber::new(3).expect("valid"),
+        ];
+        assert_eq!(page_specification(&pages), "3,1,3");
+    }
+
+    #[test]
+    fn page_geometry_parser_accepts_boxes_rotation_and_parent_reference() {
+        let page = "<< /Type /Page /Parent 12 0 R /MediaBox [ -10 -20 612 792 ] /CropBox [ 0 0 600 700 ] /Rotate 270 >>";
+        assert_eq!(
+            parse_pdf_number_array(page, "/MediaBox").expect("media box"),
+            Some([
+                "-10".to_owned(),
+                "-20".to_owned(),
+                "612".to_owned(),
+                "792".to_owned(),
+            ])
+        );
+        assert_eq!(
+            parse_pdf_number_array(page, "/CropBox").expect("crop box"),
+            Some([
+                "0".to_owned(),
+                "0".to_owned(),
+                "600".to_owned(),
+                "700".to_owned(),
+            ])
+        );
+        assert_eq!(
+            parse_pdf_integer(page, "/Rotate").expect("rotation"),
+            Some(270)
+        );
+        assert_eq!(
+            parse_pdf_reference(page, "/Parent").expect("parent"),
+            Some((12, 0))
+        );
+    }
+
+    #[test]
+    fn footer_position_prefers_the_visible_crop_box() {
+        let geometry = PdfPageGeometry {
+            media_box: Some([
+                "-10".to_owned(),
+                "-20".to_owned(),
+                "612".to_owned(),
+                "792".to_owned(),
+            ]),
+            crop_box: Some([
+                "20".to_owned(),
+                "30".to_owned(),
+                "580".to_owned(),
+                "760".to_owned(),
+            ]),
+            rotate: None,
+        };
+        assert_eq!(footer_position(&geometry), (44.0, 48.0));
+    }
+
+    #[test]
+    fn footer_position_moves_to_top_when_bottom_band_is_occupied() {
+        let geometry = PdfPageGeometry {
+            media_box: Some([
+                "0".to_owned(),
+                "0".to_owned(),
+                "600".to_owned(),
+                "800".to_owned(),
+            ]),
+            crop_box: None,
+            rotate: None,
+        };
+        let bounds = TextBounds {
+            top: 60.0,
+            bottom: 790.0,
+        };
+        assert_eq!(
+            footer_position_with_text(&geometry, Some(bounds)),
+            (24.0, 776.0)
+        );
+    }
+
+    #[test]
+    fn structured_text_bounds_are_bounded_to_block_boxes() {
+        let text = r#"<page id="page1">
+<block bbox="72 52.65 168.01 77.38">
+<line bbox="72 702 200 720">
+</line>
+</block>
+</page>"#;
+        assert_eq!(
+            parse_stext_bounds(text),
+            Some(TextBounds {
+                top: 52.65,
+                bottom: 720.0,
+            })
+        );
+    }
+
+    #[test]
+    fn qdf_document_title_decodes_literal_and_utf16_hex_values() {
+        assert_eq!(
+            qdf_document_title(b"4 0 obj\n<< /Title (Quarterly \\(draft\\)) >>\nendobj"),
+            Some("Quarterly (draft)".to_owned())
+        );
+        assert_eq!(
+            qdf_document_title(b"4 0 obj\n<< /Title <FEFF00500069006E0063> >>\nendobj"),
+            Some("Pinc".to_owned())
+        );
+    }
+
+    #[test]
+    fn qdf_document_title_ignores_empty_and_malformed_values() {
+        assert_eq!(qdf_document_title(b"<< /Title () >>"), None);
+        assert_eq!(qdf_document_title(b"<< /Title (unterminated >>"), None);
+        assert_eq!(qdf_document_title(b"<< /Title <GG> >>"), None);
+    }
+
+    #[test]
+    fn document_title_contents_falls_back_to_filename() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("report.pdf"),
+            document_title: "report.pdf".to_owned(),
+            metadata_title: Some("  ".to_owned()),
+            pages: vec![PageNumber::new(1).expect("valid")],
+            password: None,
+        };
+        assert_eq!(toc_title(&input, MergeTocPolicy::DocumentTitles), "report");
+        assert_eq!(toc_title(&input, MergeTocPolicy::FileNames), "report");
+    }
+
+    #[test]
+    fn source_bookmark_plan_prunes_excluded_leaves_and_maps_selected_pages() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("bookmarks.pdf"),
+            document_title: "bookmarks.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(2).expect("valid"),
+                PageNumber::new(3).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [
+            {"title":"Chapter 1","destpageposfrom1":1,"kids":[]},
+            {"title":"Chapter 2","destpageposfrom1":2,"kids":[
+              {"title":"Appendix","destpageposfrom1":3,"kids":[]}
+            ]}
+          ]
+        }"#;
+
+        assert_eq!(
+            parse_source_bookmarks(source, &input, 4).expect("source plan"),
+            vec![BookmarkPlanNode {
+                title: "Chapter 2".to_owned(),
+                page_position: Some(4),
+                children: vec![BookmarkPlanNode {
+                    title: "Appendix".to_owned(),
+                    page_position: Some(5),
+                    children: Vec::new(),
+                }],
+            }]
+        );
+        assert_eq!(document_bookmark_title("bookmarks.pdf"), "bookmarks");
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_keeps_only_ordered_top_level_page_targets() {
+        let json = r#"{
+          "outlines": [
+            {"title":"Intro","destpageposfrom1":1,"kids":[]},
+            {"title":"Chapter 2","destpageposfrom1":3,"kids":[
+              {"title":"Appendix","destpageposfrom1":4,"kids":[]}
+            ]}
+          ]
+        }"#;
+        assert_eq!(
+            parse_bookmark_boundaries(json).expect("valid boundaries"),
+            vec![
+                BookmarkBoundary {
+                    title: "Intro".to_owned(),
+                    page: PageNumber::new(1).expect("page"),
+                    depth: 0,
+                },
+                BookmarkBoundary {
+                    title: "Chapter 2".to_owned(),
+                    page: PageNumber::new(3).expect("page"),
+                    depth: 0,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_selects_nested_depth_and_preserves_order() {
+        let json = r#"{
+          "outlines": [
+            {"title":"Chapter 1","destpageposfrom1":1,"kids":[
+              {"title":"Section 1.1","destpageposfrom1":1,"kids":[]},
+              {"title":"Section 1.2","destpageposfrom1":2,"kids":[]}
+            ]},
+            {"title":"Chapter 2","destpageposfrom1":3,"kids":[
+              {"title":"Section 2.1","destpageposfrom1":3,"kids":[]}
+            ]}
+          ]
+        }"#;
+        assert_eq!(
+            parse_bookmark_boundaries_at_depth(json, 1).expect("nested boundaries"),
+            vec![
+                BookmarkBoundary {
+                    title: "Section 1.1".to_owned(),
+                    page: PageNumber::new(1).expect("page"),
+                    depth: 1,
+                },
+                BookmarkBoundary {
+                    title: "Section 1.2".to_owned(),
+                    page: PageNumber::new(2).expect("page"),
+                    depth: 1,
+                },
+                BookmarkBoundary {
+                    title: "Section 2.1".to_owned(),
+                    page: PageNumber::new(3).expect("page"),
+                    depth: 1,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_allows_unresolved_intermediate_destinations() {
+        let json = r#"{
+          "outlines": [{"title":"Chapter","kids":[
+            {"title":"Section","destpageposfrom1":2,"kids":[]}
+          ]}]
+        }"#;
+        let boundaries = parse_bookmark_boundaries_at_depth(json, 1).expect("child boundary");
+        assert_eq!(boundaries[0].title, "Section");
+        assert_eq!(boundaries[0].page.get(), 2);
+    }
+
+    #[test]
+    fn bookmark_update_preserves_catalog_and_does_not_replace_the_trailer() {
+        let layout = OutlineLayout {
+            metadata: json!({
+                "jsonversion": 2,
+                "pdfversion": "1.7",
+                "maxobjectid": 7
+            }),
+            max_object_id: 7,
+            catalog_reference: "1 0 R".to_owned(),
+            catalog_object: 1,
+            catalog_generation: 0,
+            page_objects: vec!["3 0 R".to_owned(), "5 0 R".to_owned(), "7 0 R".to_owned()],
+        };
+        let catalog = json!({
+            "/Pages": "2 0 R",
+            "/Type": "/Catalog",
+            "/Lang": "u:en"
+        })
+        .as_object()
+        .expect("catalog object")
+        .clone();
+        let expected = vec![
+            BookmarkPlanNode {
+                title: "one".to_owned(),
+                page_position: Some(1),
+                children: vec![BookmarkPlanNode {
+                    title: "child".to_owned(),
+                    page_position: Some(3),
+                    children: Vec::new(),
+                }],
+            },
+            BookmarkPlanNode {
+                title: "two".to_owned(),
+                page_position: Some(2),
+                children: Vec::new(),
+            },
+        ];
+
+        let update = build_bookmark_update(&layout, catalog, &expected).expect("bookmark update");
+        let objects = update["qpdf"][1].as_object().expect("update objects");
+
+        assert!(!objects.contains_key("trailer"));
+        assert_eq!(
+            objects["obj:1 0 R"]["value"]["/Pages"],
+            Value::String("2 0 R".to_owned())
+        );
+        assert_eq!(
+            objects["obj:1 0 R"]["value"]["/Lang"],
+            Value::String("u:en".to_owned())
+        );
+        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(2));
+        assert_eq!(
+            objects["obj:9 0 R"]["value"]["/Dest"][0],
+            Value::String("3 0 R".to_owned())
+        );
+        assert_eq!(
+            objects["obj:10 0 R"]["value"]["/Dest"][0],
+            Value::String("7 0 R".to_owned())
+        );
+        assert_eq!(
+            objects["obj:11 0 R"]["value"]["/Dest"][0],
+            Value::String("5 0 R".to_owned())
+        );
+    }
+}
+
