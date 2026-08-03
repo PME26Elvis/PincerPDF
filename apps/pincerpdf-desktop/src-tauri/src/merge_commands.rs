@@ -1,9 +1,9 @@
-­r‡^Ñf¥–Ø¦{^ìyÊ'vÃ®¶›­#![forbid(unsafe_code)]
+#![forbid(unsafe_code)]
 //! Trusted desktop boundary for the P4.2 Merge workspace.
 
 use pincerpdf_desktop_api::{
     CommandError, MergeBookmarkPolicy, MergeEngineStatus, MergeInputRequest, MergeRunRequest,
-    MergeRunResult, MergeSourceFeatures, PickedMergeDestination, PickedMergeSource,
+    MergeRunResult, MergeSourceFeatures, MergeTocPolicy, PickedMergeDestination, PickedMergeSource,
 };
 use pincerpdf_domain::{ErrorCode, PageSelection};
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
@@ -11,7 +11,8 @@ use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_filesystem::ExistingOutputPolicy;
 use pincerpdf_merge::{
     BookmarkPolicy, CancellationToken, ExecutionControl, MergeError, MergeExecutionOptions,
-    MergeRequest, MergeRequestError, MergeService, MergeSource, SecretString,
+    MergeRequest, MergeRequestError, MergeService, MergeSource, MergeTocPolicy as EngineTocPolicy,
+    SecretString,
 };
 use std::collections::{BTreeMap, btree_map::Entry};
 use std::path::{Path, PathBuf};
@@ -309,6 +310,10 @@ fn execute_merge(
         bookmark_policy,
         add_blank_page_if_odd: request.add_blank_page_if_odd,
         add_filename_footer: request.add_filename_footer,
+        toc_policy: match request.toc_policy {
+            MergeTocPolicy::None => EngineTocPolicy::None,
+            MergeTocPolicy::FileNames => EngineTocPolicy::FileNames,
+        },
         control: ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation),
     };
     let report = MergeService::new(&engine)
@@ -517,6 +522,7 @@ mod tests {
                 bookmark_policy: MergeBookmarkPolicy::OneEntryPerDocument,
                 add_blank_page_if_odd: false,
                 add_filename_footer: false,
+                toc_policy: MergeTocPolicy::None,
             },
             CancellationToken::default(),
         )

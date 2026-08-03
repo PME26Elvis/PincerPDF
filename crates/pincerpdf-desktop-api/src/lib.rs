@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{_,y 'v√Æ∂õ≠#![forbid(unsafe_code)]
+#![forbid(unsafe_code)]
 //! Stable, serializable messages shared by the desktop host and Leptos UI.
 
 use serde::{Deserialize, Serialize};
@@ -86,6 +86,17 @@ pub enum MergeBookmarkPolicy {
     RetainAsOneEntryPerDocument,
 }
 
+/// Generated table-of-contents policy selected in the Merge workspace.
+#[derive(Clone, Copy, Debug, Default, Deserialize, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum MergeTocPolicy {
+    /// Do not prepend a generated contents page.
+    #[default]
+    None,
+    /// List source filenames and their first output pages.
+    FileNames,
+}
+
 /// Complete Merge intent crossing the IPC boundary.
 #[derive(Clone, Deserialize, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -104,6 +115,8 @@ pub struct MergeRunRequest {
     pub add_blank_page_if_odd: bool,
     /// Whether each output page receives its source filename as a footer.
     pub add_filename_footer: bool,
+    /// Generated table-of-contents policy.
+    pub toc_policy: MergeTocPolicy,
 }
 
 /// Verified result returned after atomic finalization.

@@ -1,4 +1,4 @@
-≠rá^—f•ñÿ¶{^Ïy 'v√Æ∂õ≠/target/
+/target/
 /target-local/
 /dist/
 **/dist/
@@ -14,6 +14,7 @@
 /screenshots-diff/
 /motion-recordings/
 /.fixtures-private/
+/tests/fixtures/pdf/generated/
 /deliverables/
 .env
 .env.*

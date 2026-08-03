@@ -1,4 +1,4 @@
-­r‡^Ñf¥–Ø¦{N¬yÊ'vÃ®¶›­#!/usr/bin/env python3
+#!/usr/bin/env python3
 """Dependency-free structural verification for restricted bootstrap environments."""
 
 from __future__ import annotations
@@ -54,6 +54,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-021-document-level-bookmark-reconstruction.md",
     "docs/architecture/adr/ADR-022-source-outline-reconstruction.md",
     "docs/architecture/adr/ADR-023-filename-footer-overlay.md",
+    "docs/architecture/adr/ADR-024-filename-table-of-contents.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -306,6 +307,9 @@ def verify_merge_core_contract() -> None:
         "--overlay",
         "add_filename_footer",
         "GeneratedBlankPage",
+        "write_toc_pdf",
+        "toc_entries",
+        "MergeTocPolicy",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -422,6 +426,7 @@ def verify_merge_desktop_contract() -> None:
         "spawn_blocking",
         "Entry::Occupied",
         "native_command_boundary_merges_only_registered_paths",
+        "MergeTocPolicy::FileNames",
     ):
         if token not in commands:
             fail(f"P4.2 trusted desktop command contract missing: {token}")
@@ -448,7 +453,10 @@ def verify_merge_desktop_contract() -> None:
         'data-testid="bookmark-policy-one-entry"',
         'data-testid="bookmark-policy-retain"',
         'data-testid="bookmark-policy-retain-as-one-entry"',
+        'data-testid="toc-policy-none"',
+        'data-testid="toc-policy-file-names"',
         "One entry per document",
+        "List source filenames",
         "Retain relevant source hierarchy",
         "Reject before processing",
     ):
@@ -464,6 +472,7 @@ def verify_merge_desktop_contract() -> None:
         "running and completed Merge states",
         "advanced safety policies",
         "one-entry-per-document bookmark policy",
+        "filename table-of-contents policy",
         "retained-bookmark policy states",
         "merge-bookmark-policy-desktop.png",
         "merge-retained-bookmark-policy-desktop.png",

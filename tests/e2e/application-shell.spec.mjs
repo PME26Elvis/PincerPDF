@@ -1,4 +1,4 @@
-­r‡^Ñf¥–Ø¦{mlyÊ'vÃ®¶›­import { expect, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 
@@ -107,9 +107,16 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
   await expect(filenameFooter).not.toBeChecked();
   await filenameFooter.check();
   await expect(filenameFooter).toBeChecked();
+  const tocNone = page.getByTestId("toc-policy-none");
+  const tocFileNames = page.getByTestId("toc-policy-file-names");
+  await expect(tocNone).toBeChecked();
+  await expect(tocFileNames).not.toBeChecked();
+  await tocFileNames.check();
+  await expect(tocFileNames).toBeChecked();
   await oneEntryBookmarks.check();
   await expect(blankPageIfOdd).toBeChecked();
   await expect(filenameFooter).toBeChecked();
+  await expect(tocFileNames).toBeChecked();
   await expect(oneEntryBookmarks).toBeChecked();
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "One entry per document",
@@ -159,6 +166,16 @@ test("reports deterministic retained-bookmark policy states", async ({ page }) =
   await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
   await page.getByTestId("run-merge").click();
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+});
+
+test("reports the deterministic filename table-of-contents policy", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await page.getByTestId("toc-policy-file-names").check();
+  await page.getByTestId("run-merge").click();
+
+  await expect(page.getByTestId("merge-result-summary")).toContainText("10 pages");
 });
 
 test("supports a manual reduced-motion override", async ({ page }) => {

@@ -1,11 +1,11 @@
-­r‡^Ñf¥–Ø¦{]lyÊ'vÃ®¶›­#![forbid(unsafe_code)]
+#![forbid(unsafe_code)]
 //! Real QPDF/MuPDF contract tests for the first Merge-core checkpoint.
 
 use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{
     BookmarkPolicy, MergeError, MergeExecutionOptions, MergeRequest, MergeService, MergeSource,
-    SecretString,
+    MergeTocPolicy, SecretString,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -170,6 +170,32 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     let footer_text = mutool_text(&footer_output);
     assert!(footer_text.matches("plain-three-pages").count() >= 2);
     assert!(footer_text.matches("bookmarks").count() >= 2);
+
+    let toc_output = work.join("filename-table-of-contents.pdf");
+    let toc_request = MergeRequest::new(
+        [MergeSource::new(&plain), MergeSource::new(&bookmarks)],
+        &toc_output,
+    )
+    .expect("valid table-of-contents request");
+    let toc_report = service
+        .execute(
+            &toc_request,
+            &MergeExecutionOptions {
+                bookmark_policy: BookmarkPolicy::OneEntryPerDocument,
+                toc_policy: MergeTocPolicy::FileNames,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("filename table of contents merge succeeds");
+    assert_eq!(toc_report.page_count, 7);
+    qpdf_check(&toc_output);
+    let toc_text = mutool_text(&toc_output);
+    assert!(toc_text.contains("Table of contents"));
+    assert!(toc_text.contains("plain-three-pages"));
+    assert!(toc_text.contains("bookmarks"));
+    let toc_outlines = qpdf_outlines(&toc_output);
+    assert_eq!(toc_outlines["outlines"][0]["destpageposfrom1"], 2);
+    assert_eq!(toc_outlines["outlines"][1]["destpageposfrom1"], 5);
 
     let blank_output = work.join("odd-page-blanks.pdf");
     let blank_request = MergeRequest::new(

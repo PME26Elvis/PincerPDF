@@ -60,6 +60,15 @@ pub fn plan_output_path(
     temporary_name.push(operation_token);
     temporary_name.push(".tmp");
     let temporary_path = requested.with_file_name(temporary_name);
+    #[cfg(windows)]
+    let temporary_path = if temporary_path.to_string_lossy().encode_utf16().count() >= 240 {
+        // QPDF's Windows command-line path handling still follows MAX_PATH. Keep
+        // the atomic sibling strategy while using a compact name when the
+        // requested destination is already close to that limit.
+        requested.with_file_name(format!(".{operation_token}.tmp"))
+    } else {
+        temporary_path
+    };
 
     Ok(OutputPathPlan {
         final_path: requested.to_path_buf(),
@@ -153,5 +162,28 @@ mod tests {
                 "token: {token}"
             );
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn long_windows_destinations_use_a_short_hidden_sibling_name() {
+        let destination = PathBuf::from(
+            r"C:\pincerpdf-long-output-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\report.pdf",
+        );
+        let plan = plan_output_path(
+            &destination,
+            false,
+            ExistingOutputPolicy::Fail,
+            "merge_42_1",
+        )
+        .expect("valid long path plan");
+
+        assert_eq!(plan.temporary_path.parent(), destination.parent());
+        assert!(
+            plan.temporary_path
+                .to_string_lossy()
+                .contains(".merge_42_1.tmp")
+        );
+        assert!(plan.temporary_path.to_string_lossy().encode_utf16().count() < 260);
     }
 }

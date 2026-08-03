@@ -1,8 +1,8 @@
-≠rá^—f•ñÿ¶{]ly 'v√Æ∂õ≠# Merge feature and legacy-test traceability
+# Merge feature and legacy-test traceability
 
 - Updated: 2026-08-03
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
-- Current checkpoint: P4.7 filename footer overlay
+- Current checkpoint: P4.8 filename table of contents
 
 This ledger distinguishes a verified behavior from a complete Merge feature.
 Rows remain partial until every policy named by the phase-one specification has
@@ -16,7 +16,7 @@ executable evidence.
 | MERGE-002 | Per-input page ranges | Verified | Parser properties plus real disjoint, reordered, bounded and open-ended-to-last-page selections | Add only stress/performance coverage during hardening |
 | MERGE-003 | Bookmark policies | Partial | All four typed policies are verified with QPDF JSON: discard, one entry, retained relevant hierarchy, and retained hierarchy under a document entry | Define/verify non-page destinations, actions, style, color and open-state fidelity |
 | MERGE-004 | AcroForm policies | Partial | Form-bearing input is rejected before output creation | Rename fields, merge, flatten and discard |
-| MERGE-005 | Table of contents | Planned | None | Filename and document-title modes |
+| MERGE-005 | Table of contents | Partial | Real QPDF/MuPDF contract verifies a generated filename contents page, source first-page numbers and bookmark offsets; browser E2E verifies the explicit filename policy | Document-title mode, Unicode typography and visual golden baseline |
 | MERGE-006 | Blank page after odd input | Verified | Real QPDF/MuPDF contract verifies per-source insertion, final-source insertion, source-matched MediaBox/CropBox/rotation, empty text extraction, inherited `/Pages` geometry and bookmark destination offset remapping; browser E2E verifies the control | Add only stress/performance coverage during hardening |
 | MERGE-007 | Filename footer | Partial | Real QPDF/MuPDF contract verifies a per-output-page source filename overlay, source geometry preservation and blank-page omission; browser E2E verifies the explicit control | Embedded Unicode font, non-ASCII filename fidelity, visual baseline and footer collision policy |
 | MERGE-008 | Page normalization | Partial | `None` preserves MediaBox, CropBox and rotation across mixed geometry | Same width and orientation-aware same width |

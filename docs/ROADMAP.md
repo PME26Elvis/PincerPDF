@@ -1,4 +1,4 @@
-­r‡^Ñf¥–Ø¦{^¬yÊ'vÃ®¶›­# Roadmap
+# Roadmap
 
 | Phase | Name | Status | Exit gate |
 | --- | --- | --- | --- |
@@ -23,4 +23,5 @@
 - **P4.5 â€” Relevant source outlines: In progress.** `Retain` and `RetainAsOneEntryPerDocument` reconstruct only source hierarchy whose destinations survive the page selection. Windows real-engine evidence is green; full local cross-stack and Linux review evidence remain the exit gate.
 - **P4.6 â€” Odd-page blank insertion: Complete.** Each odd-page source, including the final source, receives a verified blank page whose MediaBox, CropBox and rotation match the source's final selected page; bookmark destination offsets are remapped.
 - **P4.7 â€” Filename footer overlay: Partial.** An explicit UI/DTO policy applies a geometry-matched source filename overlay to every non-blank output page and leaves generated blanks empty; ASCII QPDF/MuPDF contract evidence is green.
-- Form collision handling, table of contents, Unicode footer fonts, collision-aware footer placement, normalization/compression and full legacy parity remain later P4 work.
+- **P4.8 â€” Filename table of contents: Partial.** An explicit UI/DTO policy prepends a generated contents page (with pagination for larger source lists) and keeps document bookmarks pointed at the shifted source pages; filename-mode contract evidence is green.
+- Form collision handling, document-title contents mode, Unicode footer/contents fonts, collision-aware footer placement, normalization/compression and full legacy parity remain later P4 work.
