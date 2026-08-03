@@ -467,6 +467,9 @@ def verify_split_planner_contract() -> None:
         "parse_source_bookmarks_rejecting_ambiguous_duplicates",
         "ErrorCode::CapabilityUnavailable",
         "destination identity is ambiguous",
+        "source_bookmark_parser_preserves_unicode_titles_and_hierarchy",
+        "bookmark_update_preserves_closed_nested_outline_state",
+        "count_assigned_bookmark_nodes",
     ):
         if token not in qpdf_source:
             fail(f"P5.2 split metadata safety contract missing: {token}")
