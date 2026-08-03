@@ -98,7 +98,7 @@ pub enum SplitRuleKind {
     FixedPageCount,
     /// Split using explicit semicolon-separated page ranges.
     Ranges,
-    /// Split using validated top-level bookmark boundaries.
+    /// Split using validated bookmark boundaries at the requested outline depth.
     Bookmarks,
     /// Split using conservative serialized-size estimates.
     BySize,
@@ -120,6 +120,9 @@ pub struct SplitRunRequest {
     pub fixed_page_count: Option<u32>,
     /// Required for `ranges`, using the planner's semicolon-separated syntax.
     pub page_ranges: Option<String>,
+    /// Optional zero-based outline depth for `bookmarks`; `None` means the
+    /// top-level outline (depth `0`).
+    pub bookmark_depth: Option<u32>,
     /// Optional positive byte limit for `bySize`.
     pub max_output_bytes: Option<u64>,
 }

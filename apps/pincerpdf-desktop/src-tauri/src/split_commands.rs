@@ -166,11 +166,14 @@ fn execute_split(
                 .ok_or_else(|| invalid_input("At least one page range is required."))?
                 .parse::<SplitRule>()
                 .map_err(|error| invalid_input(error.to_string()))?,
-            SplitRuleKind::Bookmarks => SplitRule::Bookmarks(
-                engine
-                    .inspect_bookmark_boundaries(&source, &control)
-                    .map_err(|error| engine_error(error.code(), error.to_string()))?,
-            ),
+            SplitRuleKind::Bookmarks => {
+                let depth = request.bookmark_depth.unwrap_or(0);
+                SplitRule::Bookmarks(
+                    engine
+                        .inspect_bookmark_boundaries_at_depth(&source, depth, &control)
+                        .map_err(|error| engine_error(error.code(), error.to_string()))?,
+                )
+            }
             SplitRuleKind::BySize => {
                 let max_bytes = request
                     .max_output_bytes
@@ -236,6 +239,7 @@ mod tests {
                 rule: SplitRuleKind::EveryPage,
                 fixed_page_count: None,
                 page_ranges: None,
+                bookmark_depth: None,
                 max_output_bytes: None,
             },
             CancellationToken::default(),
@@ -275,6 +279,7 @@ mod tests {
                 rule: SplitRuleKind::EveryPage,
                 fixed_page_count: None,
                 page_ranges: None,
+                bookmark_depth: None,
                 max_output_bytes: None,
             },
             CancellationToken::default(),
@@ -291,5 +296,33 @@ mod tests {
                 "missing split output: {output}"
             );
         }
+
+        let bookmark_source = state
+            .register_path(fixtures.join("bookmarks.pdf"))
+            .expect("register bookmark split input");
+        let bookmark_output_directory = evidence.join("bookmark-outputs");
+        fs::create_dir_all(&bookmark_output_directory).expect("create bookmark output directory");
+        let bookmark_destination = state
+            .register_path(bookmark_output_directory.clone())
+            .expect("register bookmark split destination");
+        let nested_report = execute_split(
+            &state,
+            SplitRunRequest {
+                operation_id: "native-nested-bookmark-contract".to_owned(),
+                source_token: bookmark_source,
+                output_directory_token: bookmark_destination,
+                rule: SplitRuleKind::Bookmarks,
+                fixed_page_count: None,
+                page_ranges: None,
+                bookmark_depth: Some(1),
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect("nested bookmark desktop boundary split");
+        assert_eq!(nested_report.page_count, 3);
+        assert_eq!(nested_report.part_count, 1);
+        assert_eq!(nested_report.outputs.len(), 1);
+        assert!(Path::new(&nested_report.outputs[0]).is_file());
     }
 }

@@ -33,7 +33,7 @@
 - P4.1 engine-independent Merge core and process-isolated QPDF adapter completed.
 - P4.2 trusted Tauri command boundary, shared desktop DTOs, accessible Merge workspace, deterministic browser adapter, and Windows visual checkpoints implemented.
 - P5.1 split planner, QPDF materializer, trusted Tauri commands and deterministic browser workspace implemented locally; the portable/native evidence gate is still open.
-- P5.1 native command-boundary contract now passes locally with three finalized outputs from a registered source token and a registered output directory; Split desktop/compact screenshot checkpoints are wired into the browser acceptance suite.
+- P5.1 native command-boundary contract now covers three finalized outputs from registered path tokens and an explicit nested-bookmark depth request; Split desktop/compact screenshot checkpoints are wired into the browser acceptance suite.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
@@ -530,10 +530,10 @@ local Windows toolchain after this adjustment.
 1. Run the updated application-shell and native command contracts for the Split
    workspace, then capture desktop/compact screenshot evidence.
 2. Retain Linux Actions evidence for the split command boundary and its
-   page-conservation/atomic-output contract.
-3. Extend the QPDF bookmark-boundary contract beyond the verified top-level
-   page-target policy; the first conservative split-by-size estimator and
-   materialization bound are now locally verified.
+   page-conservation/atomic-output contract, including nested bookmark depth.
+3. Add verified outline reconstruction/destination remapping before claiming
+   bookmark preservation in split outputs; the current materializer emits
+   destination-free page subsets.
 4. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 

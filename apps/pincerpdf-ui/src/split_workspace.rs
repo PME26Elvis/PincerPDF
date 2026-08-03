@@ -49,6 +49,7 @@ pub(crate) fn SplitWorkspace(
     let (rule, set_rule) = signal(SplitRuleKind::EveryPage);
     let (fixed_count, set_fixed_count) = signal("2".to_owned());
     let (ranges, set_ranges) = signal("1-2;3-6".to_owned());
+    let (bookmark_depth, set_bookmark_depth) = signal("0".to_owned());
     let (max_bytes, set_max_bytes) = signal("100000".to_owned());
     let (task, set_task) = signal(TaskState::Idle);
     let (picker_busy, set_picker_busy) = signal(false);
@@ -116,6 +117,7 @@ pub(crate) fn SplitWorkspace(
             current_rule,
             &fixed_count.get_untracked(),
             &ranges.get_untracked(),
+            &bookmark_depth.get_untracked(),
             &max_bytes.get_untracked(),
             &engine_status.get_untracked(),
             &task.get_untracked(),
@@ -151,6 +153,13 @@ pub(crate) fn SplitWorkspace(
             }),
             page_ranges: (current_rule == SplitRuleKind::Ranges)
                 .then(|| ranges.get_untracked().trim().to_owned()),
+            bookmark_depth: (current_rule == SplitRuleKind::Bookmarks).then(|| {
+                bookmark_depth
+                    .get_untracked()
+                    .trim()
+                    .parse()
+                    .unwrap_or_default()
+            }),
             max_output_bytes: (current_rule == SplitRuleKind::BySize)
                 .then(|| max_bytes.get_untracked().trim().parse().unwrap_or_default()),
         };
@@ -256,7 +265,8 @@ pub(crate) fn SplitWorkspace(
                             <Show when=move || rule.get() == SplitRuleKind::FixedPageCount><label class="range-field"><span>"Pages per output"</span><input type="number" min="1" step="1" prop:value=move || fixed_count.get() on:input=move |event| set_fixed_count.set(event_target_value(&event)) data-testid="split-fixed-count"/></label></Show>
                             <label><input type="radio" name="split-rule" prop:checked=move || rule.get() == SplitRuleKind::Ranges on:change=move |_| set_rule.set(SplitRuleKind::Ranges) data-testid="split-rule-ranges"/><span><strong>"Explicit ranges"</strong><small>"Keep each semicolon-separated range as its own output."</small></span></label>
                             <Show when=move || rule.get() == SplitRuleKind::Ranges><label class="range-field"><span>"Ranges"</span><input type="text" placeholder="1-2;3-6" prop:value=move || ranges.get() on:input=move |event| set_ranges.set(event_target_value(&event)) data-testid="split-page-ranges"/></label></Show>
-                            <label><input type="radio" name="split-rule" prop:checked=move || rule.get() == SplitRuleKind::Bookmarks on:change=move |_| set_rule.set(SplitRuleKind::Bookmarks) data-testid="split-rule-bookmarks"/><span><strong>"Top-level bookmarks"</strong><small>"Start outputs at validated top-level outline destinations."</small></span></label>
+                            <label><input type="radio" name="split-rule" prop:checked=move || rule.get() == SplitRuleKind::Bookmarks on:change=move |_| set_rule.set(SplitRuleKind::Bookmarks) data-testid="split-rule-bookmarks"/><span><strong>"Bookmarks"</strong><small>"Start outputs at validated outline destinations."</small></span></label>
+                            <Show when=move || rule.get() == SplitRuleKind::Bookmarks><label class="range-field"><span>"Bookmark depth"</span><input type="number" min="0" step="1" prop:value=move || bookmark_depth.get() on:input=move |event| set_bookmark_depth.set(event_target_value(&event)) data-testid="split-bookmark-depth"/><small>"0 is top-level; deeper levels opt into nested sections."</small></label></Show>
                             <label><input type="radio" name="split-rule" prop:checked=move || rule.get() == SplitRuleKind::BySize on:change=move |_| set_rule.set(SplitRuleKind::BySize) data-testid="split-rule-size"/><span><strong>"Estimated output size"</strong><small>"Use conservative per-page serialization estimates and verify before rename."</small></span></label>
                             <Show when=move || rule.get() == SplitRuleKind::BySize><label class="range-field"><span>"Maximum bytes"</span><input type="number" min="1" step="1024" prop:value=move || max_bytes.get() on:input=move |event| set_max_bytes.set(event_target_value(&event)) data-testid="split-max-bytes"/></label></Show>
                         </fieldset>
@@ -269,8 +279,8 @@ pub(crate) fn SplitWorkspace(
                 </div>
                 <aside class="merge-run-card" aria-labelledby="split-run-title">
                     <span class="step-number">"4"</span><h2 id="split-run-title">"Create split outputs"</h2><p>"The action unlocks only when the source, rule and destination are valid."</p>
-                    <div class="run-checks">{run_check("Source inspected", move || source.get().is_some_and(|picked| picked.page_count.is_some() && picked.issue.is_none()))}{run_check("Rule valid", move || rule_valid(rule.get(), &fixed_count.get(), &ranges.get(), &max_bytes.get(), source.get().as_ref()))}{run_check("Output selected", move || destination.get().is_some())}{run_check("Native engine ready", move || engine_status.get().ready)}</div>
-                    <button type="button" class="primary-action run-action" data-testid="run-split" disabled=move || !can_run(source.get().as_ref(), destination.get().as_ref(), rule.get(), &fixed_count.get(), &ranges.get(), &max_bytes.get(), &engine_status.get(), &task.get()) on:click=run_split>{move || if matches!(task.get(), TaskState::Running { .. }) { "Splitting…" } else { "Create split outputs" }}</button>
+                    <div class="run-checks">{run_check("Source inspected", move || source.get().is_some_and(|picked| picked.page_count.is_some() && picked.issue.is_none()))}{run_check("Rule valid", move || rule_valid(rule.get(), &fixed_count.get(), &ranges.get(), &bookmark_depth.get(), &max_bytes.get(), source.get().as_ref()))}{run_check("Output selected", move || destination.get().is_some())}{run_check("Native engine ready", move || engine_status.get().ready)}</div>
+                    <button type="button" class="primary-action run-action" data-testid="run-split" disabled=move || !can_run(source.get().as_ref(), destination.get().as_ref(), rule.get(), &fixed_count.get(), &ranges.get(), &bookmark_depth.get(), &max_bytes.get(), &engine_status.get(), &task.get()) on:click=run_split>{move || if matches!(task.get(), TaskState::Running { .. }) { "Splitting…" } else { "Create split outputs" }}</button>
                     {task_status(task, Callback::new(cancel_split))}
                 </aside>
             </div>
@@ -299,6 +309,7 @@ fn rule_valid(
     rule: SplitRuleKind,
     fixed: &str,
     ranges: &str,
+    bookmark_depth: &str,
     max_bytes: &str,
     source: Option<&PickedSplitSource>,
 ) -> bool {
@@ -306,7 +317,10 @@ fn rule_valid(
         SplitRuleKind::EveryPage => true,
         SplitRuleKind::FixedPageCount => fixed.trim().parse::<u32>().is_ok_and(|value| value > 0),
         SplitRuleKind::Ranges => !ranges.trim().is_empty(),
-        SplitRuleKind::Bookmarks => source.is_some_and(|picked| picked.has_bookmarks),
+        SplitRuleKind::Bookmarks => {
+            source.is_some_and(|picked| picked.has_bookmarks)
+                && bookmark_depth.trim().parse::<u32>().is_ok()
+        }
         SplitRuleKind::BySize => max_bytes.trim().parse::<u64>().is_ok_and(|value| value > 0),
     }
 }
@@ -321,13 +335,14 @@ fn can_run(
     rule: SplitRuleKind,
     fixed: &str,
     ranges: &str,
+    bookmark_depth: &str,
     max_bytes: &str,
     engine: &pincerpdf_desktop_api::MergeEngineStatus,
     task: &TaskState,
 ) -> bool {
     source.is_some_and(|picked| picked.page_count.is_some() && picked.issue.is_none())
         && destination.is_some()
-        && rule_valid(rule, fixed, ranges, max_bytes, source)
+        && rule_valid(rule, fixed, ranges, bookmark_depth, max_bytes, source)
         && engine.ready
         && !matches!(task, TaskState::Running { .. })
 }
@@ -337,7 +352,7 @@ fn validation_message(rule: SplitRuleKind) -> &'static str {
         SplitRuleKind::EveryPage => "Choose a valid source and output folder.",
         SplitRuleKind::FixedPageCount => "Enter a positive page count.",
         SplitRuleKind::Ranges => "Enter at least one page range.",
-        SplitRuleKind::Bookmarks => "The source must contain usable top-level bookmarks.",
+        SplitRuleKind::Bookmarks => "The source must contain usable bookmarks at the selected depth.",
         SplitRuleKind::BySize => "Enter a positive output-size limit.",
     }
 }

@@ -17,7 +17,9 @@ pub enum SplitRule {
     FixedPageCount(NonZeroU32),
     /// Emit the explicitly selected ranges as separate outputs.
     Ranges(Vec<PageSelection>),
-    /// Start a new output at each ordered top-level bookmark boundary.
+    /// Start a new output at each ordered bookmark boundary selected by the
+    /// engine adapter. The adapter records the source outline depth on each
+    /// boundary so nested-bookmark policy remains explicit at the boundary.
     Bookmarks(Vec<BookmarkBoundary>),
     /// Greedily group consecutive pages under a conservative byte estimate.
     BySize {
@@ -35,6 +37,8 @@ pub struct BookmarkBoundary {
     pub title: String,
     /// One-based source page at which this output starts.
     pub page: PageNumber,
+    /// Zero-based depth in the source outline tree (top-level is `0`).
+    pub depth: u32,
 }
 
 /// Conservative serialized-size estimate for one source page.
@@ -568,10 +572,12 @@ mod tests {
             BookmarkBoundary {
                 title: "Intro".to_owned(),
                 page: PageNumber::new(1).expect("page"),
+                depth: 0,
             },
             BookmarkBoundary {
                 title: "Chapter 2".to_owned(),
                 page: PageNumber::new(3).expect("page"),
+                depth: 0,
             },
         ];
         let plan = plan_split("book.pdf", 4, &SplitRule::Bookmarks(boundaries))
@@ -592,10 +598,12 @@ mod tests {
             BookmarkBoundary {
                 title: "A".to_owned(),
                 page: PageNumber::new(2).expect("page"),
+                depth: 0,
             },
             BookmarkBoundary {
                 title: "B".to_owned(),
                 page: PageNumber::new(2).expect("page"),
+                depth: 0,
             },
         ];
         assert!(matches!(

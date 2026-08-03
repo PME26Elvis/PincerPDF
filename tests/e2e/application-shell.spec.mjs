@@ -43,6 +43,8 @@ test("runs the deterministic Split workspace across its core rule controls", asy
   await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
 
   await page.getByTestId("split-rule-bookmarks").check();
+  await expect(page.getByTestId("split-bookmark-depth")).toHaveValue("0");
+  await page.getByTestId("split-bookmark-depth").fill("1");
   await page.getByTestId("run-split").click();
   await expect(page.getByTestId("split-result-summary")).toContainText("2 parts");
 

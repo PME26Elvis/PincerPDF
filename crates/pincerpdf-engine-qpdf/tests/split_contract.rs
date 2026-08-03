@@ -95,12 +95,25 @@ fn qpdf_outline_boundaries_feed_bookmark_split_planner() {
         .expect("inspect top-level bookmark boundaries");
     assert_eq!(boundaries.len(), 2);
     assert_eq!(boundaries[0].title, "Chapter 1");
+    assert_eq!(boundaries[0].depth, 0);
     assert_eq!(boundaries[1].page.get(), 2);
     let plan = plan_split(&source, 3, &SplitRule::Bookmarks(boundaries))
         .expect("bookmark boundaries produce a split plan");
     assert_eq!(plan.parts.len(), 2);
     assert_eq!(plan.parts[0].pages.len(), 1);
     assert_eq!(plan.parts[1].pages.len(), 2);
+
+    let nested = adapter
+        .inspect_bookmark_boundaries_at_depth(&source, 1, &ExecutionControl::default())
+        .expect("inspect nested bookmark boundaries");
+    assert_eq!(nested.len(), 1);
+    assert_eq!(nested[0].title, "Appendix");
+    assert_eq!(nested[0].page.get(), 3);
+    assert_eq!(nested[0].depth, 1);
+    let nested_plan = plan_split(&source, 3, &SplitRule::Bookmarks(nested))
+        .expect("nested bookmark boundary produces a split plan");
+    assert_eq!(nested_plan.parts.len(), 1);
+    assert_eq!(nested_plan.parts[0].pages.len(), 1);
 }
 
 #[test]
