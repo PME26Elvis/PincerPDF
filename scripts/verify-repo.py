@@ -92,6 +92,7 @@ BANNED_TRACKED_PARTS = {
     ".fixtures-private",
     "node_modules",
     "target",
+    "target-local",
     "test-results",
     "playwright-report",
 }
