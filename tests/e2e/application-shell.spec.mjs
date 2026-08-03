@@ -253,6 +253,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   await page.getByTestId("add-merge-sources").click();
   await page.getByTestId("choose-merge-output").click();
   await page.getByTestId("merge-advanced-toggle").click();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-configured-desktop.png`,
     fullPage: true,
@@ -260,6 +261,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   });
 
   await page.getByTestId("bookmark-policy-one-entry").check();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-bookmark-policy-desktop.png`,
     fullPage: true,
@@ -267,6 +269,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   });
 
   await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-retained-bookmark-policy-desktop.png`,
     fullPage: true,
@@ -276,6 +279,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   await page.getByTestId("run-merge").click();
   await expect(page.getByTestId("merge-result-summary")).toContainText("9 pages");
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-completed-desktop.png`,
     fullPage: true,
@@ -283,6 +287,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-completed-compact.png`,
     fullPage: true,
@@ -306,6 +311,7 @@ test("captures empty, configured, completed and compact Split checkpoints", asyn
   await page.getByTestId("choose-split-output").click();
   await page.getByTestId("split-rule-fixed").check();
   await page.getByTestId("split-fixed-count").fill("2");
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/split-configured-desktop.png`,
     fullPage: true,
@@ -314,6 +320,7 @@ test("captures empty, configured, completed and compact Split checkpoints", asyn
 
   await page.getByTestId("run-split").click();
   await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/split-completed-desktop.png`,
     fullPage: true,
@@ -321,6 +328,7 @@ test("captures empty, configured, completed and compact Split checkpoints", asyn
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/split-completed-compact.png`,
     fullPage: true,
