@@ -111,7 +111,7 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.equal(splitWorkspace, true);
   });
 
-  it("keeps seven tool gates independent from available Merge", async () => {
+  it("keeps six tool gates independent from available Merge and Split", async () => {
     const navigation = await browser.executeAsync((done) => {
       const buttons = [
         ...document.querySelectorAll('[data-testid^="tool-nav-"]'),
@@ -147,7 +147,8 @@ describe("PincerPDF native WebView2 Merge shell", () => {
 
     assert.equal(navigation.labels.length, 8);
     assert.match(navigation.labels[0], /Merge[\s\S]*Available/);
-    for (const label of navigation.labels.slice(1)) {
+    assert.match(navigation.labels[1], /Split[\s\S]*Available/);
+    for (const label of navigation.labels.slice(2)) {
       assert.match(label, /Not implemented/);
     }
     assert.equal(navigation.rotated.title.trim(), "Rotate PDF");
