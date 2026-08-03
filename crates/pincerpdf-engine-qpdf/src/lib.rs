@@ -644,12 +644,14 @@ impl QpdfAdapter {
                 BookmarkPolicy::OneEntryPerDocument => roots.push(BookmarkPlanNode {
                     title: document_bookmark_title(&input.document_title),
                     page_position: Some(output_offset),
+                    is_open: true,
                     children: Vec::new(),
                 }),
                 BookmarkPolicy::Retain => roots.extend(source_roots),
                 BookmarkPolicy::RetainAsOneEntryPerDocument => roots.push(BookmarkPlanNode {
                     title: document_bookmark_title(&input.document_title),
                     page_position: Some(output_offset),
+                    is_open: true,
                     children: source_roots,
                 }),
             }
@@ -1432,6 +1434,7 @@ fn parse_pdf_reference(document: &str, key: &str) -> Result<Option<(u64, u64)>, 
 struct BookmarkPlanNode {
     title: String,
     page_position: Option<usize>,
+    is_open: bool,
     children: Vec<Self>,
 }
 
@@ -1451,6 +1454,7 @@ struct AssignedBookmarkNode {
     id: u64,
     title: String,
     page_position: Option<usize>,
+    is_open: bool,
     children: Vec<Self>,
 }
 
@@ -1478,6 +1482,14 @@ fn count_bookmark_nodes(nodes: &[BookmarkPlanNode]) -> usize {
         count
             .saturating_add(1)
             .saturating_add(count_bookmark_nodes(&node.children))
+    })
+}
+
+fn count_assigned_bookmark_nodes(nodes: &[AssignedBookmarkNode]) -> usize {
+    nodes.iter().fold(0_usize, |count, node| {
+        count
+            .saturating_add(1)
+            .saturating_add(count_assigned_bookmark_nodes(&node.children))
     })
 }
 
@@ -1701,6 +1713,7 @@ fn parse_source_bookmark_node(
         .get("destpageposfrom1")
         .and_then(Value::as_u64)
         .and_then(|page| u32::try_from(page).ok());
+    let is_open = entry.get("open").and_then(Value::as_bool).unwrap_or(true);
     let page_position = source_page
         .map(|source_page| {
             let positions = input
@@ -1728,6 +1741,7 @@ fn parse_source_bookmark_node(
     Ok(Some(BookmarkPlanNode {
         title,
         page_position,
+        is_open,
         children,
     }))
 }
@@ -1903,7 +1917,7 @@ fn build_bookmark_update(
         format!("obj:{outline_reference}"),
         json!({
             "value": {
-                "/Count": roots.len(),
+                "/Count": count_assigned_bookmark_nodes(&assigned_roots),
                 "/First": indirect_reference(assigned_roots[0].id),
                 "/Last": indirect_reference(assigned_roots[assigned_roots.len() - 1].id),
                 "/Type": "/Outlines"
@@ -1946,6 +1960,7 @@ fn assign_bookmark_nodes(
                 id,
                 title: node.title.clone(),
                 page_position: node.page_position,
+                is_open: node.is_open,
                 children,
             })
         })
@@ -2004,9 +2019,17 @@ fn render_bookmark_nodes(
             );
             item.insert(
                 "/Count".to_owned(),
-                Value::from(u64::try_from(node.children.len()).map_err(|_| {
-                    invalid_qpdf_json("bookmark child count exceeds the supported range")
-                })?),
+                Value::from({
+                    let descendants = i64::try_from(count_assigned_bookmark_nodes(&node.children))
+                        .map_err(|_| {
+                            invalid_qpdf_json("bookmark child count exceeds the supported range")
+                        })?;
+                    if node.is_open {
+                        descendants
+                    } else {
+                        -descendants
+                    }
+                }),
             );
         }
         let reference = indirect_reference(node.id);
@@ -2039,6 +2062,7 @@ fn verify_bookmark_nodes(
     for (entry, expectation) in actual.iter().zip(expected) {
         let title = entry.get("title").and_then(Value::as_str);
         let page_position = entry.get("destpageposfrom1").and_then(Value::as_u64);
+        let is_open = entry.get("open").and_then(Value::as_bool);
         let children = entry
             .get("kids")
             .and_then(Value::as_array)
@@ -2048,6 +2072,7 @@ fn verify_bookmark_nodes(
                 != expectation
                     .page_position
                     .and_then(|page| u64::try_from(page).ok())
+            || is_open.is_some_and(|open| open != expectation.is_open)
         {
             return Err(invalid_qpdf_json(format!(
                 "generated bookmark did not match title {:?} at its planned destination",
@@ -3190,9 +3215,11 @@ mod tests {
             vec![BookmarkPlanNode {
                 title: "Chapter 2".to_owned(),
                 page_position: Some(4),
+                is_open: true,
                 children: vec![BookmarkPlanNode {
                     title: "Appendix".to_owned(),
                     page_position: Some(5),
+                    is_open: true,
                     children: Vec::new(),
                 }],
             }]
@@ -3217,6 +3244,7 @@ mod tests {
             "title":"第一章 — 導言 📄",
             "dest":["3 0 R","/Fit"],
             "destpageposfrom1":1,
+            "open":false,
             "kids":[{
               "title":"節 1.1 · 概要",
               "dest":["4 0 R","/Fit"],
@@ -3229,6 +3257,7 @@ mod tests {
         let plan = parse_source_bookmarks(source, &input, 1).expect("unicode plan");
         assert_eq!(plan[0].title, "第一章 — 導言 📄");
         assert_eq!(plan[0].page_position, Some(1));
+        assert!(!plan[0].is_open);
         assert_eq!(plan[0].children[0].title, "節 1.1 · 概要");
         assert_eq!(plan[0].children[0].page_position, Some(2));
     }
@@ -3477,15 +3506,18 @@ mod tests {
             BookmarkPlanNode {
                 title: "one".to_owned(),
                 page_position: Some(1),
+                is_open: true,
                 children: vec![BookmarkPlanNode {
                     title: "child".to_owned(),
                     page_position: Some(3),
+                    is_open: true,
                     children: Vec::new(),
                 }],
             },
             BookmarkPlanNode {
                 title: "two".to_owned(),
                 page_position: Some(2),
+                is_open: true,
                 children: Vec::new(),
             },
         ];
@@ -3502,7 +3534,7 @@ mod tests {
             objects["obj:1 0 R"]["value"]["/Lang"],
             Value::String("u:en".to_owned())
         );
-        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(2));
+        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(3));
         assert_eq!(
             objects["obj:9 0 R"]["value"]["/Dest"][0],
             Value::String("3 0 R".to_owned())
@@ -3515,5 +3547,46 @@ mod tests {
             objects["obj:11 0 R"]["value"]["/Dest"][0],
             Value::String("5 0 R".to_owned())
         );
+    }
+
+    #[test]
+    fn bookmark_update_preserves_closed_nested_outline_state() {
+        let layout = OutlineLayout {
+            metadata: json!({
+                "jsonversion": 2,
+                "pdfversion": "1.7",
+                "maxobjectid": 7
+            }),
+            max_object_id: 7,
+            catalog_reference: "1 0 R".to_owned(),
+            catalog_object: 1,
+            catalog_generation: 0,
+            page_objects: vec!["3 0 R".to_owned()],
+        };
+        let catalog = json!({"/Pages": "2 0 R", "/Type": "/Catalog"})
+            .as_object()
+            .expect("catalog object")
+            .clone();
+        let expected = vec![BookmarkPlanNode {
+            title: "Root".to_owned(),
+            page_position: Some(1),
+            is_open: true,
+            children: vec![BookmarkPlanNode {
+                title: "Closed".to_owned(),
+                page_position: None,
+                is_open: false,
+                children: vec![BookmarkPlanNode {
+                    title: "Leaf".to_owned(),
+                    page_position: Some(1),
+                    is_open: true,
+                    children: Vec::new(),
+                }],
+            }],
+        }];
+
+        let update = build_bookmark_update(&layout, catalog, &expected).expect("bookmark update");
+        let objects = update["qpdf"][1].as_object().expect("update objects");
+        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(3));
+        assert_eq!(objects["obj:9 0 R"]["value"]["/Count"], Value::from(-1));
     }
 }
