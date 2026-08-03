@@ -297,7 +297,9 @@ impl QpdfAdapter {
                 password: None,
             };
             let bookmark_plan = BookmarkPlan {
-                roots: parse_source_bookmarks(&outline_json, &split_input, 0)?,
+                // Bookmark page positions are one-based throughout the QPDF
+                // update and verification boundary, including one-page parts.
+                roots: parse_source_bookmarks(&outline_json, &split_input, 1)?,
             };
             if bookmark_plan.roots.is_empty() {
                 stage_split_output(raw_output.path(), &output_plan.temporary_path)?;
