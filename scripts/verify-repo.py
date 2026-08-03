@@ -432,7 +432,13 @@ def verify_split_planner_contract() -> None:
             fail(f"P5.1 CLI smoke contract missing: {token}")
     if "split_materialization_conserves_pages_and_finalizes_outputs" not in split_contract:
         fail("P5.1 real-engine split contract is missing")
-    if "P5.1 — Split planner: In progress" not in roadmap:
+    if not any(
+        marker in roadmap
+        for marker in (
+            "P5.1 — Split planner: In progress",
+            "P5.1 — Split planner/materializer: In progress",
+        )
+    ):
         fail("P5.1 roadmap status is missing")
 
 
