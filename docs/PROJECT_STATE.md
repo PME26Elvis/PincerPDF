@@ -528,8 +528,8 @@ local Windows toolchain after this adjustment.
 1. Retain Linux Actions evidence for the new split materializer and its
    page-conservation/atomic-output contract.
 2. Extend the QPDF bookmark-boundary contract beyond the verified top-level
-   page-target policy, then add split-by-size only after its metadata and
-   size-estimation policies are testable.
+   page-target policy; the first conservative split-by-size estimator and
+   materialization bound are now locally verified.
 3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 

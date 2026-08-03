@@ -32,6 +32,7 @@ restricted environment before any PDF materializer is enabled in the UI.
 
 ## Deferred behavior
 
-Nested split-by-bookmarks semantics, split-by-size, bookmark destination
-remapping, collision policies and browser/native UI remain gated until their
-own real-engine contract fixtures prove page conservation and output validity.
+Nested split-by-bookmarks semantics, bookmark destination remapping, collision
+policies and browser/native UI remain gated until their own real-engine
+contract fixtures prove page conservation and output validity. Split-by-size
+estimation is defined separately by ADR-028.

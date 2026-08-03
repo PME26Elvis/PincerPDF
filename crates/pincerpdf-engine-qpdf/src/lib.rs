@@ -12,12 +12,13 @@ use pincerpdf_merge::{
     BookmarkPolicy, CancellationToken, CommandEvidence, ExecutionControl, MergeEngineInput,
     MergeEnginePort, MergeEngineRequest, MergeEngineResult, MergeTocPolicy, SecretString,
 };
-use pincerpdf_split::{BookmarkBoundary, SplitPlan};
+use pincerpdf_split::{BookmarkBoundary, PageSizeEstimate, SplitPlan};
 use serde_json::{Map, Value, json};
 use std::ffi::OsString;
 use std::fmt::Write as _;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
+use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -67,6 +68,15 @@ pub struct SplitMaterializationReport {
     /// Atomically finalized output paths in plan order.
     pub outputs: Vec<PathBuf>,
     /// External-command evidence for each extraction and count verification.
+    pub evidence: Vec<CommandEvidence>,
+}
+
+/// Conservative single-page size estimates used by size-based split planning.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SplitSizeEstimateReport {
+    /// One estimate per source page, in one-based order.
+    pub estimates: Vec<PageSizeEstimate>,
+    /// Redacted QPDF evidence for each single-page materialization.
     pub evidence: Vec<CommandEvidence>,
 }
 
@@ -268,6 +278,25 @@ impl QpdfAdapter {
                     ),
                 ));
             }
+            if let Some(limit) = plan.size_limit_bytes {
+                let actual_bytes = fs::metadata(&output_plan.temporary_path)
+                    .map_err(|error| {
+                        EngineError::new(
+                            ErrorCode::OutputWriteFailed,
+                            format!("cannot inspect split output size: {error}"),
+                        )
+                    })?
+                    .len();
+                if actual_bytes > limit.get() {
+                    return Err(EngineError::new(
+                        ErrorCode::OutputWriteFailed,
+                        format!(
+                            "split output exceeded byte limit: expected at most {}, got {actual_bytes}",
+                            limit.get()
+                        ),
+                    ));
+                }
+            }
             fs::rename(&output_plan.temporary_path, &output_plan.final_path).map_err(|error| {
                 EngineError::new(
                     ErrorCode::OutputWriteFailed,
@@ -310,6 +339,87 @@ impl QpdfAdapter {
         )?;
         ensure_complete_json(&capture.evidence, "split bookmark boundaries")?;
         parse_bookmark_boundaries(&capture.evidence.stdout)
+    }
+
+    /// Materializes each source page once to measure a conservative size
+    /// estimate for size-based split planning. The estimates deliberately use
+    /// the same QPDF page assembly path as final split outputs rather than
+    /// treating source object byte spans as interchangeable with serialized
+    /// output bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when a page cannot be materialized or its
+    /// temporary output has no measurable bytes.
+    pub fn estimate_page_sizes(
+        &self,
+        source: &Path,
+        total_pages: u32,
+        control: &ExecutionControl,
+    ) -> Result<SplitSizeEstimateReport, EngineError> {
+        if total_pages == 0 {
+            return Err(EngineError::new(
+                ErrorCode::InvalidInput,
+                "cannot estimate sizes for a zero-page source",
+            ));
+        }
+        let mut estimates = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
+        let mut evidence = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
+        for page in 1..=total_pages {
+            let temporary = TemporaryPath::new("split-size-estimate", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot create private split-size estimate: {error}"),
+                )
+            })?;
+            let page_number = PageNumber::new(page).map_err(|_| {
+                EngineError::new(ErrorCode::InvalidInput, "split page number overflowed")
+            })?;
+            let page_spec = page_specification(&[page_number]);
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(source),
+                    OsString::from(&page_spec),
+                    OsString::from("--"),
+                    qpdf_path(temporary.path()),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    source.display().to_string(),
+                    page_spec,
+                    "--".to_owned(),
+                    "<private-split-size-estimate>".to_owned(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(capture.evidence);
+            let bytes = fs::metadata(temporary.path())
+                .map_err(|error| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("cannot inspect split-size estimate for page {page}: {error}"),
+                    )
+                })?
+                .len();
+            let estimated_bytes = NonZeroU64::new(bytes).ok_or_else(|| {
+                EngineError::new(
+                    ErrorCode::EngineFailure,
+                    format!("QPDF produced an empty split-size estimate for page {page}"),
+                )
+            })?;
+            estimates.push(PageSizeEstimate {
+                page: page_number,
+                estimated_bytes,
+            });
+        }
+        Ok(SplitSizeEstimateReport {
+            estimates,
+            evidence,
+        })
     }
 
     fn prepare_merge_sources(

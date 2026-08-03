@@ -4,7 +4,7 @@
 use pincerpdf_domain::{PageNumber, PageSelection, ResolveSelectionError};
 use std::error::Error;
 use std::fmt;
-use std::num::NonZeroU32;
+use std::num::{NonZeroU32, NonZeroU64};
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -19,6 +19,13 @@ pub enum SplitRule {
     Ranges(Vec<PageSelection>),
     /// Start a new output at each ordered top-level bookmark boundary.
     Bookmarks(Vec<BookmarkBoundary>),
+    /// Greedily group consecutive pages under a conservative byte estimate.
+    BySize {
+        /// Maximum estimated bytes allowed in one output.
+        max_bytes: NonZeroU64,
+        /// One estimate for every source page, in one-based page order.
+        page_estimates: Vec<PageSizeEstimate>,
+    },
 }
 
 /// A validated bookmark boundary supplied by an engine adapter.
@@ -28,6 +35,15 @@ pub struct BookmarkBoundary {
     pub title: String,
     /// One-based source page at which this output starts.
     pub page: PageNumber,
+}
+
+/// Conservative serialized-size estimate for one source page.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PageSizeEstimate {
+    /// One-based source page represented by this estimate.
+    pub page: PageNumber,
+    /// Estimated bytes of a single-page QPDF materialization.
+    pub estimated_bytes: NonZeroU64,
 }
 
 impl FromStr for SplitRule {
@@ -87,6 +103,8 @@ pub struct SplitPart {
     pub filename_stem: String,
 }
 
+type PageGroup = (Vec<PageNumber>, Option<String>);
+
 /// Complete engine-independent split plan.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SplitPlan {
@@ -94,6 +112,8 @@ pub struct SplitPlan {
     pub source: PathBuf,
     /// Ordered output parts.
     pub parts: Vec<SplitPart>,
+    /// Optional conservative limit that the materializer must verify.
+    pub size_limit_bytes: Option<NonZeroU64>,
 }
 
 /// Planner failure with no filesystem or engine side effects.
@@ -122,6 +142,33 @@ pub enum SplitPlanError {
         /// Zero-based boundary index that violated ascending order.
         ordinal: usize,
     },
+    /// The size rule did not provide one estimate for each source page.
+    SizeEstimateCount {
+        /// Expected number of page estimates.
+        expected: u32,
+        /// Number of estimates supplied by the engine.
+        actual: usize,
+    },
+    /// A size estimate was not for the next page in one-based order.
+    SizeEstimateOrder {
+        /// Zero-based estimate index that violated ordering.
+        ordinal: usize,
+        /// Expected page number.
+        expected: PageNumber,
+        /// Supplied page number.
+        actual: PageNumber,
+    },
+    /// A single page cannot fit under the requested limit.
+    PageExceedsSizeLimit {
+        /// One-based page that exceeded the limit.
+        page: PageNumber,
+        /// Its estimated bytes.
+        estimated_bytes: NonZeroU64,
+        /// Requested maximum bytes.
+        max_bytes: NonZeroU64,
+    },
+    /// The estimate accumulator overflowed `u64`.
+    SizeEstimateOverflow,
     /// An output ordinal overflowed the supported one-based range.
     TooManyParts,
 }
@@ -148,6 +195,31 @@ impl fmt::Display for SplitPlanError {
                     formatter,
                     "bookmark boundary {ordinal} is not strictly after the previous boundary"
                 )
+            }
+            Self::SizeEstimateCount { expected, actual } => {
+                write!(
+                    formatter,
+                    "size split requires {expected} page estimates, got {actual}"
+                )
+            }
+            Self::SizeEstimateOrder {
+                ordinal,
+                expected,
+                actual,
+            } => write!(
+                formatter,
+                "size estimate {ordinal} targets page {actual}, expected page {expected}"
+            ),
+            Self::PageExceedsSizeLimit {
+                page,
+                estimated_bytes,
+                max_bytes,
+            } => write!(
+                formatter,
+                "page {page} estimate {estimated_bytes} exceeds split limit {max_bytes}"
+            ),
+            Self::SizeEstimateOverflow => {
+                formatter.write_str("split size estimate overflowed the supported range")
             }
             Self::TooManyParts => {
                 formatter.write_str("split output count exceeded the supported range")
@@ -179,35 +251,44 @@ pub fn plan_split(
         return Err(SplitPlanError::EmptyDocument);
     }
     let source = source.into();
-    let page_groups = match rule {
-        SplitRule::EveryPage => (1..=total_pages)
-            .map(|page| numbered_range(page, page))
-            .map(|pages| pages.map(|pages| (pages, None)))
-            .collect::<Result<Vec<_>, _>>()?,
+    let (page_groups, size_limit_bytes) = match rule {
+        SplitRule::EveryPage => (
+            (1..=total_pages)
+                .map(|page| numbered_range(page, page))
+                .map(|pages| pages.map(|pages| (pages, None)))
+                .collect::<Result<Vec<_>, _>>()?,
+            None,
+        ),
         SplitRule::FixedPageCount(count) => {
             let count = count.get();
-            (1..=total_pages)
-                .step_by(usize::try_from(count).unwrap_or(usize::MAX))
-                .map(|start| {
-                    let end = start
-                        .saturating_add(count)
-                        .saturating_sub(1)
-                        .min(total_pages);
-                    numbered_range(start, end).map(|pages| (pages, None))
-                })
-                .collect::<Result<Vec<_>, _>>()?
+            (
+                (1..=total_pages)
+                    .step_by(usize::try_from(count).unwrap_or(usize::MAX))
+                    .map(|start| {
+                        let end = start
+                            .saturating_add(count)
+                            .saturating_sub(1)
+                            .min(total_pages);
+                        numbered_range(start, end).map(|pages| (pages, None))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                None,
+            )
         }
-        SplitRule::Ranges(ranges) => ranges
-            .iter()
-            .enumerate()
-            .map(|(ordinal, range)| {
-                let pages = range.resolve(total_pages)?;
-                if pages.is_empty() {
-                    return Err(SplitPlanError::EmptyRange { ordinal });
-                }
-                Ok((pages, None))
-            })
-            .collect::<Result<Vec<_>, SplitPlanError>>()?,
+        SplitRule::Ranges(ranges) => (
+            ranges
+                .iter()
+                .enumerate()
+                .map(|(ordinal, range)| {
+                    let pages = range.resolve(total_pages)?;
+                    if pages.is_empty() {
+                        return Err(SplitPlanError::EmptyRange { ordinal });
+                    }
+                    Ok((pages, None))
+                })
+                .collect::<Result<Vec<_>, SplitPlanError>>()?,
+            None,
+        ),
         SplitRule::Bookmarks(boundaries) => {
             if boundaries.is_empty() {
                 return Err(SplitPlanError::NoBookmarks);
@@ -223,18 +304,28 @@ pub fn plan_split(
                     return Err(SplitPlanError::BookmarkOrder { ordinal });
                 }
             }
-            boundaries
-                .iter()
-                .enumerate()
-                .map(|(ordinal, boundary)| {
-                    let end = boundaries
-                        .get(ordinal + 1)
-                        .map_or(total_pages, |next| next.page.get().saturating_sub(1));
-                    numbered_range(boundary.page.get(), end)
-                        .map(|pages| (pages, Some(boundary.title.clone())))
-                })
-                .collect::<Result<Vec<_>, _>>()?
+            (
+                boundaries
+                    .iter()
+                    .enumerate()
+                    .map(|(ordinal, boundary)| {
+                        let end = boundaries
+                            .get(ordinal + 1)
+                            .map_or(total_pages, |next| next.page.get().saturating_sub(1));
+                        numbered_range(boundary.page.get(), end)
+                            .map(|pages| (pages, Some(boundary.title.clone())))
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+                None,
+            )
         }
+        SplitRule::BySize {
+            max_bytes,
+            page_estimates,
+        } => (
+            plan_by_size(total_pages, *max_bytes, page_estimates)?,
+            Some(*max_bytes),
+        ),
     };
     let stem = source_stem(&source);
     let parts = page_groups
@@ -250,7 +341,61 @@ pub fn plan_split(
             })
         })
         .collect::<Result<Vec<_>, SplitPlanError>>()?;
-    Ok(SplitPlan { source, parts })
+    Ok(SplitPlan {
+        source,
+        parts,
+        size_limit_bytes,
+    })
+}
+
+fn plan_by_size(
+    total_pages: u32,
+    max_bytes: NonZeroU64,
+    estimates: &[PageSizeEstimate],
+) -> Result<Vec<PageGroup>, SplitPlanError> {
+    if estimates.len() != usize::try_from(total_pages).unwrap_or(usize::MAX) {
+        return Err(SplitPlanError::SizeEstimateCount {
+            expected: total_pages,
+            actual: estimates.len(),
+        });
+    }
+    let mut groups: Vec<PageGroup> = Vec::new();
+    let mut current_pages = Vec::new();
+    let mut current_bytes = 0_u64;
+    for (ordinal, estimate) in estimates.iter().enumerate() {
+        let expected = PageNumber::new(u32::try_from(ordinal + 1).unwrap_or(u32::MAX))
+            .map_err(|_| SplitPlanError::SizeEstimateOverflow)?;
+        if estimate.page != expected {
+            return Err(SplitPlanError::SizeEstimateOrder {
+                ordinal,
+                expected,
+                actual: estimate.page,
+            });
+        }
+        if estimate.estimated_bytes.get() > max_bytes.get() {
+            return Err(SplitPlanError::PageExceedsSizeLimit {
+                page: estimate.page,
+                estimated_bytes: estimate.estimated_bytes,
+                max_bytes,
+            });
+        }
+        let next_bytes = current_bytes
+            .checked_add(estimate.estimated_bytes.get())
+            .ok_or(SplitPlanError::SizeEstimateOverflow)?;
+        if !current_pages.is_empty() && next_bytes > max_bytes.get() {
+            groups.push((current_pages, None));
+            current_pages = Vec::new();
+            current_bytes = 0;
+        }
+        current_pages.push(estimate.page);
+        current_bytes = current_bytes
+            .checked_add(estimate.estimated_bytes.get())
+            .ok_or(SplitPlanError::SizeEstimateOverflow)?;
+    }
+    if !current_pages.is_empty() {
+        groups.push((current_pages, None));
+    }
+    Ok(groups)
 }
 
 fn source_stem(source: &Path) -> String {
@@ -321,6 +466,66 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![2, 2, 1]
         );
+    }
+
+    #[test]
+    fn size_estimates_greedily_partition_consecutive_pages() {
+        let estimates = (1..=5)
+            .map(|page| PageSizeEstimate {
+                page: PageNumber::new(page).expect("page"),
+                estimated_bytes: NonZeroU64::new(40).expect("bytes"),
+            })
+            .collect();
+        let plan = plan_split(
+            "book.pdf",
+            5,
+            &SplitRule::BySize {
+                max_bytes: NonZeroU64::new(100).expect("limit"),
+                page_estimates: estimates,
+            },
+        )
+        .expect("valid size plan");
+        assert_eq!(
+            plan.parts
+                .iter()
+                .map(|part| part.pages.len())
+                .collect::<Vec<_>>(),
+            vec![2, 2, 1]
+        );
+        assert_eq!(plan.size_limit_bytes, NonZeroU64::new(100));
+    }
+
+    #[test]
+    fn size_estimates_reject_missing_or_oversized_pages() {
+        let page = PageNumber::new(1).expect("page");
+        assert!(matches!(
+            plan_split(
+                "book.pdf",
+                2,
+                &SplitRule::BySize {
+                    max_bytes: NonZeroU64::new(100).expect("limit"),
+                    page_estimates: vec![PageSizeEstimate {
+                        page,
+                        estimated_bytes: NonZeroU64::new(40).expect("bytes"),
+                    }],
+                },
+            ),
+            Err(SplitPlanError::SizeEstimateCount { .. })
+        ));
+        assert!(matches!(
+            plan_split(
+                "book.pdf",
+                1,
+                &SplitRule::BySize {
+                    max_bytes: NonZeroU64::new(40).expect("limit"),
+                    page_estimates: vec![PageSizeEstimate {
+                        page,
+                        estimated_bytes: NonZeroU64::new(41).expect("bytes"),
+                    }],
+                },
+            ),
+            Err(SplitPlanError::PageExceedsSizeLimit { .. })
+        ));
     }
 
     #[test]

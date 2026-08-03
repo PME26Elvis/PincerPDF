@@ -62,6 +62,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-025-document-title-table-of-contents.md",
     "docs/architecture/adr/ADR-026-text-aware-footer-placement.md",
     "docs/architecture/adr/ADR-027-split-planner-boundary.md",
+    "docs/architecture/adr/ADR-028-split-by-size-estimation.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -330,6 +331,8 @@ def verify_merge_core_contract() -> None:
         "inspect_bookmark_boundaries",
         "parse_bookmark_boundaries",
         "SplitMaterializationReport",
+        "SplitSizeEstimateReport",
+        "estimate_page_sizes",
         "SplitOutputGuard",
         "parse_qpdf_page_count",
     ):
@@ -424,8 +427,12 @@ def verify_split_planner_contract() -> None:
         "Ranges(Vec<PageSelection>)",
         "Bookmarks(Vec<BookmarkBoundary>)",
         "pub struct BookmarkBoundary",
+        "BySize",
+        "pub struct PageSizeEstimate",
         "pub struct SplitPlan",
+        "size_limit_bytes",
         "pub fn plan_split",
+        "plan_by_size",
         "numbered_range",
         "source_stem",
     ):
@@ -437,6 +444,7 @@ def verify_split_planner_contract() -> None:
     for token in (
         "split_materialization_conserves_pages_and_finalizes_outputs",
         "qpdf_outline_boundaries_feed_bookmark_split_planner",
+        "qpdf_page_size_estimates_feed_size_split_and_bound_outputs",
     ):
         if token not in split_contract:
             fail(f"P5.1 real-engine split contract is missing: {token}")
