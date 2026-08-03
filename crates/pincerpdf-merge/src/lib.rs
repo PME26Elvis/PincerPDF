@@ -465,4 +465,782 @@ pub enum MergeError {
     /// A source could not be inspected.
     InspectSource {
         /// Zero-based source position.
-   ã®5¶‰žËkºwµçlÍ½ÕÉ•}¥¹‘•àô¤ì(€€€€€€€ô(€€€ô(€€€=¬  ¤¤)ô()™¸É•Í½±Ù•}Í½ÕÉ•}Á…•Ì (€€€Í½ÕÉ”è€™5•É•M½ÕÉ”°(€€€µ•Ñ…‘…Ñ„è€™A‘™5•Ñ…‘…Ñ„°(¤€´øI•ÍÕ±ÐñY•ŒñA…•9Õµ‰•Èø°I•Í½±Ù•M•±•Ñ¥½¹ÉÉ½Èøì(€€€¥˜±•ÐM½µ”¡Í•±•Ñ¥½¸¤€ôÍ½ÕÉ”¹Í•±•Ñ¥½¸ ¤ì(€€€€€€€Í•±•Ñ¥½¸¹É•Í½±Ù”¡µ•Ñ…‘…Ñ„¹Á…•}½Õ¹Ð¤(€€€ô•±Í”ì(€€€€€€€=¬  Ä¸¸õµ•Ñ…‘…Ñ„¹Á…•}½Õ¹Ð¤(€€€€€€€€€€€€¹µ…À¡ñÁ…•ðA…•9Õµ‰•Èèé¹•Ü¡Á…”¤¹•áÁ•Ð ‰Á…”É…¹”ÍÑ…ÉÑÌ…Ð½¹”ˆ¤¤(€€€€€€€€€€€€¹½±±•Ð ¤¤(€€€ô)ô()ÍÑÉÕÐ=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸ì(€€€Á±…¸è=ÕÑÁÕÑA…Ñ¡A±…¸°(€€€½µµ¥ÑÑ•è‰½½°°)ô()¥µÁ°=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸ì(€€€™¸‰•¥¸¡Á…Ñ è€™A…Ñ °Á½±¥äèá¥ÍÑ¥¹=ÕÑÁÕÑA½±¥ä¤€´øI•ÍÕ±ÐñM•±˜°5•É•ÉÉ½Èøì(€€€€€€€±•Ð™¥¹…±}•á¥ÍÑÌ€ôÁ…Ñ ¹ÑÉå}•á¥ÍÑÌ ¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éðì(€€€€€€€€€€€5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½Ð¥¹ÍÁ•Ð½ÕÑÁÕÐÁ…Ñ èí•ÉÉ½Éôˆ¤¤(€€€€€€€ô¤üì(€€€€€€€±•ÐÑ½­•¸€ô™½Éµ…Ð„ (€€€€€€€€€€€€‰µ•É•}íõ}íôˆ°(€€€€€€€€€€€ÁÉ½•ÍÌèé¥ ¤°(€€€€€€€€€€€9aQ}=AIQ%=9}%¹™•Ñ¡}…‘ Ä°=É‘•É¥¹œèéI•±…á•¤(€€€€€€€€¤ì(€€€€€€€±•ÐÁ±…¸€ô(€€€€€€€€€€€Á±…¹}½ÕÑÁÕÑ}Á…Ñ ¡Á…Ñ °™¥¹…±}•á¥ÍÑÌ°Á½±¥ä°€™Ñ½­•¸¤¹µ…Á}•ÉÈ¡5•É•ÉÉ½Èèé=ÕÑÁÕÑA±…¸¤üì(€€€€€€€¥˜Á±…¸¹Ñ•µÁ½É…Éå}Á…Ñ ¹ÑÉå}•á¥ÍÑÌ ¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éðì(€€€€€€€€€€€5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½Ð¥¹ÍÁ•ÐÑ•µÁ½É…Éä½ÕÑÁÕÐÁ…Ñ èí•ÉÉ½Éôˆ¤¤(€€€€€€€ô¤üì(€€€€€€€€€€€É•ÑÕÉ¸ÉÈ¡5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼ (€€€€€€€€€€€€€€€€‰Ñ•µÁ½É…Éäµ•É”½ÕÑÁÕÐÕ¹•áÁ•Ñ•‘±ä…±É•…‘ä•á¥ÍÑÌˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€€¤¤ì(€€€€€€€ô(€€€€€€€=¬¡M•±˜ì(€€€€€€€€€€€Á±…¸°(€€€€€€€€€€€½µµ¥ÑÑ•è™…±Í”°(€€€€€€€ô¤(€€€ô((€€€™¸Ñ•µÁ½É…Éå}Á…Ñ  ™Í•±˜¤€´ø€™A…Ñ ì(€€€€€€€€™Í•±˜¹Á±…¸¹Ñ•µÁ½É…Éå}Á…Ñ (€€€ô((€€€™¸½µµ¥Ð ™µÕÐÍ•±˜¤€´øI•ÍÕ±ÐñA…Ñ¡	Õ˜°5•É•ÉÉ½Èøì(€€€€€€€±•ÐÑ•µÁ½É…Éä€ô€™Í•±˜¹Á±…¸¹Ñ•µÁ½É…Éå}Á…Ñ ì(€€€€€€€±•Ð™¥¹…±}Á…Ñ €ô€™Í•±˜¹Á±…¸¹™¥¹…±}Á…Ñ ì(€€€€€€€¥˜€…Ñ•µÁ½É…Éä¹¥Í}™¥±” ¤ì(€€€€€€€€€€€É•ÑÕÉ¸ÉÈ¡5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼ (€€€€€€€€€€€€€€€€‰•¹¥¹”‘¥¹½ÐÁÉ½‘Õ”„É•Õ±…ÈÑ•µÁ½É…ÉäAˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€€¤¤ì(€€€€€€€ô(€€€€€€€=Á•¹=ÁÑ¥½¹Ìèé¹•Ü ¤(€€€€€€€€€€€€¹ÝÉ¥Ñ”¡ÑÉÕ”¤(€€€€€€€€€€€€¹½Á•¸¡Ñ•µÁ½É…Éä¤(€€€€€€€€€€€€¹…¹‘}Ñ¡•¸¡ñ™¥±•ð™¥±”¹Íå¹}…±° ¤¤(€€€€€€€€€€€€¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éð5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½ÐÍå¹ŒÑ•µÁ½É…ÉäAèí•ÉÉ½Éôˆ¤¤¤üì(€€€€€€€¥˜€…Í•±˜¹Á±…¸¹É•Á±…•}•á¥ÍÑ¥¹œ(€€€€€€€€€€€€˜˜™¥¹…±}Á…Ñ ¹ÑÉå}•á¥ÍÑÌ ¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éðì(€€€€€€€€€€€€€€€5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½ÐÉ•¡•¬™¥¹…°½ÕÑÁÕÐÁ…Ñ èí•ÉÉ½Éôˆ¤¤(€€€€€€€€€€€ô¤ü(€€€€€€€ì(€€€€€€€€€€€É•ÑÕÉ¸ÉÈ¡5•É•ÉÉ½Èèé=ÕÑÁÕÑA±…¸ (€€€€€€€€€€€€€€€=ÕÑÁÕÑA±…¹ÉÉ½Èèéá¥ÍÑ¥¹=ÕÑÁÕÑ½¹™±¥Ð°(€€€€€€€€€€€€¤¤ì(€€€€€€€ô(€€€€€€€™ÌèéÉ•¹…µ”¡Ñ•µÁ½É…Éä°™¥¹…±}Á…Ñ ¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éðì(€€€€€€€€€€€5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½Ð…Ñ½µ¥…±±ä™¥¹…±¥é”Aèí•ÉÉ½Éôˆ¤¤(€€€€€€€ô¤üì(€€€€€€€¥˜±•ÐM½µ”¡Á…É•¹Ð¤€ô™¥¹…±}Á…Ñ (€€€€€€€€€€€€¹Á…É•¹Ð ¤(€€€€€€€€€€€€¹™¥±Ñ•È¡ñÁ…É•¹Ñð€…Á…É•¹Ð¹…Í}½Í}ÍÑÈ ¤¹¥Í}•µÁÑä ¤¤(€€€€€€€ì(€€€€€€€€€€€€m™œ¡Õ¹¥à¥t(€€€€€€€€€€€Íå¹}½ÕÑÁÕÑ}‘¥É•Ñ½Éä¡Á…É•¹Ð¤üì(€€€€€€€€€€€€m™œ¡¹½Ð¡Õ¹¥à¤¥t(€€€€€€€€€€€ì(€€€€€€€€€€€€€€€€¼¼ÍÑèé™Ì…¹¹½Ð½Á•¸„]¥¹‘½ÝÌ‘¥É•Ñ½Éä™½È±ÕÍ¡¥±•	Õ™™•ÉÌ¸Q¡”(€€€€€€€€€€€€€€€€¼¼Ñ•µÁ½É…Éä™¥±”¥ÑÍ•±˜Ý…Ì‘ÕÉ…‰±ä™±ÕÍ¡•‰•™½É”Ñ¡”Í…µ”µÙ½±Õµ”É•¹…µ”¸(€€€€€€€€€€€€€€€±•Ð|€ôÁ…É•¹Ðì(€€€€€€€€€€€ô(€€€€€€€ô(€€€€€€€Í•±˜¹½µµ¥ÑÑ•€ôÑÉÕ”ì(€€€€€€€=¬¡™¥¹…±}Á…Ñ ¹±½¹” ¤¤(€€€ô)ô((m™œ¡Õ¹¥à¥t)™¸Íå¹}½ÕÑÁÕÑ}‘¥É•Ñ½Éä¡Á…É•¹Ðè€™A…Ñ ¤€´øI•ÍÕ±Ðð ¤°5•É•ÉÉ½Èøì(€€€¥±”èé½Á•¸¡Á…É•¹Ð¤(€€€€€€€€¹…¹‘}Ñ¡•¸¡ñ‘¥É•Ñ½Éåð‘¥É•Ñ½Éä¹Íå¹}…±° ¤¤(€€€€€€€€¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éð5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡™½Éµ…Ð„ ‰…¹¹½ÐÍå¹Œ½ÕÑÁÕÐ‘¥É•Ñ½Éäèí•ÉÉ½Éôˆ¤¤¤)ô()¥µÁ°É½À™½È=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸ì(€€€™¸‘É½À ™µÕÐÍ•±˜¤ì(€€€€€€€¥˜€…Í•±˜¹½µµ¥ÑÑ•ì(€€€€€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±” ™Í•±˜¹Á±…¸¹Ñ•µÁ½É…Éå}Á…Ñ ¤ì(€€€€€€€ô(€€€ô)ô((¼¼¼I•ÑÕÉ¹ÌÑ¡”…Á…‰¥±¥ÑäÍ•ÐÉ•ÅÕ¥É•‰ä@Ð¸Ä5•É”¸(mµÕÍÑ}ÕÍ•t)ÁÕˆ™¸µ•É•}½É•}…Á…‰¥±¥Ñ¥•Ì ¤€´ø…Á…‰¥±¥ÑåM•Ðì(€€€Á¥¹•ÉÁ‘™}…ÁÁ±¥…Ñ¥½¸èéÉ•ÅÕ¥É•‘}…Á…‰¥±¥Ñ¥•Ì¡Q½½±-¥¹èé5•É”¤)ô((m™œ¡Ñ•ÍÐ¥t)µ½Ñ•ÍÑÌì(€€€ÕÍ”ÍÕÁ•Èèè¨ì(€€€ÕÍ”Á¥¹•ÉÁ‘™}•¹¥¹•}…Á¤èéíA‘™…Á…‰¥±¥Ñä°A‘™5•Ñ…‘…Ñ…ôì(€€€ÕÍ”ÍÑèéÍå¹Œèé…Ñ½µ¥ŒèéíÑ½µ¥TÌÈ°=É‘•É¥¹œ…ÌÑ½µ¥=É‘•É¥¹ôì((€€€€m™œ¡Ý¥¹‘½ÝÌ¥t(€€€ÕÍ”ÍÑèé½ÌèéÝ¥¹‘½ÝÌèé™Ìèé=Á•¹=ÁÑ¥½¹ÍáÐì((€€€ÍÑÉÕÐ…­•¹¥¹”ì(€€€€€€€½ÕÑÁÕÑ}Á…•ÌèÑ½µ¥TÌÈ°(€€€€€€€½ÕÑÁÕÑ}¡…Í}‰½½­µ…É­ÌèÑ½µ¥	½½°°(€€€ô((€€€¥µÁ°…­•¹¥¹”ì(€€€€€€€™¸¹•Ü ¤€´øM•±˜ì(€€€€€€€€€€€M•±˜ì(€€€€€€€€€€€€€€€½ÕÑÁÕÑ}Á…•ÌèÑ½µ¥TÌÈèé¹•Ü À¤°(€€€€€€€€€€€€€€€½ÕÑÁÕÑ}¡…Í}‰½½­µ…É­ÌèÑ½µ¥	½½°èé¹•Ü¡™…±Í”¤°(€€€€€€€€€€€ô(€€€€€€€ô(€€€ô((€€€¥µÁ°A‘™¹¥¹•A½ÉÐ™½È…­•¹¥¹”ì(€€€€€€€™¸¥‘•¹Ñ¥Ñä ™Í•±˜¤€´ø¹¥¹•%‘•¹Ñ¥Ñäì(€€€€€€€€€€€¹¥¹•%‘•¹Ñ¥Ñäì(€€€€€€€€€€€€€€€¥è€‰™…­”ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€€€€€Ù•ÉÍ¥½¸è€ˆÄˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€ô(€€€€€€€ô((€€€€€€€™¸…Á…‰¥±¥Ñ¥•Ì ™Í•±˜¤€´ø…Á…‰¥±¥ÑåM•Ðì(€€€€€€€€€€€…Á…‰¥±¥ÑåM•Ðèé™É½µ}…Á…‰¥±¥Ñ¥•Ì¡mA‘™…Á…‰¥±¥Ñäèé%¹ÍÁ•Ð°A‘™…Á…‰¥±¥Ñäèé5•É•t¤(€€€€€€€ô((€€€€€€€™¸¥¹ÍÁ•Ð (€€€€€€€€€€€€™Í•±˜°(€€€€€€€€€€€Í½ÕÉ”è€™A…Ñ °(€€€€€€€€€€€}½ÁÑ¥½¹Ìè%¹ÍÁ•Ñ=ÁÑ¥½¹Ìð|ø°(€€€€€€€€¤€´øI•ÍÕ±ÐñA‘™5•Ñ…‘…Ñ„°¹¥¹•ÉÉ½Èøì(€€€€€€€€€€€±•Ð¥Í}½ÕÑÁÕÐ€ôÍ½ÕÉ”(€€€€€€€€€€€€€€€€¹™¥±•}¹…µ” ¤(€€€€€€€€€€€€€€€€¹¥Í}Í½µ•}…¹¡ñ¹…µ•ð¹…µ”¹Ñ½}ÍÑÉ¥¹}±½ÍÍä ¤¹½¹Ñ…¥¹Ì ‰Á¥¹•ÉÁ‘˜µµ•É•|ˆ¤¤ì(€€€€€€€€€€€=¬¡A‘™5•Ñ…‘…Ñ„ì(€€€€€€€€€€€€€€€Á…•}½Õ¹Ðè¥˜¥Í}½ÕÑÁÕÐì(€€€€€€€€€€€€€€€€€€€Í•±˜¹½ÕÑÁÕÑ}Á…•Ì¹±½…¡Ñ½µ¥=É‘•É¥¹œèéÅÕ¥É”¤(€€€€€€€€€€€€€€€ô•±Í”ì(€€€€€€€€€€€€€€€€€€€€Ì(€€€€€€€€€€€€€€€ô°(€€€€€€€€€€€€€€€‘½Õµ•¹Ñ}Ñ¥Ñ±”è9½¹”°(€€€€€€€€€€€€€€€•¹ÉåÁÑ•è™…±Í”°(€€€€€€€€€€€€€€€Á‘™}Ù•ÉÍ¥½¸èM½µ” ˆÄ¸Üˆ¹Ñ½}½Ý¹• ¤¤°(€€€€€€€€€€€€€€€¡…Í}‰½½­µ…É­Ìè¥˜¥Í}½ÕÑÁÕÐì(€€€€€€€€€€€€€€€€€€€Í•±˜¹½ÕÑÁÕÑ}¡…Í}‰½½­µ…É­Ì¹±½…¡Ñ½µ¥=É‘•É¥¹œèéÅÕ¥É”¤(€€€€€€€€€€€€€€€ô•±Í”ì(€€€€€€€€€€€€€€€€€€€Í½ÕÉ”¹Ñ½}ÍÑÉ¥¹}±½ÍÍä ¤¹½¹Ñ…¥¹Ì ‰‰½½­µ…É­Ìˆ¤(€€€€€€€€€€€€€€€ô°(€€€€€€€€€€€€€€€¡…Í}™½ÉµÌèÍ½ÕÉ”¹Ñ½}ÍÑÉ¥¹}±½ÍÍä ¤¹½¹Ñ…¥¹Ì ‰™½É´ˆ¤°(€€€€€€€€€€€ô¤(€€€€€€€ô(€€€ô((€€€¥µÁ°5•É•¹¥¹•A½ÉÐ™½È…­•¹¥¹”ì(€€€€€€€™¸µ•É” (€€€€€€€€€€€€™Í•±˜°(€€€€€€€€€€€É•ÅÕ•ÍÐè€™5•É•¹¥¹•I•ÅÕ•ÍÐ°(€€€€€€€€€€€}½¹ÑÉ½°è€™á•ÕÑ¥½¹½¹ÑÉ½°°(€€€€€€€€¤€´øI•ÍÕ±Ðñ5•É•¹¥¹•I•ÍÕ±Ð°¹¥¹•ÉÉ½Èøì(€€€€€€€€€€€±•ÐÁ…•Ì€ôÉ•ÅÕ•ÍÐ(€€€€€€€€€€€€€€€€¹¥¹ÁÕÑÌ(€€€€€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€€€€€¹µ…À¡ñ¥¹ÁÕÑð¥¹ÁÕÐ¹Á…•Ì¹±•¸ ¤¤(€€€€€€€€€€€€€€€€¹ÍÕ´èèñÕÍ¥é”ø ¤ì(€€€€€€€€€€€±•ÐÁ…•Ì€ôÁ…•Ì(€€€€€€€€€€€€€€€€¬ÕÍ¥é”èé™É½´¡É•ÅÕ•ÍÐ¹…‘‘}‰±…¹­}Á…•}¥™}½‘¤(€€€€€€€€€€€€€€€€€€€€¨É•ÅÕ•ÍÐ(€€€€€€€€€€€€€€€€€€€€€€€€¹¥¹ÁÕÑÌ(€€€€€€€€€€€€€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€€€€€€€€€€€€€¹™¥±Ñ•È¡ñ¥¹ÁÕÑð¥¹ÁÕÐ¹Á…•Ì¹±•¸ ¤€”€È€ôô€Ä¤(€€€€€€€€€€€€€€€€€€€€€€€€¹½Õ¹Ð ¤ì(€€€€€€€€€€€±•ÐÁ…•Ì€ôÔÌÈèéÑÉå}™É½´¡Á…•Ì¤¹•áÁ•Ð ‰Ñ•ÍÐÁ…”½Õ¹Ð™¥ÑÌÔÌÈˆ¤ì(€€€€€€€€€€€Í•±˜¹½ÕÑÁÕÑ}Á…•Ì¹ÍÑ½É”¡Á…•Ì°Ñ½µ¥=É‘•É¥¹œèéI•±•…Í”¤ì(€€€€€€€€€€€±•Ð‰½½­µ…É­}•¹ÑÉ¥•Ì€ôµ…Ñ É•ÅÕ•ÍÐ¹‰½½­µ…É­}Á½±¥äì(€€€€€€€€€€€€€€€	½½­µ…É­A½±¥äèé¥Í…É€ôø€À°(€€€€€€€€€€€€€€€	½½­µ…É­A½±¥äèé=¹•¹ÑÉåA•É½Õµ•¹Ð(€€€€€€€€€€€€€€€ð	½½­µ…É­A½±¥äèéI•Ñ…¥¹Í=¹•¹ÑÉåA•É½Õµ•¹Ð€ôøÉ•ÅÕ•ÍÐ¹¥¹ÁÕÑÌ¹±•¸ ¤°(€€€€€€€€€€€€€€€	½½­µ…É­A½±¥äèéI•Ñ…¥¸€ôø€Ä°(€€€€€€€€€€€ôì(€€€€€€€€€€€Í•±˜¹½ÕÑÁÕÑ}¡…Í}‰½½­µ…É­Ì(€€€€€€€€€€€€€€€€¹ÍÑ½É”¡‰½½­µ…É­}•¹ÑÉ¥•Ì€ø€À°Ñ½µ¥=É‘•É¥¹œèéI•±•…Í”¤ì(€€€€€€€€€€€™ÌèéÝÉ¥Ñ” ™É•ÅÕ•ÍÐ¹½ÕÑÁÕÐ°ˆˆ•A´Ä¸Ýq¸”•=q¸ˆ¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éðì(€€€€€€€€€€€€€€€¹¥¹•ÉÉ½Èèé¹•Ü¡ÉÉ½É½‘”èé=ÕÑÁÕÑ]É¥Ñ•…¥±•°•ÉÉ½È¹Ñ½}ÍÑÉ¥¹œ ¤¤(€€€€€€€€€€€ô¤üì(€€€€€€€€€€€=¬¡5•É•¹¥¹•I•ÍÕ±Ðì(€€€€€€€€€€€€€€€Á…•}½Õ¹ÐèÁ…•Ì°(€€€€€€€€€€€€€€€‰½½­µ…É­}•¹ÑÉ¥•Ì°(€€€€€€€€€€€€€€€•Ù¥‘•¹”èY•Œèé¹•Ü ¤°(€€€€€€€€€€€ô¤(€€€€€€€ô(€€€ô((€€€€mÑ•ÍÑt(€€€™¸™¥±•¹…µ•}Ñ½}Á…¥¹…Ñ¥½¹}¥Í}‘•Ñ•Éµ¥¹¥ÍÑ¥}…¹‘}‰½Õ¹‘• ¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé9½¹”°ÕÍ¥é”èé5`¤°(€€€€€€€€€€€€À(€€€€€€€€¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€À¤°€À¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€Ä¤°€Ä¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€ÌÔ¤°€Ä¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€ÌØ¤°€È¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€ÜÀ¤°€È¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡•¹•É…Ñ•‘}Ñ½}Á…•}½Õ¹Ð¡5•É•Q½A½±¥äèé¥±•9…µ•Ì°€ÜÄ¤°€Ì¤ì(€€€ô((€€€™¸Õ¹¥ÅÕ•}Á…Ñ ¡¹…µ”è€™ÍÑÈ¤€´øA…Ñ¡	Õ˜ì(€€€€€€€ÍÑèé•¹ØèéÑ•µÁ}‘¥È ¤¹©½¥¸¡™½Éµ…Ð„ (€€€€€€€€€€€€‰Á¥¹•ÉÁ‘˜µµ•É”µÑ•ÍÐµíôµíôµí¹…µ•ôˆ°(€€€€€€€€€€€ÁÉ½•ÍÌèé¥ ¤°(€€€€€€€€€€€9aQ}=AIQ%=9}%¹™•Ñ¡}…‘ Ä°=É‘•É¥¹œèéI•±…á•¤(€€€€€€€€¤¤(€€€ô((€€€€mÑ•ÍÑt(€€€™¸Í•É•Ñ}‘•‰Õ}¥Í}É•‘…Ñ•‘}…¹‘}µÕ±Ñ¥±¥¹•}Ù…±Õ•Í}…É•}É•©•Ñ• ¤ì(€€€€€€€±•ÐÍ•É•Ð€ôM•É•ÑMÑÉ¥¹œèé¹•Ü ‰½ÉÉ•Ð¡½ÉÍ”‰…ÑÑ•ÉäÍÑ…Á±”ˆ¤¹•áÁ•Ð ‰Ù…±¥Í•É•Ðˆ¤ì(€€€€€€€±•Ð‘•‰Õœ€ô™½Éµ…Ð„ ‰íÍ•É•Ðèýôˆ¤ì(€€€€€€€…ÍÍ•ÉÐ„¡‘•‰Õœ¹½¹Ñ…¥¹Ì ‰IQˆ¤¤ì(€€€€€€€…ÍÍ•ÉÐ„ …‘•‰Õœ¹½¹Ñ…¥¹Ì ‰½ÉÉ•Ð¡½ÉÍ”ˆ¤¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡M•É•ÑMÑÉ¥¹œèé¹•Ü ‰±¥¹”Åq¹±¥¹”Èˆ¤°ÉÈ¡M•É•ÑMÑÉ¥¹ÉÉ½È¤¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸É•ÅÕ•ÍÑ}Ù…±¥‘…Ñ¥½¹}ÁÉ•Í•ÉÙ•Í}‘ÕÁ±¥…Ñ•}Í½ÕÉ•Í}‰ÕÑ}É•©•ÑÍ}Õ¹Í…™•}½ÕÑÁÕÐ ¤ì(€€€€€€€±•ÐÍ½ÕÉ”€ô5•É•M½ÕÉ”èé¹•Ü ‰„¹Á‘˜ˆ¤ì(€€€€€€€±•ÐÉ•ÅÕ•ÍÐ€ô(€€€€€€€€€€€5•É•I•ÅÕ•ÍÐèé¹•Ü¡mÍ½ÕÉ”¹±½¹” ¤°Í½ÕÉ•t°€‰½ÕÐ¹Aˆ¤¹•áÁ•Ð ‰Ù…±¥É•ÅÕ•ÍÐˆ¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•ÅÕ•ÍÐ¹Í½ÕÉ•Ì ¤¹±•¸ ¤°€È¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€5•É•I•ÅÕ•ÍÐèé¹•Ü¡m5•É•M½ÕÉ”èé¹•Ü ‰„¹Á‘˜ˆ¥t°€‰½ÕÐ¹Á‘˜ˆ¤°(€€€€€€€€€€€ÉÈ¡5•É•I•ÅÕ•ÍÑÉÉ½Èèé9½Ñ¹½Õ¡M½ÕÉ•Ì¤(€€€€€€€€¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€5•É•I•ÅÕ•ÍÐèé¹•Ü (€€€€€€€€€€€€€€€m5•É•M½ÕÉ”èé¹•Ü ‰„¹Á‘˜ˆ¤°5•É•M½ÕÉ”èé¹•Ü ‰ˆ¹Á‘˜ˆ¥t°(€€€€€€€€€€€€€€€€‰„¹Á‘˜ˆ(€€€€€€€€€€€€¤°(€€€€€€€€€€€ÉÈ¡5•É•I•ÅÕ•ÍÑÉÉ½Èèé=ÕÑÁÕÑÅÕ…±ÍM½ÕÉ”ìÍ½ÕÉ•}¥¹‘•àè€Àô¤(€€€€€€€€¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸Í•ÉÙ¥•}ÁÉ•Í•ÉÙ•Í}Á…•}½É‘•É}…¹‘}‘ÕÁ±¥…Ñ•Í}Ñ¡•¹}™¥¹…±¥é•Í}…Ñ½µ¥…±±ä ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰½É‘•É•¹Á‘˜ˆ¤ì(€€€€€€€±•ÐÍ•±•Ñ¥½¸èA…•M•±•Ñ¥½¸€ô€ˆÌ°Ä°Ìˆ¹Á…ÉÍ” ¤¹•áÁ•Ð ‰Ù…±¥Í•±•Ñ¥½¸ˆ¤ì(€€€€€€€±•ÐÉ•ÅÕ•ÍÐ€ô5•É•I•ÅÕ•ÍÐèé¹•Ü (€€€€€€€€€€€l(€€€€€€€€€€€€€€€5•É•M½ÕÉ”èé¹•Ü ‰™¥ÉÍÐ¹Á‘˜ˆ¤¹Ý¥Ñ¡}Í•±•Ñ¥½¸¡Í•±•Ñ¥½¸¤°(€€€€€€€€€€€€€€€5•É•M½ÕÉ”èé¹•Ü ‰Í•½¹¹Á‘˜ˆ¤°(€€€€€€€€€€€t°(€€€€€€€€€€€€™½ÕÑÁÕÐ°(€€€€€€€€¤(€€€€€€€€¹•áÁ•Ð ‰Ù…±¥É•ÅÕ•ÍÐˆ¤ì(€€€€€€€±•Ð•¹¥¹”€ô…­•¹¥¹”èé¹•Ü ¤ì(€€€€€€€±•ÐÉ•Á½ÉÐ€ô5•É•M•ÉÙ¥”èé¹•Ü ™•¹¥¹”¤(€€€€€€€€€€€€¹•á•ÕÑ” ™É•ÅÕ•ÍÐ°€™5•É•á•ÕÑ¥½¹=ÁÑ¥½¹Ìèé‘•™…Õ±Ð ¤¤(€€€€€€€€€€€€¹•áÁ•Ð ‰µ•É”ÍÕ••‘Ìˆ¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•Á½ÉÐ¹Á…•}½Õ¹Ð°€Ø¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•Á½ÉÐ¹Í½ÕÉ•}½Õ¹Ð°€È¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•Á½ÉÐ¹‰½½­µ…É­}•¹ÑÉ¥•Ì°€À¤ì(€€€€€€€…ÍÍ•ÉÐ„¡½ÕÑÁÕÐ¹¥Í}™¥±” ¤¤ì(€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±”¡½ÕÑÁÕÐ¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸½¹•}•¹ÑÉå}Á½±¥å}É•ÅÕ¥É•Í}…¹‘}É•Á½ÉÑÍ}½¹•}‰½½­µ…É­}Á•É}½É‘•É•‘}Í½ÕÉ” ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰½¹”µ•¹ÑÉäµÁ•Èµ‘½Õµ•¹Ð¹Á‘˜ˆ¤ì(€€€€€€€±•ÐÉ•ÅÕ•ÍÐ€ô5•É•I•ÅÕ•ÍÐèé¹•Ü (€€€€€€€€€€€l(€€€€€€€€€€€€€€€5•É•M½ÕÉ”èé¹•Ü ‰™½±‘•È½™¥ÉÍÐ¹Á‘˜ˆ¤°(€€€€€€€€€€€€€€€5•É•M½ÕÉ”èé¹•Ü ‰™½±‘•È½Í•½¹¹Á‘˜ˆ¤°(€€€€€€€€€€€t°(€€€€€€€€€€€€™½ÕÑÁÕÐ°(€€€€€€€€¤(€€€€€€€€¹•áÁ•Ð ‰Ù…±¥É•ÅÕ•ÍÐˆ¤ì(€€€€€€€±•Ð½ÁÑ¥½¹Ì€ô5•É•á•ÕÑ¥½¹=ÁÑ¥½¹Ìì(€€€€€€€€€€€‰½½­µ…É­}Á½±¥äè	½½­µ…É­A½±¥äèé=¹•¹ÑÉåA•É½Õµ•¹Ð°(€€€€€€€€€€€€¸¹5•É•á•ÕÑ¥½¹=ÁÑ¥½¹Ìèé‘•™…Õ±Ð ¤(€€€€€€€ôì((€€€€€€€±•ÐÉ•Á½ÉÐ€ô5•É•M•ÉÙ¥”èé¹•Ü ™…­•¹¥¹”èé¹•Ü ¤¤(€€€€€€€€€€€€¹•á•ÕÑ” ™É•ÅÕ•ÍÐ°€™½ÁÑ¥½¹Ì¤(€€€€€€€€€€€€¹•áÁ•Ð ‰‰½½­µ…É¬Á½±¥äÍÕ••‘Ìˆ¤ì((€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•Á½ÉÐ¹‰½½­µ…É­}•¹ÑÉ¥•Ì°€È¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„¡É•Á½ÉÐ¹‰½½­µ…É­}Í½ÕÉ•Í}‘¥Í…É‘•°€À¤ì(€€€€€€€…ÍÍ•ÉÐ„¡½ÕÑÁÕÐ¹¥Í}™¥±” ¤¤ì(€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±”¡½ÕÑÁÕÐ¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸É•Á±…•}Á½±¥å}…Ñ½µ¥…±±å}É•Á±…•Í}…¹}•á¥ÍÑ¥¹}½ÕÑÁÕÐ ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰É•Á±…”µ•á¥ÍÑ¥¹œ¹Á‘˜ˆ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™½ÕÑÁÕÐ°ˆ‰Ù•É¥™¥•µ½±µ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰ÝÉ¥Ñ”½É¥¥¹…°½ÕÑÁÕÐˆ¤ì(€€€€€€€±•ÐµÕÐÑÉ…¹Í…Ñ¥½¸€ô=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸èé‰•¥¸ ™½ÕÑÁÕÐ°á¥ÍÑ¥¹=ÕÑÁÕÑA½±¥äèéI•Á±…”¤(€€€€€€€€€€€€¹•áÁ•Ð ‰‰•¥¸É•Á±…•µ•¹Ðˆ¤ì(€€€€€€€±•ÐÑ•µÁ½É…Éä€ôÑÉ…¹Í…Ñ¥½¸¹Ñ•µÁ½É…Éå}Á…Ñ  ¤¹Ñ½}Á…Ñ¡}‰Õ˜ ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™Ñ•µÁ½É…Éä°ˆ‰Ù•É¥™¥•µ¹•Üµ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰ÝÉ¥Ñ”É•Á±…•µ•¹Ð½ÕÑÁÕÐˆ¤ì((€€€€€€€ÑÉ…¹Í…Ñ¥½¸¹½µµ¥Ð ¤¹•áÁ•Ð ‰É•Á±…”•á¥ÍÑ¥¹œ½ÕÑÁÕÐˆ¤ì((€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€™ÌèéÉ•… ™½ÕÑÁÕÐ¤¹•áÁ•Ð ‰É•…É•Á±…•½ÕÑÁÕÐˆ¤°(€€€€€€€€€€€ˆ‰Ù•É¥™¥•µ¹•Üµ½ÕÑÁÕÐˆ(€€€€€€€€¤ì(€€€€€€€…ÍÍ•ÉÐ„ …Ñ•µÁ½É…Éä¹•á¥ÍÑÌ ¤¤ì(€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±”¡½ÕÑÁÕÐ¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸™…¥±}Á½±¥å}ÁÉ•Í•ÉÙ•Í}…}‘•ÍÑ¥¹…Ñ¥½¹}É•…Ñ•‘}…™Ñ•É}Á±…¹¹¥¹œ ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰±…Ñ”µ½¹™±¥Ð¹Á‘˜ˆ¤ì(€€€€€€€±•ÐµÕÐÑÉ…¹Í…Ñ¥½¸€ô=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸èé‰•¥¸ ™½ÕÑÁÕÐ°á¥ÍÑ¥¹=ÕÑÁÕÑA½±¥äèé…¥°¤(€€€€€€€€€€€€¹•áÁ•Ð ‰‰•¥¸½¹™±¥Ðµ™É•”½ÕÑÁÕÐˆ¤ì(€€€€€€€±•ÐÑ•µÁ½É…Éä€ôÑÉ…¹Í…Ñ¥½¸¹Ñ•µÁ½É…Éå}Á…Ñ  ¤¹Ñ½}Á…Ñ¡}‰Õ˜ ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™Ñ•µÁ½É…Éä°ˆ‰Õ¹½µµ¥ÑÑ•µ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰ÝÉ¥Ñ”Ñ•µÁ½É…Éä½ÕÑÁÕÐˆ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™½ÕÑÁÕÐ°ˆ‰±…Ñ”µ•á¥ÍÑ¥¹œµ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰É•…Ñ”É…¥¹œ‘•ÍÑ¥¹…Ñ¥½¸ˆ¤ì((€€€€€€€±•Ð•ÉÉ½È€ôÑÉ…¹Í…Ñ¥½¸¹½µµ¥Ð ¤¹•áÁ•Ñ}•ÉÈ ‰±…Ñ”‘•ÍÑ¥¹…Ñ¥½¸µÕÍÐÝ¥¸ˆ¤ì((€€€€€€€…ÍÍ•ÉÐ„¡µ…Ñ¡•Ì„ (€€€€€€€€€€€•ÉÉ½È°(€€€€€€€€€€€5•É•ÉÉ½Èèé=ÕÑÁÕÑA±…¸¡=ÕÑÁÕÑA±…¹ÉÉ½Èèéá¥ÍÑ¥¹=ÕÑÁÕÑ½¹™±¥Ð¤(€€€€€€€€¤¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€™ÌèéÉ•… ™½ÕÑÁÕÐ¤¹•áÁ•Ð ‰É•…ÁÉ•Í•ÉÙ•‘•ÍÑ¥¹…Ñ¥½¸ˆ¤°(€€€€€€€€€€€ˆ‰±…Ñ”µ•á¥ÍÑ¥¹œµ½ÕÑÁÕÐˆ(€€€€€€€€¤ì(€€€€€€€‘É½À¡ÑÉ…¹Í…Ñ¥½¸¤ì(€€€€€€€…ÍÍ•ÉÐ„ …Ñ•µÁ½É…Éä¹•á¥ÍÑÌ ¤¤ì(€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±”¡½ÕÑÁÕÐ¤ì(€€€ô((€€€€m™œ¡Ý¥¹‘½ÝÌ¥t(€€€€mÑ•ÍÑt(€€€™¸™…¥±•‘}Ý¥¹‘½ÝÍ}É•Á±…•}ÁÉ•Í•ÉÙ•Í}Ñ¡•}½±‘}½ÕÑÁÕÑ}…¹‘}±•…¹Í}Ñ¡•}Ñ•µÁ½É…Éå}™¥±” ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰±½­•µÉ•Á±…•µ•¹Ð¹Á‘˜ˆ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™½ÕÑÁÕÐ°ˆ‰±½­•µ½±µ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰ÝÉ¥Ñ”½É¥¥¹…°½ÕÑÁÕÐˆ¤ì(€€€€€€€±•ÐµÕÐÑÉ…¹Í…Ñ¥½¸€ô=ÕÑÁÕÑQÉ…¹Í…Ñ¥½¸èé‰•¥¸ ™½ÕÑÁÕÐ°á¥ÍÑ¥¹=ÕÑÁÕÑA½±¥äèéI•Á±…”¤(€€€€€€€€€€€€¹•áÁ•Ð ‰‰•¥¸É•Á±…•µ•¹Ðˆ¤ì(€€€€€€€±•ÐÑ•µÁ½É…Éä€ôÑÉ…¹Í…Ñ¥½¸¹Ñ•µÁ½É…Éå}Á…Ñ  ¤¹Ñ½}Á…Ñ¡}‰Õ˜ ¤ì(€€€€€€€™ÌèéÝÉ¥Ñ” ™Ñ•µÁ½É…Éä°ˆ‰Õ¹½µµ¥ÑÑ•µ¹•Üµ½ÕÑÁÕÐˆ¤¹•áÁ•Ð ‰ÝÉ¥Ñ”Ñ•µÁ½É…Éä½ÕÑÁÕÐˆ¤ì(€€€€€€€±•Ð±½­•‘}½ÕÑÁÕÐ€ô=Á•¹=ÁÑ¥½¹Ìèé¹•Ü ¤(€€€€€€€€€€€€¹É•…¡ÑÉÕ”¤(€€€€€€€€€€€€¹ÝÉ¥Ñ”¡ÑÉÕ”¤(€€€€€€€€€€€€¹Í¡…É•}µ½‘” À¤(€€€€€€€€€€€€¹½Á•¸ ™½ÕÑÁÕÐ¤(€€€€€€€€€€€€¹•áÁ•Ð ‰±½¬•á¥ÍÑ¥¹œ½ÕÑÁÕÐÝ¥Ñ¡½ÕÐ‘•±•Ñ”Í¡…É¥¹œˆ¤ì((€€€€€€€±•Ð•ÉÉ½È€ôÑÉ…¹Í…Ñ¥½¸(€€€€€€€€€€€€¹½µµ¥Ð ¤(€€€€€€€€€€€€¹•áÁ•Ñ}•ÉÈ ‰]¥¹‘½ÝÌµÕÍÐÉ•©•ÐÉ•Á±…•µ•¹ÐÝ¡¥±”‘•ÍÑ¥¹…Ñ¥½¸¥Ì±½­•ˆ¤ì((€€€€€€€…ÍÍ•ÉÐ„¡µ…Ñ¡•Ì„¡•ÉÉ½È°5•É•ÉÉ½Èèé=ÕÑÁÕÑ%¼¡|¤¤¤ì(€€€€€€€…ÍÍ•ÉÐ„¡½ÕÑÁÕÐ¹•á¥ÍÑÌ ¤¤ì(€€€€€€€…ÍÍ•ÉÐ„¡Ñ•µÁ½É…Éä¹•á¥ÍÑÌ ¤¤ì(€€€€€€€‘É½À¡±½­•‘}½ÕÑÁÕÐ¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€™ÌèéÉ•… ™½ÕÑÁÕÐ¤¹•áÁ•Ð ‰É•…ÁÉ•Í•ÉÙ•½ÕÑÁÕÐ…™Ñ•ÈÉ•±•…Í¥¹œ±½¬ˆ¤°(€€€€€€€€€€€ˆ‰±½­•µ½±µ½ÕÑÁÕÐˆ(€€€€€€€€¤ì(€€€€€€€‘É½À¡ÑÉ…¹Í…Ñ¥½¸¤ì(€€€€€€€…ÍÍ•ÉÐ„ …Ñ•µÁ½É…Éä¹•á¥ÍÑÌ ¤¤ì(€€€€€€€…ÍÍ•ÉÑ}•Ä„ (€€€€€€€€€€€™ÌèéÉ•… ™½ÕÑÁÕÐ¤¹•áÁ•Ð ‰É•…½ÕÑÁÕÐ…™Ñ•È±•…¹ÕÀˆ¤°(€€€€€€€€€€€ˆ‰±½­•µ½±µ½ÕÑÁÕÐˆ(€€€€€€€€¤ì(€€€€€€€±•Ð|€ô™ÌèéÉ•µ½Ù•}™¥±”¡½ÕÑÁÕÐ¤ì(€€€ô((€€€€mÑ•ÍÑt(€€€™¸Í•ÉÙ¥•}É•©•ÑÍ}™½ÉµÍ}‰•™½É•}•¹¥¹•}µ•É” ¤ì(€€€€€€€±•Ð½ÕÑÁÕÐ€ôÕ¹¥ÅÕ•}Á…Ñ  ‰™½ÉµÌ¹Á‘˜ˆ¤ì(€€€€€€€±•ÐÉ•ÅÕ•ÍÐ€ô5•É•I•ÅÕ•ÍÐèé¹•Ü (€€€€€€€€€€€m5•É•M½ÕÉ”èé¹•Ü ‰™½É´¹Á‘˜ˆ¤°5•É•M½ÕÉ”èé¹•Ü ‰Á±…¥¸¹Á‘˜ˆ¥t°(€€€€€€€€€€€€™½ÕÑÁÕÐ°(€€€€€€€€¤(€€€€€€€€¹•áÁ•Ð ‰Ù…±¥É•ÅÕ•ÍÐˆ¤ì(€€€€€€€±•Ð•ÉÉ½È€ô5•É•M•ÉÙ¥”èé¹•Ü ™…­•¹¥¹”èé¹•Ü ¤¤(€€€€€€€€€€€€¹•á•ÕÑ” ™É•ÅÕ•ÍÐ°€™5•É•á•ÕÑ¥½¹=ÁÑ¥½¹Ìèé‘•™…Õ±Ð ¤¤(€€€€€€€€€€€€¹•áÁ•Ñ}•ÉÈ ‰™½ÉµÌ…É”¹½ÐÙ•É¥™¥•ˆ¤ì(€€€€€€€…ÍÍ•ÉÐ„¡µ…Ñ¡•Ì„ (€€€€€€€€€€€•ÉÉ½È°(€€€€€€€€€€€5•É•ÉÉ½Èèé½ÉµÍU¹ÍÕÁÁ½ÉÑ•ìÍ½ÕÉ•}¥¹‘•àè€Àô(€€€€€€€€¤¤ì(€€€€€€€…ÍÍ•ÉÐ„ …½ÕÑÁÕÐ¹•á¥ÍÑÌ ¤¤ì(€€€ô)ô(
+        source_index: usize,
+        /// Underlying engine error.
+        error: EngineError,
+    },
+    /// The output resolves to the same existing path as a source.
+    OutputAliasesSource {
+        /// Zero-based source position.
+        source_index: usize,
+    },
+    /// An inspected source contains no pages.
+    EmptySourceDocument {
+        /// Zero-based source position.
+        source_index: usize,
+    },
+    /// An interactive form was detected and cannot yet be preserved safely.
+    FormsUnsupported {
+        /// Zero-based source position.
+        source_index: usize,
+    },
+    /// A page selection exceeded the inspected document boundary.
+    InvalidSelection {
+        /// Zero-based source position.
+        source_index: usize,
+        /// Resolution error.
+        error: ResolveSelectionError,
+    },
+    /// Output planning failed before execution.
+    OutputPlan(OutputPlanError),
+    /// Filesystem access or atomic finalization failed.
+    OutputIo(String),
+    /// The merge adapter failed.
+    Engine(EngineError),
+    /// The temporary output could not be inspected.
+    VerifyOutput(EngineError),
+    /// The engine output page count differed from the application plan.
+    PageCountMismatch {
+        /// Planned number of pages.
+        expected: u32,
+        /// Observed number of pages.
+        actual: u32,
+    },
+    /// Output unexpectedly retained a bookmark tree.
+    UnexpectedBookmarks,
+    /// Output bookmark count differed from the explicit policy.
+    BookmarkCountMismatch {
+        /// Number of entries required by policy.
+        expected: usize,
+        /// Number of entries verified by the adapter.
+        actual: usize,
+    },
+    /// Output unexpectedly retained an interactive form.
+    UnexpectedForms,
+}
+
+impl MergeError {
+    /// Returns the stable error category used by CLI and future IPC.
+    #[must_use]
+    pub const fn code(&self) -> ErrorCode {
+        match self {
+            Self::MissingCapabilities(_) => ErrorCode::CapabilityUnavailable,
+            Self::InspectSource { error, .. } | Self::Engine(error) | Self::VerifyOutput(error) => {
+                error.code()
+            }
+            Self::OutputAliasesSource { .. }
+            | Self::EmptySourceDocument { .. }
+            | Self::FormsUnsupported { .. }
+            | Self::InvalidSelection { .. } => ErrorCode::InvalidInput,
+            Self::OutputPlan(OutputPlanError::ExistingOutputConflict) => ErrorCode::OutputConflict,
+            Self::OutputPlan(_) | Self::OutputIo(_) => ErrorCode::OutputWriteFailed,
+            Self::PageCountMismatch { .. }
+            | Self::UnexpectedBookmarks
+            | Self::BookmarkCountMismatch { .. }
+            | Self::UnexpectedForms => ErrorCode::EngineFailure,
+        }
+    }
+}
+
+impl fmt::Display for MergeError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::MissingCapabilities(error) => error.fmt(formatter),
+            Self::InspectSource {
+                source_index,
+                error,
+            } => {
+                write!(
+                    formatter,
+                    "failed to inspect merge source {}: {error}",
+                    source_index + 1
+                )
+            }
+            Self::OutputAliasesSource { source_index } => write!(
+                formatter,
+                "merge output resolves to the same file as source {}",
+                source_index + 1
+            ),
+            Self::EmptySourceDocument { source_index } => write!(
+                formatter,
+                "merge source {} contains no pages",
+                source_index + 1
+            ),
+            Self::FormsUnsupported { source_index } => write!(
+                formatter,
+                "merge source {} contains an interactive form; form merge is not yet verified",
+                source_index + 1
+            ),
+            Self::InvalidSelection {
+                source_index,
+                error,
+            } => write!(
+                formatter,
+                "invalid page selection for merge source {}: {error}",
+                source_index + 1
+            ),
+            Self::OutputPlan(error) => error.fmt(formatter),
+            Self::OutputIo(message) => formatter.write_str(message),
+            Self::Engine(error) => error.fmt(formatter),
+            Self::VerifyOutput(error) => {
+                write!(formatter, "failed to verify merge output: {error}")
+            }
+            Self::PageCountMismatch { expected, actual } => write!(
+                formatter,
+                "merge output page count mismatch: expected {expected}, observed {actual}"
+            ),
+            Self::UnexpectedBookmarks => {
+                formatter.write_str("merge output unexpectedly retained a bookmark tree")
+            }
+            Self::BookmarkCountMismatch { expected, actual } => write!(
+                formatter,
+                "merge output bookmark count mismatch: expected {expected}, observed {actual}"
+            ),
+            Self::UnexpectedForms => {
+                formatter.write_str("merge output unexpectedly retained an interactive form")
+            }
+        }
+    }
+}
+
+impl Error for MergeError {}
+
+/// Engine-agnostic orchestration for the first Merge vertical slice.
+pub struct MergeService<'engine, E: MergeEngine + ?Sized> {
+    engine: &'engine E,
+}
+
+impl<'engine, E: MergeEngine + ?Sized> MergeService<'engine, E> {
+    /// Creates a Merge service over one concrete engine composition.
+    #[must_use]
+    pub const fn new(engine: &'engine E) -> Self {
+        Self { engine }
+    }
+
+    fn plan_inputs(
+        &self,
+        request: &MergeRequest,
+        options: &MergeExecutionOptions,
+    ) -> Result<(Vec<MergeEngineInput>, u32, usize), MergeError> {
+        let mut inputs = Vec::with_capacity(request.sources.len());
+        let mut expected_pages = 0_u32;
+        let mut bookmark_sources_discarded = 0_usize;
+
+        for (source_index, source) in request.sources.iter().enumerate() {
+            let metadata = self
+                .engine
+                .inspect(
+                    source.path(),
+                    InspectOptions {
+                        password: source.password().map(SecretString::expose_secret),
+                    },
+                )
+                .map_err(|error| MergeError::InspectSource {
+                    source_index,
+                    error,
+                })?;
+            if metadata.page_count == 0 {
+                return Err(MergeError::EmptySourceDocument { source_index });
+            }
+            if metadata.has_forms {
+                return Err(MergeError::FormsUnsupported { source_index });
+            }
+            if options.bookmark_policy == BookmarkPolicy::Discard {
+                bookmark_sources_discarded += usize::from(metadata.has_bookmarks);
+            }
+            let pages = resolve_source_pages(source, &metadata).map_err(|error| {
+                MergeError::InvalidSelection {
+                    source_index,
+                    error,
+                }
+            })?;
+            expected_pages = expected_pages
+                .checked_add(u32::try_from(pages.len()).map_err(|_| {
+                    MergeError::OutputIo("merge page plan exceeds supported size".to_owned())
+                })?)
+                .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
+            if options.add_blank_page_if_odd && pages.len() % 2 == 1 {
+                expected_pages = expected_pages
+                    .checked_add(1)
+                    .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
+            }
+            inputs.push(MergeEngineInput {
+                source: source.path.clone(),
+                document_title: source_document_title(source.path()),
+                metadata_title: metadata.document_title,
+                pages,
+                password: source.password.clone(),
+            });
+        }
+
+        Ok((inputs, expected_pages, bookmark_sources_discarded))
+    }
+
+    /// Inspects, plans, executes, verifies, and atomically finalizes one merge request.
+    ///
+    /// Bookmark behavior is explicit. Inputs containing forms are rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MergeError`] for capability, input, engine, verification, or filesystem failures.
+    pub fn execute(
+        &self,
+        request: &MergeRequest,
+        options: &MergeExecutionOptions,
+    ) -> Result<MergeReport, MergeError> {
+        validate_tool_capabilities(ToolKind::Merge, &self.engine.capabilities())
+            .map_err(MergeError::MissingCapabilities)?;
+        ensure_output_does_not_alias_source(request)?;
+
+        let (inputs, mut expected_pages, bookmark_sources_discarded) =
+            self.plan_inputs(request, options)?;
+        let toc_pages = generated_toc_page_count(options.toc_policy, inputs.len());
+        expected_pages = expected_pages
+            .checked_add(u32::try_from(toc_pages).map_err(|_| {
+                MergeError::OutputIo(
+                    "generated table of contents exceeds supported size".to_owned(),
+                )
+            })?)
+            .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
+
+        let mut transaction = OutputTransaction::begin(request.output(), options.output_policy)?;
+        let engine_result = self
+            .engine
+            .merge(
+                &MergeEngineRequest {
+                    inputs,
+                    output: transaction.temporary_path().to_path_buf(),
+                    bookmark_policy: options.bookmark_policy,
+                    add_blank_page_if_odd: options.add_blank_page_if_odd,
+                    add_filename_footer: options.add_filename_footer,
+                    toc_policy: options.toc_policy,
+                },
+                &options.control,
+            )
+            .map_err(MergeError::Engine)?;
+
+        let verified = self
+            .engine
+            .inspect(transaction.temporary_path(), InspectOptions::default())
+            .map_err(MergeError::VerifyOutput)?;
+        if verified.page_count != expected_pages || engine_result.page_count != expected_pages {
+            return Err(MergeError::PageCountMismatch {
+                expected: expected_pages,
+                actual: verified.page_count,
+            });
+        }
+        verify_bookmark_policy(
+            options.bookmark_policy,
+            request.sources.len(),
+            &verified,
+            &engine_result,
+        )?;
+        if verified.has_forms {
+            return Err(MergeError::UnexpectedForms);
+        }
+
+        let output = transaction.commit()?;
+        Ok(MergeReport {
+            output,
+            source_count: request.sources.len(),
+            page_count: verified.page_count,
+            bookmark_sources_discarded,
+            bookmark_entries: engine_result.bookmark_entries,
+            engine: self.engine.identity(),
+            evidence: engine_result.evidence,
+        })
+    }
+}
+
+fn verify_bookmark_policy(
+    policy: BookmarkPolicy,
+    source_count: usize,
+    metadata: &PdfMetadata,
+    engine_result: &MergeEngineResult,
+) -> Result<(), MergeError> {
+    let expected = match policy {
+        BookmarkPolicy::Discard => 0,
+        BookmarkPolicy::OneEntryPerDocument | BookmarkPolicy::RetainAsOneEntryPerDocument => {
+            source_count
+        }
+        BookmarkPolicy::Retain => engine_result.bookmark_entries,
+    };
+    if engine_result.bookmark_entries != expected {
+        return Err(MergeError::BookmarkCountMismatch {
+            expected,
+            actual: engine_result.bookmark_entries,
+        });
+    }
+    match policy {
+        BookmarkPolicy::Discard if metadata.has_bookmarks => Err(MergeError::UnexpectedBookmarks),
+        BookmarkPolicy::OneEntryPerDocument | BookmarkPolicy::RetainAsOneEntryPerDocument
+            if !metadata.has_bookmarks =>
+        {
+            Err(MergeError::BookmarkCountMismatch {
+                expected,
+                actual: 0,
+            })
+        }
+        BookmarkPolicy::Retain if engine_result.bookmark_entries > 0 && !metadata.has_bookmarks => {
+            Err(MergeError::BookmarkCountMismatch {
+                expected,
+                actual: 0,
+            })
+        }
+        BookmarkPolicy::Discard
+        | BookmarkPolicy::OneEntryPerDocument
+        | BookmarkPolicy::Retain
+        | BookmarkPolicy::RetainAsOneEntryPerDocument => Ok(()),
+    }
+}
+
+fn source_document_title(source: &Path) -> String {
+    source.file_name().map_or_else(
+        || source.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    )
+}
+
+fn generated_toc_page_count(policy: MergeTocPolicy, source_count: usize) -> usize {
+    match policy {
+        MergeTocPolicy::None => 0,
+        MergeTocPolicy::FileNames | MergeTocPolicy::DocumentTitles => {
+            source_count.saturating_add(34) / 35
+        }
+    }
+}
+
+fn ensure_output_does_not_alias_source(request: &MergeRequest) -> Result<(), MergeError> {
+    let output_parent = request
+        .output()
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    let canonical_parent = output_parent.canonicalize().map_err(|error| {
+        MergeError::OutputIo(format!("cannot resolve merge output directory: {error}"))
+    })?;
+    let output_name = request
+        .output()
+        .file_name()
+        .ok_or_else(|| MergeError::OutputIo("merge output path has no file name".to_owned()))?;
+    let output_candidate = canonical_parent.join(output_name);
+
+    for (source_index, source) in request.sources().iter().enumerate() {
+        if let Ok(canonical_source) = source.path().canonicalize()
+            && canonical_source == output_candidate
+        {
+            return Err(MergeError::OutputAliasesSource { source_index });
+        }
+    }
+    Ok(())
+}
+
+fn resolve_source_pages(
+    source: &MergeSource,
+    metadata: &PdfMetadata,
+) -> Result<Vec<PageNumber>, ResolveSelectionError> {
+    if let Some(selection) = source.selection() {
+        selection.resolve(metadata.page_count)
+    } else {
+        Ok((1..=metadata.page_count)
+            .map(|page| PageNumber::new(page).expect("page range starts at one"))
+            .collect())
+    }
+}
+
+struct OutputTransaction {
+    plan: OutputPathPlan,
+    committed: bool,
+}
+
+impl OutputTransaction {
+    fn begin(path: &Path, policy: ExistingOutputPolicy) -> Result<Self, MergeError> {
+        let final_exists = path.try_exists().map_err(|error| {
+            MergeError::OutputIo(format!("cannot inspect output path: {error}"))
+        })?;
+        let token = format!(
+            "merge_{}_{}",
+            process::id(),
+            NEXT_OPERATION_ID.fetch_add(1, Ordering::Relaxed)
+        );
+        let plan =
+            plan_output_path(path, final_exists, policy, &token).map_err(MergeError::OutputPlan)?;
+        if plan.temporary_path.try_exists().map_err(|error| {
+            MergeError::OutputIo(format!("cannot inspect temporary output path: {error}"))
+        })? {
+            return Err(MergeError::OutputIo(
+                "temporary merge output unexpectedly already exists".to_owned(),
+            ));
+        }
+        Ok(Self {
+            plan,
+            committed: false,
+        })
+    }
+
+    fn temporary_path(&self) -> &Path {
+        &self.plan.temporary_path
+    }
+
+    fn commit(&mut self) -> Result<PathBuf, MergeError> {
+        let temporary = &self.plan.temporary_path;
+        let final_path = &self.plan.final_path;
+        if !temporary.is_file() {
+            return Err(MergeError::OutputIo(
+                "engine did not produce a regular temporary PDF".to_owned(),
+            ));
+        }
+        OpenOptions::new()
+            .write(true)
+            .open(temporary)
+            .and_then(|file| file.sync_all())
+            .map_err(|error| MergeError::OutputIo(format!("cannot sync temporary PDF: {error}")))?;
+        if !self.plan.replace_existing
+            && final_path.try_exists().map_err(|error| {
+                MergeError::OutputIo(format!("cannot recheck final output path: {error}"))
+            })?
+        {
+            return Err(MergeError::OutputPlan(
+                OutputPlanError::ExistingOutputConflict,
+            ));
+        }
+        fs::rename(temporary, final_path).map_err(|error| {
+            MergeError::OutputIo(format!("cannot atomically finalize PDF: {error}"))
+        })?;
+        if let Some(parent) = final_path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            #[cfg(unix)]
+            sync_output_directory(parent)?;
+            #[cfg(not(unix))]
+            {
+                // std::fs cannot open a Windows directory for FlushFileBuffers. The
+                // temporary file itself was durably flushed before the same-volume rename.
+                let _ = parent;
+            }
+        }
+        self.committed = true;
+        Ok(final_path.clone())
+    }
+}
+
+#[cfg(unix)]
+fn sync_output_directory(parent: &Path) -> Result<(), MergeError> {
+    File::open(parent)
+        .and_then(|directory| directory.sync_all())
+        .map_err(|error| MergeError::OutputIo(format!("cannot sync output directory: {error}")))
+}
+
+impl Drop for OutputTransaction {
+    fn drop(&mut self) {
+        if !self.committed {
+            let _ = fs::remove_file(&self.plan.temporary_path);
+        }
+    }
+}
+
+/// Returns the capability set required by P4.1 Merge.
+#[must_use]
+pub fn merge_core_capabilities() -> CapabilitySet {
+    pincerpdf_application::required_capabilities(ToolKind::Merge)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pincerpdf_engine_api::{PdfCapability, PdfMetadata};
+    use std::sync::atomic::{AtomicU32, Ordering as AtomicOrdering};
+
+    #[cfg(windows)]
+    use std::os::windows::fs::OpenOptionsExt;
+
+    struct FakeEngine {
+        output_pages: AtomicU32,
+        output_has_bookmarks: AtomicBool,
+    }
+
+    impl FakeEngine {
+        fn new() -> Self {
+            Self {
+                output_pages: AtomicU32::new(0),
+                output_has_bookmarks: AtomicBool::new(false),
+            }
+        }
+    }
+
+    impl PdfEnginePort for FakeEngine {
+        fn identity(&self) -> EngineIdentity {
+            EngineIdentity {
+                id: "fake".to_owned(),
+                version: "1".to_owned(),
+            }
+        }
+
+        fn capabilities(&self) -> CapabilitySet {
+            CapabilitySet::from_capabilities([PdfCapability::Inspect, PdfCapability::Merge])
+        }
+
+        fn inspect(
+            &self,
+            source: &Path,
+            _options: InspectOptions<'_>,
+        ) -> Result<PdfMetadata, EngineError> {
+            let is_output = source
+                .file_name()
+                .is_some_and(|name| name.to_string_lossy().contains("pincerpdf-merge_"));
+            Ok(PdfMetadata {
+                page_count: if is_output {
+                    self.output_pages.load(AtomicOrdering::Acquire)
+                } else {
+                    3
+                },
+                document_title: None,
+                encrypted: false,
+                pdf_version: Some("1.7".to_owned()),
+                has_bookmarks: if is_output {
+                    self.output_has_bookmarks.load(AtomicOrdering::Acquire)
+                } else {
+                    source.to_string_lossy().contains("bookmarks")
+                },
+                has_forms: source.to_string_lossy().contains("form"),
+            })
+        }
+    }
+
+    impl MergeEnginePort for FakeEngine {
+        fn merge(
+            &self,
+            request: &MergeEngineRequest,
+            _control: &ExecutionControl,
+        ) -> Result<MergeEngineResult, EngineError> {
+            let pages = request
+                .inputs
+                .iter()
+                .map(|input| input.pages.len())
+                .sum::<usize>();
+            let pages = pages
+                + usize::from(request.add_blank_page_if_odd)
+                    * request
+                        .inputs
+                        .iter()
+                        .filter(|input| input.pages.len() % 2 == 1)
+                        .count();
+            let pages = u32::try_from(pages).expect("test page count fits u32");
+            self.output_pages.store(pages, AtomicOrdering::Release);
+            let bookmark_entries = match request.bookmark_policy {
+                BookmarkPolicy::Discard => 0,
+                BookmarkPolicy::OneEntryPerDocument
+                | BookmarkPolicy::RetainAsOneEntryPerDocument => request.inputs.len(),
+                BookmarkPolicy::Retain => 1,
+            };
+            self.output_has_bookmarks
+                .store(bookmark_entries > 0, AtomicOrdering::Release);
+            fs::write(&request.output, b"%PDF-1.7\n%%EOF\n").map_err(|error| {
+                EngineError::new(ErrorCode::OutputWriteFailed, error.to_string())
+            })?;
+            Ok(MergeEngineResult {
+                page_count: pages,
+                bookmark_entries,
+                evidence: Vec::new(),
+            })
+        }
+    }
+
+    #[test]
+    fn filename_toc_pagination_is_deterministic_and_bounded() {
+        assert_eq!(
+            generated_toc_page_count(MergeTocPolicy::None, usize::MAX),
+            0
+        );
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 0), 0);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 1), 1);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 35), 1);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 36), 2);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 70), 2);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 71), 3);
+    }
+
+    fn unique_path(name: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "pincerpdf-merge-test-{}-{}-{name}",
+            process::id(),
+            NEXT_OPERATION_ID.fetch_add(1, Ordering::Relaxed)
+        ))
+    }
+
+    #[test]
+    fn secret_debug_is_redacted_and_multiline_values_are_rejected() {
+        let secret = SecretString::new("correct horse battery staple").expect("valid secret");
+        let debug = format!("{secret:?}");
+        assert!(debug.contains("REDACTED"));
+        assert!(!debug.contains("correct horse"));
+        assert_eq!(SecretString::new("line1\nline2"), Err(SecretStringError));
+    }
+
+    #[test]
+    fn request_validation_preserves_duplicate_sources_but_rejects_unsafe_output() {
+        let source = MergeSource::new("a.pdf");
+        let request =
+            MergeRequest::new([source.clone(), source], "out.PDF").expect("valid request");
+        assert_eq!(request.sources().len(), 2);
+        assert_eq!(
+            MergeRequest::new([MergeSource::new("a.pdf")], "out.pdf"),
+            Err(MergeRequestError::NotEnoughSources)
+        );
+        assert_eq!(
+            MergeRequest::new(
+                [MergeSource::new("a.pdf"), MergeSource::new("b.pdf")],
+                "a.pdf"
+            ),
+            Err(MergeRequestError::OutputEqualsSource { source_index: 0 })
+        );
+    }
+
+    #[test]
+    fn service_preserves_page_order_and_duplicates_then_finalizes_atomically() {
+        let output = unique_path("ordered.pdf");
+        let selection: PageSelection = "3,1,3".parse().expect("valid selection");
+        let request = MergeRequest::new(
+            [
+                MergeSource::new("first.pdf").with_selection(selection),
+                MergeSource::new("second.pdf"),
+            ],
+            &output,
+        )
+        .expect("valid request");
+        let engine = FakeEngine::new();
+        let report = MergeService::new(&engine)
+            .execute(&request, &MergeExecutionOptions::default())
+            .expect("merge succeeds");
+        assert_eq!(report.page_count, 6);
+        assert_eq!(report.source_count, 2);
+        assert_eq!(report.bookmark_entries, 0);
+        assert!(output.is_file());
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn one_entry_policy_requires_and_reports_one_bookmark_per_ordered_source() {
+        let output = unique_path("one-entry-per-document.pdf");
+        let request = MergeRequest::new(
+            [
+                MergeSource::new("folder/first.pdf"),
+                MergeSource::new("folder/second.pdf"),
+            ],
+            &output,
+        )
+        .expect("valid request");
+        let options = MergeExecutionOptions {
+            bookmark_policy: BookmarkPolicy::OneEntryPerDocument,
+            ..MergeExecutionOptions::default()
+        };
+
+        let report = MergeService::new(&FakeEngine::new())
+            .execute(&request, &options)
+            .expect("bookmark policy succeeds");
+
+        assert_eq!(report.bookmark_entries, 2);
+        assert_eq!(report.bookmark_sources_discarded, 0);
+        assert!(output.is_file());
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn replace_policy_atomically_replaces_an_existing_output() {
+        let output = unique_path("replace-existing.pdf");
+        fs::write(&output, b"verified-old-output").expect("write original output");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Replace)
+            .expect("begin replacement");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"verified-new-output").expect("write replacement output");
+
+        transaction.commit().expect("replace existing output");
+
+        assert_eq!(
+            fs::read(&output).expect("read replaced output"),
+            b"verified-new-output"
+        );
+        assert!(!temporary.exists());
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn fail_policy_preserves_a_destination_created_after_planning() {
+        let output = unique_path("late-conflict.pdf");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Fail)
+            .expect("begin conflict-free output");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"uncommitted-output").expect("write temporary output");
+        fs::write(&output, b"late-existing-output").expect("create racing destination");
+
+        let error = transaction.commit().expect_err("late destination must win");
+
+        assert!(matches!(
+            error,
+            MergeError::OutputPlan(OutputPlanError::ExistingOutputConflict)
+        ));
+        assert_eq!(
+            fs::read(&output).expect("read preserved destination"),
+            b"late-existing-output"
+        );
+        drop(transaction);
+        assert!(!temporary.exists());
+        let _ = fs::remove_file(output);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn failed_windows_replace_preserves_the_old_output_and_cleans_the_temporary_file() {
+        let output = unique_path("locked-replacement.pdf");
+        fs::write(&output, b"locked-old-output").expect("write original output");
+        let mut transaction = OutputTransaction::begin(&output, ExistingOutputPolicy::Replace)
+            .expect("begin replacement");
+        let temporary = transaction.temporary_path().to_path_buf();
+        fs::write(&temporary, b"uncommitted-new-output").expect("write temporary output");
+        let locked_output = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .share_mode(0)
+            .open(&output)
+            .expect("lock existing output without delete sharing");
+
+        let error = transaction
+            .commit()
+            .expect_err("Windows must reject replacement while destination is locked");
+
+        assert!(matches!(error, MergeError::OutputIo(_)));
+        assert!(output.exists());
+        assert!(temporary.exists());
+        drop(locked_output);
+        assert_eq!(
+            fs::read(&output).expect("read preserved output after releasing lock"),
+            b"locked-old-output"
+        );
+        drop(transaction);
+        assert!(!temporary.exists());
+        assert_eq!(
+            fs::read(&output).expect("read output after cleanup"),
+            b"locked-old-output"
+        );
+        let _ = fs::remove_file(output);
+    }
+
+    #[test]
+    fn service_rejects_forms_before_engine_merge() {
+        let output = unique_path("forms.pdf");
+        let request = MergeRequest::new(
+            [MergeSource::new("form.pdf"), MergeSource::new("plain.pdf")],
+            &output,
+        )
+        .expect("valid request");
+        let error = MergeService::new(&FakeEngine::new())
+            .execute(&request, &MergeExecutionOptions::default())
+            .expect_err("forms are not verified");
+        assert!(matches!(
+            error,
+            MergeError::FormsUnsupported { source_index: 0 }
+        ));
+        assert!(!output.exists());
+    }
+}

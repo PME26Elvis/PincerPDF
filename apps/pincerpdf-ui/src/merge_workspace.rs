@@ -354,8 +354,728 @@ pub(crate) fn MergeWorkspace(engine_status: ReadSignal<MergeEngineStatus>) -> im
                                 "Existing output will be replaced only after the temporary PDF passes verification."
                             } else {
                                 "If the destination already exists, the merge stops without replacing it."
-                   ë}:¶‰žËkºwµçUð…¹‘¥‘…Ñ”¹¥€ôô¥¤(€€€€€€€€€€€€€€€€€€€€¹µ…Á}½È À°ñ¥¹‘•áð¥¹‘•à€¬€Ä¥ô(€€€€€€€€€€€€ð½ÍÁ…¸ø(€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Í½ÕÉ”µ¥‘•¹Ñ¥Ñäˆø(€€€€€€€€€€€€€€€€ñÍÑÉ½¹œùí™¥±•}¹…µ•ôð½ÍÑÉ½¹œø(€€€€€€€€€€€€€€€€ñÍµ…±°Ñ¥Ñ±”õ‘¥ÍÁ±…å}Á…Ñ ¹±½¹” ¤ùí‘¥ÍÁ±…å}Á…Ñ ¹±½¹” ¥ôð½Íµ…±°ø(€€€€€€€€€€€€€€€€ñÍÁ…¸±…ÍÌô‰Í½ÕÉ”µ‰…‘•Ìˆø(€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ùíÁ…•}½Õ¹Ð¹µ…Á}½É}•±Í”¡ñð€‰1½­•ˆ¹Ñ½}½Ý¹• ¤°ñÁ…•Íð™½Éµ…Ð„ ‰íÁ…•ÍôÁ…•Ìˆ¤¥ôð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ñM¡½ÜÝ¡•¸õµ½Ù”ñð•¹ÉåÁÑ•ø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸±…ÍÌô‰¥ÌµÝ…É¹¥¹œˆø‰¹ÉåÁÑ•ˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ð½M¡½Üø(€€€€€€€€€€€€€€€€€€€€ñM¡½ÜÝ¡•¸õµ½Ù”ñð‰½½­µ…É­Ìø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ø‰	½½­µ…É­Ìˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ð½M¡½Üø(€€€€€€€€€€€€€€€€ð½ÍÁ…¸ø(€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€ñ±…‰•°±…ÍÌô‰É…¹”µ™¥•±ˆø(€€€€€€€€€€€€€€€€ñÍÁ…¸ø‰A…•Ìˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€ñ¥¹ÁÕÐ(€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰Ñ•áÐˆ(€€€€€€€€€€€€€€€€€€€¥¹ÁÕÑµ½‘”ô‰¹Õµ•É¥Œˆ(€€€€€€€€€€€€€€€€€€€Á±…•¡½±‘•Èô‰±°Á…•Ìˆ(€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õÁ…•Í}±…‰•°(€€€€€€€€€€€€€€€€€€€ÁÉ½ÀéÙ…±Õ”õ¥¹¥Ñ¥…±}Í•±•Ñ¥½¸(€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€‘…Ñ„µÑ•ÍÑ¥ô‰µ•É”µÁ…”µÍ•±•Ñ¥½¸ˆ(€€€€€€€€€€€€€€€€€€€½¸é¥¹ÁÕÐõµ½Ù”ñ•Ù•¹Ñðì(€€€€€€€€€€€€€€€€€€€€€€€ÕÁ‘…Ñ•}Í½ÕÉ”¡Í•Ñ}Í½ÕÉ•Ì°¥°ñÍ½ÕÉ•ðì(€€€€€€€€€€€€€€€€€€€€€€€€€€€Í½ÕÉ”¹Í•±•Ñ¥½¸€ô•Ù•¹Ñ}Ñ…É•Ñ}Ù…±Õ” ™•Ù•¹Ð¤ì(€€€€€€€€€€€€€€€€€€€€€€€ô¤ì(€€€€€€€€€€€€€€€€€€€ô(€€€€€€€€€€€€€€€€¼ø(€€€€€€€€€€€€ð½±…‰•°ø(€€€€€€€€€€€€ñM¡½ÜÝ¡•¸õµ½Ù”ñðÁ…ÍÍÝ½É‘}É•ÅÕ¥É•ø(€€€€€€€€€€€€€€€€ñ±…‰•°±…ÍÌô‰Á…ÍÍÝ½Éµ™¥•±ˆø(€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ø‰A…ÍÍÝ½Éˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ñ¥¹ÁÕÐ(€€€€€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰Á…ÍÍÝ½Éˆ(€€€€€€€€€€€€€€€€€€€€€€€…ÕÑ½½µÁ±•Ñ”ô‰½™˜ˆ(€€€€€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õµ½Ù”ñðÁ…ÍÍÝ½É‘}±…‰•°¹•Ñ}Ù…±Õ” ¤(€€€€€€€€€€€€€€€€€€€€€€€ÁÉ½ÀéÙ…±Õ”õµ½Ù”ñð¥¹¥Ñ¥…±}Á…ÍÍÝ½É¹•Ñ}Ù…±Õ” ¤(€€€€€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€€€€€‘…Ñ„µÑ•ÍÑ¥ô‰µ•É”µÍ½ÕÉ”µÁ…ÍÍÝ½Éˆ(€€€€€€€€€€€€€€€€€€€€€€€½¸é¥¹ÁÕÐõµ½Ù”ñ•Ù•¹Ñðì(€€€€€€€€€€€€€€€€€€€€€€€€€€€ÕÁ‘…Ñ•}Í½ÕÉ”¡Í•Ñ}Í½ÕÉ•Ì°¥°ñÍ½ÕÉ•ðì(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€Í½ÕÉ”¹Á…ÍÍÝ½É€ô•Ù•¹Ñ}Ñ…É•Ñ}Ù…±Õ” ™•Ù•¹Ð¤ì(€€€€€€€€€€€€€€€€€€€€€€€€€€€ô¤ì(€€€€€€€€€€€€€€€€€€€€€€€ô(€€€€€€€€€€€€€€€€€€€€¼ø(€€€€€€€€€€€€€€€€ð½±…‰•°ø(€€€€€€€€€€€€ð½M¡½Üø(€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Í½ÕÉ”µ…Ñ¥½¹Ìˆ…É¥„µ±…‰•°ô‰M½ÕÉ”½É‘•È½¹ÑÉ½±Ìˆø(€€€€€€€€€€€€€€€€ñ‰ÕÑÑ½¸(€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰‰ÕÑÑ½¸ˆ(€€€€€€€€€€€€€€€€€€€Ñ¥Ñ±”ô‰5½Ù”ÕÀˆ(€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õµ½Ù•}ÕÁ}±…‰•°(€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€½¸é±¥¬õµ½Ù”ñ}ðµ½Ù•}Í½ÕÉ”¡Í•Ñ}Í½ÕÉ•Ì°¥°€´Ä¤(€€€€€€€€€€€€€€€€ø‹ŠDˆð½‰ÕÑÑ½¸ø(€€€€€€€€€€€€€€€€ñ‰ÕÑÑ½¸(€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰‰ÕÑÑ½¸ˆ(€€€€€€€€€€€€€€€€€€€Ñ¥Ñ±”ô‰5½Ù”‘½Ý¸ˆ(€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õµ½Ù•}‘½Ý¹}±…‰•°(€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€½¸é±¥¬õµ½Ù”ñ}ðµ½Ù•}Í½ÕÉ”¡Í•Ñ}Í½ÕÉ•Ì°¥°€Ä¤(€€€€€€€€€€€€€€€€ø‹ŠLˆð½‰ÕÑÑ½¸ø(€€€€€€€€€€€€€€€€ñ‰ÕÑÑ½¸(€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰‰ÕÑÑ½¸ˆ(€€€€€€€€€€€€€€€€€€€Ñ¥Ñ±”ô‰ÕÁ±¥…Ñ”ˆ(€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õ‘ÕÁ±¥…Ñ•}±…‰•°(€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€‘…Ñ„µÑ•ÍÑ¥ô‰‘ÕÁ±¥…Ñ”µµ•É”µÍ½ÕÉ”ˆ(€€€€€€€€€€€€€€€€€€€½¸é±¥¬õµ½Ù”ñ}ð‘ÕÁ±¥…Ñ•}Í½ÕÉ” (€€€€€€€€€€€€€€€€€€€€€€€Í•Ñ}Í½ÕÉ•Ì°(€€€€€€€€€€€€€€€€€€€€€€€¥°(€€€€€€€€€€€€€€€€€€€€€€€¹•áÑ}Í½ÕÉ•}¥°(€€€€€€€€€€€€€€€€€€€€€€€Í•Ñ}¹•áÑ}Í½ÕÉ•}¥°(€€€€€€€€€€€€€€€€€€€€¤(€€€€€€€€€€€€€€€€ø‹Šž$ˆð½‰ÕÑÑ½¸ø(€€€€€€€€€€€€€€€€ñ‰ÕÑÑ½¸(€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰‰ÕÑÑ½¸ˆ(€€€€€€€€€€€€€€€€€€€Ñ¥Ñ±”ô‰I•µ½Ù”ˆ(€€€€€€€€€€€€€€€€€€€…É¥„µ±…‰•°õÉ•µ½Ù•}±…‰•°(€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ‘¥Í…‰±•(€€€€€€€€€€€€€€€€€€€‘…Ñ„µÑ•ÍÑ¥ô‰É•µ½Ù”µµ•É”µÍ½ÕÉ”ˆ(€€€€€€€€€€€€€€€€€€€½¸é±¥¬õµ½Ù”ñ}ðÍ•Ñ}Í½ÕÉ•Ì¹ÕÁ‘…Ñ”¡ñÉ½ÝÍðÉ½ÝÌ¹É•Ñ…¥¸¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹¥€„ô¥¤¤(€€€€€€€€€€€€€€€€ø‹\ˆð½‰ÕÑÑ½¸ø(€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€ñM¡½ÜÝ¡•¸õµ½Ù”ñð•ÉÉ½È¹•Ð ¤¹¥Í}Í½µ” ¤ø(€€€€€€€€€€€€€€€€ñÀ±…ÍÌô‰Í½ÕÉ”µ•ÉÉ½ÈˆÉ½±”ô‰…±•ÉÐˆùíµ½Ù”ñð•ÉÉ½È¹•Ð ¤¹Õ¹ÝÉ…Á}½É}‘•™…Õ±Ð ¥ôð½Àø(€€€€€€€€€€€€ð½M¡½Üø(€€€€€€€€ð½±¤ø(€€€ô)ô()™¸ÉÕ¹}¡•¬ (€€€±…‰•°è€˜ÍÑ…Ñ¥ŒÍÑÈ°(€€€É•…‘äè¥µÁ°¸ ¤€´ø‰½½°€¬M•¹€¬Må¹Œ€¬€ÍÑ…Ñ¥Œ°(¤€´ø¥µÁ°%¹Ñ½Y¥•Üì(€€€±•ÐÉ•…‘ä€ô5•µ¼èé¹•Ü¡µ½Ù”ñ}ðÉ•…‘ä ¤¤ì(€€€Ù¥•Ü„ì(€€€€€€€€ñ‘¥Ø±…ÍÌõµ½Ù”ñð¥˜É•…‘ä¹•Ð ¤ì€‰ÉÕ¸µ¡•¬¥ÌµÉ•…‘äˆô•±Í”ì€‰ÉÕ¸µ¡•¬ˆôø(€€€€€€€€€€€€ñÍÁ…¸…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆùíµ½Ù”ñð¥˜É•…‘ä¹•Ð ¤ì€‹ŠrLˆô•±Í”ì€‹
-Üˆõôð½ÍÁ…¸ø(€€€€€€€€€€€€ñÍÁ…¸ùí±…‰•±ôð½ÍÁ…¸ø(€€€€€€€€ð½‘¥Øø(€€€ô)ô()™¸Ñ…Í­}ÍÑ…ÑÕÌ (€€€Ñ…Í¬èI•…‘M¥¹…°ñQ…Í­MÑ…Ñ”ø°(€€€…¹•±}µ•É”è…±±‰…¬ñ•Øèé5½ÕÍ•Ù•¹Ðø°(¤€´ø¥µÁ°%¹Ñ½Y¥•Üì(€€€Ù¥•Ü„ì(€€€€€€€€ñ‘¥Ø±…ÍÌô‰Ñ…Í¬µÍÑ…ÑÕÌˆÉ½±”ô‰ÍÑ…ÑÕÌˆ…É¥„µ±¥Ù”ô‰Á½±¥Ñ”ˆ‘…Ñ„µÑ•ÍÑ¥ô‰µ•É”µÑ…Í¬µÍÑ…ÑÕÌˆø(€€€€€€€€€€€íµ½Ù”ñðµ…Ñ Ñ…Í¬¹•Ð ¤ì(€€€€€€€€€€€€€€€Q…Í­MÑ…Ñ”èé%‘±”€ôøÙ¥•Ü„ì(€€€€€€€€€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Ñ…Í¬µ¥‘±”ˆø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆø‹Š^8ˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸øñÍÑÉ½¹œø‰I•…‘äÝ¡•¸å½Ô…É”ˆð½ÍÑÉ½¹œøñÍµ…±°ø‰9½Ñ¡¥¹œÉÕ¹ÌÕ¹Ñ¥°å½Ô½¹™¥É´¸ˆð½Íµ…±°øð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€€€€ô¹¥¹Ñ½}…¹ä ¤°(€€€€€€€€€€€€€€€Q…Í­MÑ…Ñ”èéIÕ¹¹¥¹œì…¹•±±¥¹œ°€¸¸ô€ôøÙ¥•Ü„ì(€€€€€€€€€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Ñ…Í¬µÉÕ¹¹¥¹œˆø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸±…ÍÌô‰ÁÉ½É•ÍÌµÍÁ¥¹¹•Èˆ…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆøð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍÑÉ½¹œùí¥˜…¹•±±¥¹œì€‰…¹•±±¥¹œÍ…™•±çŠ˜ˆô•±Í”ì€‰Y•É¥™å¥¹œ…¹µ•É¥¹ŸŠ˜ˆõôð½ÍÑÉ½¹œø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍµ…±°ø‰Q¡”‘•ÍÑ¥¹…Ñ¥½¸É•µ…¥¹ÌÕ¹Ñ½Õ¡•Õ¹Ñ¥°Ù•É¥™¥…Ñ¥½¸Á…ÍÍ•Ì¸ˆð½Íµ…±°ø(€€€€€€€€€€€€€€€€€€€€€€€€ð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€ñ‰ÕÑÑ½¸(€€€€€€€€€€€€€€€€€€€€€€€€€€€ÑåÁ”ô‰‰ÕÑÑ½¸ˆ(€€€€€€€€€€€€€€€€€€€€€€€€€€€±…ÍÌô‰Ñ•áÐµ…Ñ¥½¸ˆ(€€€€€€€€€€€€€€€€€€€€€€€€€€€‘¥Í…‰±•õ…¹•±±¥¹œ(€€€€€€€€€€€€€€€€€€€€€€€€€€€½¸é±¥¬õµ½Ù”ñ•Ù•¹Ñð…¹•±}µ•É”¹ÉÕ¸¡•Ù•¹Ð¤(€€€€€€€€€€€€€€€€€€€€€€€€ø(€€€€€€€€€€€€€€€€€€€€€€€€€€€í¥˜…¹•±±¥¹œì€‰…¹•±±¥¹œˆô•±Í”ì€‰…¹•°ˆõô(€€€€€€€€€€€€€€€€€€€€€€€€ð½‰ÕÑÑ½¸ø(€€€€€€€€€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€€€€ô¹¥¹Ñ½}…¹ä ¤°(€€€€€€€€€€€€€€€Q…Í­MÑ…Ñ”èé½µÁ±•Ñ•¡É•Á½ÉÐ¤€ôøÙ¥•Ü„ì(€€€€€€€€€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Ñ…Í¬µ½µÁ±•Ñ”ˆø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸±…ÍÌô‰ÍÕ•ÍÌµ¡•¬ˆ…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆø‹ŠrLˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍÑÉ½¹œø‰5•É•AÉ•…Ñ•ˆð½ÍÑÉ½¹œø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍµ…±°‘…Ñ„µÑ•ÍÑ¥ô‰µ•É”µÉ•ÍÕ±ÐµÍÕµµ…Éäˆø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€í™½Éµ…Ð„ (€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€‰íôÁ…•Ìƒ
-ÜíôÍ½ÕÉ•Ìƒ
-Üíô‰½½­µ…É­Ìƒ
-Üíôˆ°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€É•Á½ÉÐ¹Á…•}½Õ¹Ð°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€É•Á½ÉÐ¹Í½ÕÉ•}½Õ¹Ð°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€É•Á½ÉÐ¹‰½½­µ…É­}•¹ÑÉ¥•Ì°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€É•Á½ÉÐ¹½ÕÑÁÕÑ}‘¥ÍÁ±…ä°(€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€€¥ô(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ð½Íµ…±°ø(€€€€€€€€€€€€€€€€€€€€€€€€ð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€€€€ô¹¥¹Ñ½}…¹ä ¤°(€€€€€€€€€€€€€€€Q…Í­MÑ…Ñ”èé…¥±•¡•ÉÉ½È¤€ôøÙ¥•Ü„ì(€€€€€€€€€€€€€€€€€€€€ñ‘¥Ø±…ÍÌô‰Ñ…Í¬µ™…¥±•ˆÉ½±”ô‰…±•ÉÐˆø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸…É¥„µ¡¥‘‘•¸ô‰ÑÉÕ”ˆøˆ„ˆð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€ñÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍÑÉ½¹œø‰5•É”‘¥¹½Ð½µÁ±•Ñ”ˆð½ÍÑÉ½¹œø(€€€€€€€€€€€€€€€€€€€€€€€€€€€€ñÍµ…±°ùí•ÉÉ½È¹µ•ÍÍ…•ôð½Íµ…±°ø(€€€€€€€€€€€€€€€€€€€€€€€€ð½ÍÁ…¸ø(€€€€€€€€€€€€€€€€€€€€ð½‘¥Øø(€€€€€€€€€€€€€€€ô¹¥¹Ñ½}…¹ä ¤°(€€€€€€€€€€€õô(€€€€€€€€ð½‘¥Øø(€€€ô)ô()™¸…ÁÁ•¹‘}Í½ÕÉ•Ì (€€€Á¥­•èY•ŒñA¥­•‘5•É•M½ÕÉ”ø°(€€€Í•Ñ}Í½ÕÉ•Ìè]É¥Ñ•M¥¹…°ñY•ŒñM½ÕÉ•I½Üøø°(€€€¹•áÑ}Í½ÕÉ•}¥èI•…‘M¥¹…°ñÔØÐø°(€€€Í•Ñ}¹•áÑ}Í½ÕÉ•}¥è]É¥Ñ•M¥¹…°ñÔØÐø°(¤ì(€€€±•ÐµÕÐ¥€ô¹•áÑ}Í½ÕÉ•}¥¹•Ñ}Õ¹ÑÉ…­• ¤ì(€€€Í•Ñ}Í½ÕÉ•Ì¹ÕÁ‘…Ñ”¡ñÍ½ÕÉ•Íðì(€€€€€€€Í½ÕÉ•Ì¹•áÑ•¹¡Á¥­•¹¥¹Ñ½}¥Ñ•È ¤¹µ…À¡ñÁ¥­•‘ðì(€€€€€€€€€€€±•ÐÉ½Ü€ôM½ÕÉ•I½Üì(€€€€€€€€€€€€€€€¥°(€€€€€€€€€€€€€€€Á¥­•°(€€€€€€€€€€€€€€€Í•±•Ñ¥½¸èMÑÉ¥¹œèé¹•Ü ¤°(€€€€€€€€€€€€€€€Á…ÍÍÝ½ÉèMÑÉ¥¹œèé¹•Ü ¤°(€€€€€€€€€€€ôì(€€€€€€€€€€€¥€¬ô€Äì(€€€€€€€€€€€É½Ü(€€€€€€€ô¤¤ì(€€€ô¤ì(€€€Í•Ñ}¹•áÑ}Í½ÕÉ•}¥¹Í•Ð¡¥¤ì)ô()™¸ÕÁ‘…Ñ•}Í½ÕÉ” (€€€Í•Ñ}Í½ÕÉ•Ìè]É¥Ñ•M¥¹…°ñY•ŒñM½ÕÉ•I½Üøø°(€€€¥èÔØÐ°(€€€ÕÁ‘…Ñ”è¥µÁ°¹=¹” ™µÕÐM½ÕÉ•I½Ü¤°(¤ì(€€€Í•Ñ}Í½ÕÉ•Ì¹ÕÁ‘…Ñ”¡ñÍ½ÕÉ•Íðì(€€€€€€€¥˜±•ÐM½µ”¡Í½ÕÉ”¤€ôÍ½ÕÉ•Ì¹¥Ñ•É}µÕÐ ¤¹™¥¹¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹¥€ôô¥¤ì(€€€€€€€€€€€ÕÁ‘…Ñ”¡Í½ÕÉ”¤ì(€€€€€€€ô(€€€ô¤ì)ô()™¸µ½Ù•}Í½ÕÉ”¡Í•Ñ}Í½ÕÉ•Ìè]É¥Ñ•M¥¹…°ñY•ŒñM½ÕÉ•I½Üøø°¥èÔØÐ°½™™Í•Ðè¥Í¥é”¤ì(€€€Í•Ñ}Í½ÕÉ•Ì¹ÕÁ‘…Ñ”¡ñÍ½ÕÉ•Íðì(€€€€€€€±•ÐM½µ”¡¥¹‘•à¤€ôÍ½ÕÉ•Ì¹¥Ñ•È ¤¹Á½Í¥Ñ¥½¸¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹¥€ôô¥¤•±Í”ì(€€€€€€€€€€€É•ÑÕÉ¸ì(€€€€€€€ôì(€€€€€€€±•ÐÑ…É•Ð€ô¥¹‘•à¹Í…ÑÕÉ…Ñ¥¹}…‘‘}Í¥¹•¡½™™Í•Ð¤ì(€€€€€€€¥˜Ñ…É•Ð€ðÍ½ÕÉ•Ì¹±•¸ ¤ì(€€€€€€€€€€€Í½ÕÉ•Ì¹ÍÝ…À¡¥¹‘•à°Ñ…É•Ð¤ì(€€€€€€€ô(€€€ô¤ì)ô()™¸‘ÕÁ±¥…Ñ•}Í½ÕÉ” (€€€Í•Ñ}Í½ÕÉ•Ìè]É¥Ñ•M¥¹…°ñY•ŒñM½ÕÉ•I½Üøø°(€€€¥èÔØÐ°(€€€¹•áÑ}Í½ÕÉ•}¥èI•…‘M¥¹…°ñÔØÐø°(€€€Í•Ñ}¹•áÑ}Í½ÕÉ•}¥è]É¥Ñ•M¥¹…°ñÔØÐø°(¤ì(€€€±•Ð¹•Ý}¥€ô¹•áÑ}Í½ÕÉ•}¥¹•Ñ}Õ¹ÑÉ…­• ¤ì(€€€Í•Ñ}¹•áÑ}Í½ÕÉ•}¥¹Í•Ð¡¹•Ý}¥€¬€Ä¤ì(€€€Í•Ñ}Í½ÕÉ•Ì¹ÕÁ‘…Ñ”¡ñÍ½ÕÉ•Íðì(€€€€€€€±•ÐM½µ”¡¥¹‘•à¤€ôÍ½ÕÉ•Ì¹¥Ñ•È ¤¹Á½Í¥Ñ¥½¸¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹¥€ôô¥¤•±Í”ì(€€€€€€€€€€€É•ÑÕÉ¸ì(€€€€€€€ôì(€€€€€€€±•ÐµÕÐ‘ÕÁ±¥…Ñ”€ôÍ½ÕÉ•Ím¥¹‘•át¹±½¹” ¤ì(€€€€€€€‘ÕÁ±¥…Ñ”¹¥€ô¹•Ý}¥ì(€€€€€€€Í½ÕÉ•Ì¹¥¹Í•ÉÐ¡¥¹‘•à€¬€Ä°‘ÕÁ±¥…Ñ”¤ì(€€€ô¤ì)ô()™¸Ù…±¥‘…Ñ•}Í½ÕÉ”¡Í½ÕÉ”è€™M½ÕÉ•I½Ü¤€´ø=ÁÑ¥½¸ñMÑÉ¥¹œøì(€€€¥˜±•ÐM½µ”¡¥ÍÍÕ”¤€ô€™Í½ÕÉ”¹Á¥­•¹¥ÍÍÕ”ì(€€€€€€€É•ÑÕÉ¸M½µ”¡¥ÍÍÕ”¹µ•ÍÍ…”¹±½¹” ¤¤ì(€€€ô(€€€¥˜Í½ÕÉ”¹Á¥­•¹™•…ÑÕÉ•Ì¹¡…Í}™½ÉµÌì(€€€€€€€É•ÑÕÉ¸M½µ” ‰%¹Ñ•É…Ñ¥Ù”™½ÉµÌ…É”¹½Ðå•ÐÍÕÁÁ½ÉÑ•‰ä5•É”¸ˆ¹Ñ½}½Ý¹• ¤¤ì(€€€ô(€€€¥˜Í½ÕÉ”¹Á¥­•¹Á…ÍÍÝ½É‘}É•ÅÕ¥É•€˜˜Í½ÕÉ”¹Á…ÍÍÝ½É¹¥Í}•µÁÑä ¤ì(€€€€€€€É•ÑÕÉ¸M½µ” ‰¹Ñ•ÈÑ¡”AÁ…ÍÍÝ½É‰•™½É”ÉÕ¹¹¥¹œ5•É”¸ˆ¹Ñ½}½Ý¹• ¤¤ì(€€€ô(€€€±•ÐÍ•±•Ñ¥½¸€ôÍ½ÕÉ”¹Í•±•Ñ¥½¸¹ÑÉ¥´ ¤ì(€€€¥˜Í•±•Ñ¥½¸¹¥Í}•µÁÑä ¤ì(€€€€€€€É•ÑÕÉ¸9½¹”ì(€€€ô(€€€±•ÐÁ…ÉÍ•€ôA…•M•±•Ñ¥½¸èé™É½µ}ÍÑÈ¡Í•±•Ñ¥½¸¤¹µ…Á}•ÉÈ¡ñ•ÉÉ½Éð•ÉÉ½È¹Ñ½}ÍÑÉ¥¹œ ¤¤ì(€€€µ…Ñ €¡Á…ÉÍ•°Í½ÕÉ”¹Á¥­•¹Á…•}½Õ¹Ð¤ì(€€€€€€€€¡ÉÈ¡•ÉÉ½È¤°|¤€ôøM½µ”¡•ÉÉ½È¤°(€€€€€€€€¡=¬¡Í•±•Ñ¥½¸¤°M½µ”¡Ñ½Ñ…°¤¤€ôøÍ•±•Ñ¥½¸(€€€€€€€€€€€€¹É•Í½±Ù”¡Ñ½Ñ…°¤(€€€€€€€€€€€€¹•ÉÈ ¤(€€€€€€€€€€€€¹µ…À¡ñ•ÉÉ½Éð•ÉÉ½È¹Ñ½}ÍÑÉ¥¹œ ¤¤°(€€€€€€€€¡=¬¡|¤°9½¹”¤€ôø9½¹”°(€€€ô)ô()™¸Á±…¹¹•‘}Á…•}½Õ¹Ð¡Í½ÕÉ•Ìè€™mM½ÕÉ•I½Ýt¤€´ø=ÁÑ¥½¸ñÔÌÈøì(€€€Í½ÕÉ•Ì¹¥Ñ•È ¤¹ÑÉå}™½± Á}ÔÌÈ°ñÑ½Ñ…°°Í½ÕÉ•ðì(€€€€€€€¥˜Ù…±¥‘…Ñ•}Í½ÕÉ”¡Í½ÕÉ”¤¹¥Í}Í½µ” ¤ì(€€€€€€€€€€€É•ÑÕÉ¸9½¹”ì(€€€€€€€ô(€€€€€€€±•ÐÁ…•Ì€ôµ…Ñ €¡Í½ÕÉ”¹Í•±•Ñ¥½¸¹ÑÉ¥´ ¤°Í½ÕÉ”¹Á¥­•¹Á…•}½Õ¹Ð¤ì(€€€€€€€€€€€€¡|°9½¹”¤€ôøÉ•ÑÕÉ¸9½¹”°(€€€€€€€€€€€€ ˆˆ°M½µ”¡Á…•}½Õ¹Ð¤¤€ôøÁ…•}½Õ¹Ð°(€€€€€€€€€€€€¡Í•±•Ñ¥½¸°M½µ”¡Á…•}½Õ¹Ð¤¤€ôøÔÌÈèéÑÉå}™É½´ (€€€€€€€€€€€€€€€A…•M•±•Ñ¥½¸èé™É½µ}ÍÑÈ¡Í•±•Ñ¥½¸¤(€€€€€€€€€€€€€€€€€€€€¹½¬ ¤ü(€€€€€€€€€€€€€€€€€€€€¹É•Í½±Ù”¡Á…•}½Õ¹Ð¤(€€€€€€€€€€€€€€€€€€€€¹½¬ ¤ü(€€€€€€€€€€€€€€€€€€€€¹±•¸ ¤°(€€€€€€€€€€€€¤(€€€€€€€€€€€€¹½¬ ¤ü°(€€€€€€€ôì(€€€€€€€Ñ½Ñ…°¹¡•­•‘}…‘¡Á…•Ì¤(€€€ô¤)ô()™¸…¹}ÉÕ¸ (€€€Í½ÕÉ•Ìè€™mM½ÕÉ•I½Ýt°(€€€‘•ÍÑ¥¹…Ñ¥½¸è=ÁÑ¥½¸ð™A¥­•‘5•É••ÍÑ¥¹…Ñ¥½¸ø°(€€€•¹¥¹”è€™5•É•¹¥¹•MÑ…ÑÕÌ°(€€€Ñ…Í¬è€™Q…Í­MÑ…Ñ”°(¤€´ø‰½½°ì(€€€Í½ÕÉ•Ì¹±•¸ ¤€øô€È(€€€€€€€€˜˜Í½ÕÉ•Ì(€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€¹…±°¡ñÍ½ÕÉ•ðÙ…±¥‘…Ñ•}Í½ÕÉ”¡Í½ÕÉ”¤¹¥Í}¹½¹” ¤¤(€€€€€€€€˜˜‘•ÍÑ¥¹…Ñ¥½¸¹¥Í}Í½µ” ¤(€€€€€€€€˜˜•¹¥¹”¹É•…‘ä(€€€€€€€€˜˜€…µ…Ñ¡•Ì„¡Ñ…Í¬°Q…Í­MÑ…Ñ”èéIÕ¹¹¥¹œì€¸¸ô¤)ô((m‘•É¥Ù”¡±½¹”°½Áä¥t)ÍÑÉÕÐ5•É•I•ÅÕ•ÍÑ=ÁÑ¥½¹Ìì(€€€É•Á±…•}•á¥ÍÑ¥¹œè‰½½°°(€€€‰½½­µ…É­}Á½±¥äè5•É•	½½­µ…É­A½±¥ä°(€€€…‘‘}‰±…¹­}Á…•}¥™}½‘è‰½½°°(€€€…‘‘}™¥±•¹…µ•}™½½Ñ•Èè‰½½°°(€€€Ñ½}Á½±¥äè5•É•Q½A½±¥ä°)ô()™¸µ…­•}É•ÅÕ•ÍÐ (€€€½Á•É…Ñ¥½¹}¥èMÑÉ¥¹œ°(€€€Í½ÕÉ•Ìè€™mM½ÕÉ•I½Ýt°(€€€‘•ÍÑ¥¹…Ñ¥½¸è€™A¥­•‘5•É••ÍÑ¥¹…Ñ¥½¸°(€€€½ÁÑ¥½¹Ìè5•É•I•ÅÕ•ÍÑ=ÁÑ¥½¹Ì°(¤€´ø5•É•IÕ¹I•ÅÕ•ÍÐì(€€€5•É•IÕ¹I•ÅÕ•ÍÐì(€€€€€€€½Á•É…Ñ¥½¹}¥°(€€€€€€€Í½ÕÉ•ÌèÍ½ÕÉ•Ì(€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€¹µ…À¡ñÍ½ÕÉ•ð5•É•%¹ÁÕÑI•ÅÕ•ÍÐì(€€€€€€€€€€€€€€€Á…Ñ¡}Ñ½­•¸èÍ½ÕÉ”¹Á¥­•¹Á…Ñ¡}Ñ½­•¸¹±½¹” ¤°(€€€€€€€€€€€€€€€Á…•}Í•±•Ñ¥½¸è€ …Í½ÕÉ”¹Í•±•Ñ¥½¸¹ÑÉ¥´ ¤¹¥Í}•µÁÑä ¤¤(€€€€€€€€€€€€€€€€€€€€¹Ñ¡•¸¡ñðÍ½ÕÉ”¹Í•±•Ñ¥½¸¹ÑÉ¥´ ¤¹Ñ½}½Ý¹• ¤¤°(€€€€€€€€€€€€€€€Á…ÍÍÝ½Éè€ …Í½ÕÉ”¹Á…ÍÍÝ½É¹¥Í}•µÁÑä ¤¤¹Ñ¡•¸¡ñðÍ½ÕÉ”¹Á…ÍÍÝ½É¹±½¹” ¤¤°(€€€€€€€€€€€ô¤(€€€€€€€€€€€€¹½±±•Ð ¤°(€€€€€€€½ÕÑÁÕÑ}Ñ½­•¸è‘•ÍÑ¥¹…Ñ¥½¸¹Á…Ñ¡}Ñ½­•¸¹±½¹” ¤°(€€€€€€€É•Á±…•}•á¥ÍÑ¥¹œè½ÁÑ¥½¹Ì¹É•Á±…•}•á¥ÍÑ¥¹œ°(€€€€€€€‰½½­µ…É­}Á½±¥äè½ÁÑ¥½¹Ì¹‰½½­µ…É­}Á½±¥ä°(€€€€€€€…‘‘}‰±…¹­}Á…•}¥™}½‘è½ÁÑ¥½¹Ì¹…‘‘}‰±…¹­}Á…•}¥™}½‘°(€€€€€€€…‘‘}™¥±•¹…µ•}™½½Ñ•Èè½ÁÑ¥½¹Ì¹…‘‘}™¥±•¹…µ•}™½½Ñ•È°(€€€€€€€Ñ½}Á½±¥äè½ÁÑ¥½¹Ì¹Ñ½}Á½±¥ä°(€€€ô)ô()™¸‰É½ÝÍ•É}Í½ÕÉ•Ì ¤€´øY•ŒñA¥­•‘5•É•M½ÕÉ”øì(€€€Ù•Œ…l(€€€€€€€A¥­•‘5•É•M½ÕÉ”ì(€€€€€€€€€€€Á…Ñ¡}Ñ½­•¸è€‰‰É½ÝÍ•ÈµÅÕ…ÉÑ•É±äˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€™¥±•}¹…µ”è€‰ÅÕ…ÉÑ•É±äµÉ•Á½ÉÐ¹Á‘˜ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€‘¥ÍÁ±…å}Á…Ñ è€‰•µ¼™¥±•Ì€¼ÅÕ…ÉÑ•É±äµÉ•Á½ÉÐ¹Á‘˜ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€Á…•}½Õ¹ÐèM½µ” Ø¤°(€€€€€€€€€€€™•…ÑÕÉ•Ìè5•É•M½ÕÉ••…ÑÕÉ•Ìì(€€€€€€€€€€€€€€€•¹ÉåÁÑ•è™…±Í”°(€€€€€€€€€€€€€€€¡…Í}‰½½­µ…É­ÌèÑÉÕ”°(€€€€€€€€€€€€€€€¡…Í}™½ÉµÌè™…±Í”°(€€€€€€€€€€€ô°(€€€€€€€€€€€Á…ÍÍÝ½É‘}É•ÅÕ¥É•è™…±Í”°(€€€€€€€€€€€¥ÍÍÕ”è9½¹”°(€€€€€€€ô°(€€€€€€€A¥­•‘5•É•M½ÕÉ”ì(€€€€€€€€€€€Á…Ñ¡}Ñ½­•¸è€‰‰É½ÝÍ•Èµ…ÁÁ•¹‘¥àˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€™¥±•}¹…µ”è€‰…ÁÁ•¹‘¥à¹Á‘˜ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€‘¥ÍÁ±…å}Á…Ñ è€‰•µ¼™¥±•Ì€¼…ÁÁ•¹‘¥à¹Á‘˜ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€€€€€Á…•}½Õ¹ÐèM½µ” Ì¤°(€€€€€€€€€€€™•…ÑÕÉ•Ìè5•É•M½ÕÉ••…ÑÕÉ•Ìèé‘•™…Õ±Ð ¤°(€€€€€€€€€€€Á…ÍÍÝ½É‘}É•ÅÕ¥É•è™…±Í”°(€€€€€€€€€€€¥ÍÍÕ”è9½¹”°(€€€€€€€ô°(€€€t)ô()™¸‰É½ÝÍ•É}É•ÍÕ±Ð (€€€Í½ÕÉ•Ìè€™mM½ÕÉ•I½Ýt°(€€€‰½½­µ…É­}Á½±¥äè5•É•	½½­µ…É­A½±¥ä°(€€€Ñ½}Á½±¥äè5•É•Q½A½±¥ä°(¤€´ø5•É•IÕ¹I•ÍÕ±Ðì(€€€±•Ð‰½½­µ…É­}•¹ÑÉ¥•Ì€ôµ…Ñ ‰½½­µ…É­}Á½±¥äì(€€€€€€€5•É•	½½­µ…É­A½±¥äèé¥Í…É€ôø€À°(€€€€€€€5•É•	½½­µ…É­A½±¥äèé=¹•¹ÑÉåA•É½Õµ•¹Ð(€€€€€€€ð5•É•	½½­µ…É­A½±¥äèéI•Ñ…¥¹Í=¹•¹ÑÉåA•É½Õµ•¹Ð€ôøÍ½ÕÉ•Ì¹±•¸ ¤°(€€€€€€€5•É•	½½­µ…É­A½±¥äèéI•Ñ…¥¸€ôøÍ½ÕÉ•Ì(€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€¹™¥±Ñ•È¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹Á¥­•¹™•…ÑÕÉ•Ì¹¡…Í}‰½½­µ…É­Ì¤(€€€€€€€€€€€€¹½Õ¹Ð ¤°(€€€ôì(€€€5•É•IÕ¹I•ÍÕ±Ðì(€€€€€€€½ÕÑÁÕÑ}‘¥ÍÁ±…äè€‰µ•É•µ‘½Õµ•¹Ð¹Á‘˜ˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€Í½ÕÉ•}½Õ¹ÐèÍ½ÕÉ•Ì¹±•¸ ¤°(€€€€€€€Á…•}½Õ¹ÐèÁ±…¹¹•‘}Á…•}½Õ¹Ð¡Í½ÕÉ•Ì¤(€€€€€€€€€€€€¹Õ¹ÝÉ…Á}½É}‘•™…Õ±Ð ¤(€€€€€€€€€€€€¹Í…ÑÕÉ…Ñ¥¹}…‘¡ÔÌÈèé™É½´ …µ…Ñ¡•Ì„¡Ñ½}Á½±¥ä°5•É•Q½A½±¥äèé9½¹”¤¤¤°(€€€€€€€‰½½­µ…É­}Í½ÕÉ•Í}‘¥Í…É‘•èÕÍ¥é”èé™É½´¡‰½½­µ…É­}Á½±¥ä€ôô5•É•	½½­µ…É­A½±¥äèé¥Í…É¤(€€€€€€€€€€€€¨Í½ÕÉ•Ì(€€€€€€€€€€€€€€€€¹¥Ñ•È ¤(€€€€€€€€€€€€€€€€¹™¥±Ñ•È¡ñÍ½ÕÉ•ðÍ½ÕÉ”¹Á¥­•¹™•…ÑÕÉ•Ì¹¡…Í}‰½½­µ…É­Ì¤(€€€€€€€€€€€€€€€€¹½Õ¹Ð ¤°(€€€€€€€‰½½­µ…É­}•¹ÑÉ¥•Ì°(€€€€€€€•¹¥¹•}¥è€‰‘•Ñ•Éµ¥¹¥ÍÑ¥Œµ‰É½ÝÍ•Èµ…‘…ÁÑ•Èˆ¹Ñ½}½Ý¹• ¤°(€€€€€€€•¹¥¹•}Ù•ÉÍ¥½¸è€‰@Ð¸Èˆ¹Ñ½}½Ý¹• ¤°(€€€ô)ô()™¸½µÁ±•Ñ•}‰É½ÝÍ•É}µ•É•}…™Ñ•É}‘•±…ä (€€€½Á•É…Ñ¥½¹}¥èMÑÉ¥¹œ°(€€€É•Á½ÉÐè5•É•IÕ¹I•ÍÕ±Ð°(€€€Ñ…Í¬èI•…‘M¥¹…°ñQ…Í­MÑ…Ñ”ø°(€€€Í•Ñ}Ñ…Í¬è]É¥Ñ•M¥¹…°ñQ…Í­MÑ…Ñ”ø°(¤ì(€€€±•Ð…±±‰…¬€ô±½ÍÕÉ”èé½¹•}¥¹Ñ½}©Ì¡µ½Ù”ñðì(€€€€€€€±•ÐÍÑ¥±±}ÉÕ¹¹¥¹œ€ôµ…Ñ¡•Ì„ (€€€€€€€€€€€Ñ…Í¬¹•Ñ}Õ¹ÑÉ…­• ¤°(€€€€€€€€€€€Q…Í­MÑ…Ñ”èéIÕ¹¹¥¹œì(€€€€€€€€€€€€€€€½Á•É…Ñ¥½¹}¥èÕÉÉ•¹Ð°(€€€€€€€€€€€€€€€€¸¸(€€€€€€€€€€€ô¥˜ÕÉÉ•¹Ð€ôô½Á•É…Ñ¥½¹}¥(€€€€€€€€¤ì(€€€€€€€¥˜ÍÑ¥±±}ÉÕ¹¹¥¹œì(€€€€€€€€€€€Í•Ñ}Ñ…Í¬¹Í•Ð¡Q…Í­MÑ…Ñ”èé½µÁ±•Ñ•¡É•Á½ÉÐ¤¤ì(€€€€€€€ô(€€€ô¤ì(€€€¥˜±•ÐM½µ”¡Ý¥¹‘½Ü¤€ôÝ•‰}ÍåÌèéÝ¥¹‘½Ü ¤ì(€€€€€€€±•Ð|€ôÝ¥¹‘½Ü(€€€€€€€€€€€€¹Í•Ñ}Ñ¥µ•½ÕÑ}Ý¥Ñ¡}…±±‰…­}…¹‘}Ñ¥µ•½ÕÑ}…¹‘}…ÉÕµ•¹ÑÍ|À¡…±±‰…¬¹Õ¹¡•­•‘}É•˜ ¤°€ØÔÀ¤ì(€€€ô)ô(
+                            }}
+                        </p>
+                    </section>
+
+                    <section class="merge-card advanced-card">
+                        <button
+                            type="button"
+                            class="accordion-trigger"
+                            aria-expanded=move || advanced_open.get().to_string()
+                            data-testid="merge-advanced-toggle"
+                            on:click=move |_| set_advanced_open.update(|open| *open = !*open)
+                        >
+                            <span>
+                                <strong>"Advanced safety policy"</strong>
+                                <small>"Bookmarks, forms and conflicts remain explicit."</small>
+                            </span>
+                            <span class="accordion-chevron" aria-hidden="true">
+                                {move || if advanced_open.get() { "âˆ’" } else { "+" }}
+                            </span>
+                        </button>
+                        <Show when=move || advanced_open.get()>
+                            <div data-testid="merge-advanced-panel">
+                                <label class="overwrite-choice">
+                                    <input
+                                        type="checkbox"
+                                        prop:checked=move || replace_existing.get()
+                                        disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                        data-testid="replace-existing-output"
+                                        on:change=move |event| {
+                                            set_replace_existing.set(event_target_checked(&event));
+                                        }
+                                    />
+                                    <span>
+                                        <strong>"Replace an existing destination"</strong>
+                                        <small>
+                                            "Explicit opt-in Â· verify and flush the temporary PDF before atomic replacement."
+                                        </small>
+                                    </span>
+                                </label>
+                                <label class="overwrite-choice">
+                                    <input
+                                        type="checkbox"
+                                        prop:checked=move || add_blank_page_if_odd.get()
+                                        disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                        data-testid="blank-page-if-odd"
+                                        on:change=move |event| {
+                                            set_add_blank_page_if_odd.set(event_target_checked(&event));
+                                        }
+                                    />
+                                    <span>
+                                        <strong>"Add a blank page after odd-page documents"</strong>
+                                        <small>"Adds a blank page matching the final selected page's geometry after each odd-page source while preserving bookmark destinations."</small>
+                                    </span>
+                                </label>
+                                <label class="overwrite-choice">
+                                    <input
+                                        type="checkbox"
+                                        prop:checked=move || add_filename_footer.get()
+                                        disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                        data-testid="filename-footer"
+                                        on:change=move |event| {
+                                            set_add_filename_footer.set(event_target_checked(&event));
+                                        }
+                                    />
+                                    <span>
+                                        <strong>"Add a filename footer"</strong>
+                                        <small>"Adds the contributing source filename to each non-blank page."</small>
+                                    </span>
+                                </label>
+                                <fieldset class="bookmark-policy" data-testid="merge-toc-policy">
+                                    <legend>"Table of contents"</legend>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-toc-policy"
+                                            value="none"
+                                            prop:checked=move || toc_policy.get() == MergeTocPolicy::None
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="toc-policy-none"
+                                            on:change=move |_| set_toc_policy.set(MergeTocPolicy::None)
+                                        />
+                                        <span>
+                                            <strong>"No table of contents"</strong>
+                                            <small>"Keep the merged page sequence unchanged."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-toc-policy"
+                                            value="file-names"
+                                            prop:checked=move || toc_policy.get() == MergeTocPolicy::FileNames
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="toc-policy-file-names"
+                                            on:change=move |_| set_toc_policy.set(MergeTocPolicy::FileNames)
+                                        />
+                                        <span>
+                                            <strong>"List source filenames"</strong>
+                                            <small>"Prepend a generated contents page with each source's first output page."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-toc-policy"
+                                            value="document-titles"
+                                            prop:checked=move || toc_policy.get() == MergeTocPolicy::DocumentTitles
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="toc-policy-document-titles"
+                                            on:change=move |_| set_toc_policy.set(MergeTocPolicy::DocumentTitles)
+                                        />
+                                        <span>
+                                            <strong>"List document titles"</strong>
+                                            <small>"Use each PDF's metadata title, falling back to its filename when absent."</small>
+                                        </span>
+                                    </label>
+                                </fieldset>
+                                <fieldset class="bookmark-policy" data-testid="merge-bookmark-policy">
+                                    <legend>"Bookmarks"</legend>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="discard"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::Discard
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-discard"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(MergeBookmarkPolicy::Discard);
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"Discard source bookmarks"</strong>
+                                            <small>"Create no outline tree and report how many source trees were removed."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="one-entry-per-document"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::OneEntryPerDocument
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-one-entry"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(
+                                                    MergeBookmarkPolicy::OneEntryPerDocument,
+                                                );
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"One entry per document"</strong>
+                                            <small>"Create one top-level bookmark at the first contributed page of every ordered source."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="retain"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::Retain
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-retain"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(MergeBookmarkPolicy::Retain);
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"Retain source bookmarks"</strong>
+                                            <small>"Rebuild the relevant source hierarchy at the output root."</small>
+                                        </span>
+                                    </label>
+                                    <label>
+                                        <input
+                                            type="radio"
+                                            name="merge-bookmark-policy"
+                                            value="retain-as-one-entry"
+                                            prop:checked=move || bookmark_policy.get() == MergeBookmarkPolicy::RetainAsOneEntryPerDocument
+                                            disabled=move || matches!(task.get(), TaskState::Running { .. })
+                                            data-testid="bookmark-policy-retain-as-one-entry"
+                                            on:change=move |_| {
+                                                set_bookmark_policy.set(
+                                                    MergeBookmarkPolicy::RetainAsOneEntryPerDocument,
+                                                );
+                                            }
+                                        />
+                                        <span>
+                                            <strong>"Retain under each document"</strong>
+                                            <small>"Create one source entry, then preserve its relevant hierarchy beneath it."</small>
+                                        </span>
+                                    </label>
+                                </fieldset>
+                                <dl class="policy-grid">
+                                    <div>
+                                        <dt>"Bookmarks"</dt>
+                                        <dd>{move || match bookmark_policy.get() {
+                                            MergeBookmarkPolicy::Discard => "Discard and report",
+                                            MergeBookmarkPolicy::OneEntryPerDocument => {
+                                                "One entry per document"
+                                            }
+                                            MergeBookmarkPolicy::Retain => "Retain relevant source hierarchy",
+                                            MergeBookmarkPolicy::RetainAsOneEntryPerDocument => {
+                                                "Retain under one entry per document"
+                                            }
+                                        }}</dd>
+                                    </div>
+                                    <div><dt>"Interactive forms"</dt><dd>"Reject before processing"</dd></div>
+                                    <div>
+                                        <dt>"Existing output"</dt>
+                                        <dd>{move || if replace_existing.get() {
+                                            "Atomic replacement"
+                                        } else {
+                                            "Stop safely"
+                                        }}</dd>
+                                    </div>
+                                    <div><dt>"Finalization"</dt><dd>"Verify, flush, atomic rename"</dd></div>
+                                </dl>
+                            </div>
+                        </Show>
+                    </section>
+                </div>
+
+                <aside class="merge-run-card" aria-labelledby="run-title">
+                    <span class="step-number">"3"</span>
+                    <h2 id="run-title">"Create merged PDF"</h2>
+                    <p>"The action unlocks only when every visible requirement is satisfied."</p>
+
+                    <div class="run-checks">
+                        {run_check(
+                            "At least two sources",
+                            move || sources.get().len() >= 2,
+                        )}
+                        {run_check(
+                            "Every source is valid",
+                            move || sources.get().iter().all(|row| validate_source(row).is_none()),
+                        )}
+                        {run_check(
+                            "Output selected",
+                            move || destination.get().is_some(),
+                        )}
+                        {run_check(
+                            "Native engine ready",
+                            move || engine_status.get().ready,
+                        )}
+                    </div>
+
+                    <button
+                        type="button"
+                        class="primary-action run-action"
+                        data-testid="run-merge"
+                        disabled=move || !can_run(
+                            &sources.get(),
+                            destination.get().as_ref(),
+                            &engine_status.get(),
+                            &task.get(),
+                        )
+                        on:click=run_merge
+                    >
+                        {move || if matches!(task.get(), TaskState::Running { .. }) {
+                            "Mergingâ€¦"
+                        } else {
+                            "Create merged PDF"
+                        }}
+                    </button>
+
+                    {task_status(task, Callback::new(cancel_merge))}
+                </aside>
+            </div>
+        </section>
+    }
+}
+
+#[allow(
+    clippy::too_many_lines,
+    reason = "one ordered source row keeps its labels and controls in a single semantic list item"
+)]
+fn source_row(
+    row: SourceRow,
+    sources: ReadSignal<Vec<SourceRow>>,
+    set_sources: WriteSignal<Vec<SourceRow>>,
+    next_source_id: ReadSignal<u64>,
+    set_next_source_id: WriteSignal<u64>,
+    task: ReadSignal<TaskState>,
+) -> impl IntoView {
+    let id = row.id;
+    let error = Memo::new(move |_| {
+        sources
+            .get()
+            .iter()
+            .find(|candidate| candidate.id == id)
+            .and_then(validate_source)
+    });
+    let disabled = move || matches!(task.get(), TaskState::Running { .. });
+    let file_name = row.picked.file_name.clone();
+    let display_path = row.picked.display_path.clone();
+    let page_count = row.picked.page_count;
+    let encrypted = row.picked.features.encrypted;
+    let bookmarks = row.picked.features.has_bookmarks;
+    let password_required = row.picked.password_required;
+    let initial_selection = row.selection.clone();
+    let initial_password = StoredValue::new(row.password.clone());
+    let pages_label = format!("Pages from {}", row.picked.file_name);
+    let password_label = StoredValue::new(format!("Password for {}", row.picked.file_name));
+    let move_up_label = format!("Move {} up", row.picked.file_name);
+    let move_down_label = format!("Move {} down", row.picked.file_name);
+    let duplicate_label = format!("Duplicate {}", row.picked.file_name);
+    let remove_label = format!("Remove {}", row.picked.file_name);
+
+    view! {
+        <li
+            class=move || if error.get().is_some() { "source-row has-error" } else { "source-row" }
+            data-testid="merge-source-row"
+        >
+            <span class="drag-handle" aria-hidden="true">"â‹®â‹®"</span>
+            <span class="source-order">
+                {move || sources.get().iter().position(|candidate| candidate.id == id)
+                    .map_or(0, |index| index + 1)}
+            </span>
+            <div class="source-identity">
+                <strong>{file_name}</strong>
+                <small title=display_path.clone()>{display_path.clone()}</small>
+                <span class="source-badges">
+                    <span>{page_count.map_or_else(|| "Locked".to_owned(), |pages| format!("{pages} pages"))}</span>
+                    <Show when=move || encrypted>
+                        <span class="is-warning">"Encrypted"</span>
+                    </Show>
+                    <Show when=move || bookmarks>
+                        <span>"Bookmarks"</span>
+                    </Show>
+                </span>
+            </div>
+            <label class="range-field">
+                <span>"Pages"</span>
+                <input
+                    type="text"
+                    inputmode="numeric"
+                    placeholder="All pages"
+                    aria-label=pages_label
+                    prop:value=initial_selection
+                    disabled=disabled
+                    data-testid="merge-page-selection"
+                    on:input=move |event| {
+                        update_source(set_sources, id, |source| {
+                            source.selection = event_target_value(&event);
+                        });
+                    }
+                />
+            </label>
+            <Show when=move || password_required>
+                <label class="password-field">
+                    <span>"Password"</span>
+                    <input
+                        type="password"
+                        autocomplete="off"
+                        aria-label=move || password_label.get_value()
+                        prop:value=move || initial_password.get_value()
+                        disabled=disabled
+                        data-testid="merge-source-password"
+                        on:input=move |event| {
+                            update_source(set_sources, id, |source| {
+                                source.password = event_target_value(&event);
+                            });
+                        }
+                    />
+                </label>
+            </Show>
+            <div class="source-actions" aria-label="Source order controls">
+                <button
+                    type="button"
+                    title="Move up"
+                    aria-label=move_up_label
+                    disabled=disabled
+                    on:click=move |_| move_source(set_sources, id, -1)
+                >"â†‘"</button>
+                <button
+                    type="button"
+                    title="Move down"
+                    aria-label=move_down_label
+                    disabled=disabled
+                    on:click=move |_| move_source(set_sources, id, 1)
+                >"â†“"</button>
+                <button
+                    type="button"
+                    title="Duplicate"
+                    aria-label=duplicate_label
+                    disabled=disabled
+                    data-testid="duplicate-merge-source"
+                    on:click=move |_| duplicate_source(
+                        set_sources,
+                        id,
+                        next_source_id,
+                        set_next_source_id,
+                    )
+                >"â§‰"</button>
+                <button
+                    type="button"
+                    title="Remove"
+                    aria-label=remove_label
+                    disabled=disabled
+                    data-testid="remove-merge-source"
+                    on:click=move |_| set_sources.update(|rows| rows.retain(|source| source.id != id))
+                >"Ã—"</button>
+            </div>
+            <Show when=move || error.get().is_some()>
+                <p class="source-error" role="alert">{move || error.get().unwrap_or_default()}</p>
+            </Show>
+        </li>
+    }
+}
+
+fn run_check(
+    label: &'static str,
+    ready: impl Fn() -> bool + Send + Sync + 'static,
+) -> impl IntoView {
+    let ready = Memo::new(move |_| ready());
+    view! {
+        <div class=move || if ready.get() { "run-check is-ready" } else { "run-check" }>
+            <span aria-hidden="true">{move || if ready.get() { "âœ“" } else { "Â·" }}</span>
+            <span>{label}</span>
+        </div>
+    }
+}
+
+fn task_status(
+    task: ReadSignal<TaskState>,
+    cancel_merge: Callback<ev::MouseEvent>,
+) -> impl IntoView {
+    view! {
+        <div class="task-status" role="status" aria-live="polite" data-testid="merge-task-status">
+            {move || match task.get() {
+                TaskState::Idle => view! {
+                    <div class="task-idle">
+                        <span aria-hidden="true">"â—Ž"</span>
+                        <span><strong>"Ready when you are"</strong><small>"Nothing runs until you confirm."</small></span>
+                    </div>
+                }.into_any(),
+                TaskState::Running { cancelling, .. } => view! {
+                    <div class="task-running">
+                        <span class="progress-spinner" aria-hidden="true"></span>
+                        <span>
+                            <strong>{if cancelling { "Cancelling safelyâ€¦" } else { "Verifying and mergingâ€¦" }}</strong>
+                            <small>"The destination remains untouched until verification passes."</small>
+                        </span>
+                        <button
+                            type="button"
+                            class="text-action"
+                            disabled=cancelling
+                            on:click=move |event| cancel_merge.run(event)
+                        >
+                            {if cancelling { "Cancelling" } else { "Cancel" }}
+                        </button>
+                    </div>
+                }.into_any(),
+                TaskState::Completed(report) => view! {
+                    <div class="task-complete">
+                        <span class="success-check" aria-hidden="true">"âœ“"</span>
+                        <span>
+                            <strong>"Merged PDF created"</strong>
+                            <small data-testid="merge-result-summary">
+                                {format!(
+                                    "{} pages Â· {} sources Â· {} bookmarks Â· {}",
+                                    report.page_count,
+                                    report.source_count,
+                                    report.bookmark_entries,
+                                    report.output_display,
+                                )}
+                            </small>
+                        </span>
+                    </div>
+                }.into_any(),
+                TaskState::Failed(error) => view! {
+                    <div class="task-failed" role="alert">
+                        <span aria-hidden="true">"!"</span>
+                        <span>
+                            <strong>"Merge did not complete"</strong>
+                            <small>{error.message}</small>
+                        </span>
+                    </div>
+                }.into_any(),
+            }}
+        </div>
+    }
+}
+
+fn append_sources(
+    picked: Vec<PickedMergeSource>,
+    set_sources: WriteSignal<Vec<SourceRow>>,
+    next_source_id: ReadSignal<u64>,
+    set_next_source_id: WriteSignal<u64>,
+) {
+    let mut id = next_source_id.get_untracked();
+    set_sources.update(|sources| {
+        sources.extend(picked.into_iter().map(|picked| {
+            let row = SourceRow {
+                id,
+                picked,
+                selection: String::new(),
+                password: String::new(),
+            };
+            id += 1;
+            row
+        }));
+    });
+    set_next_source_id.set(id);
+}
+
+fn update_source(
+    set_sources: WriteSignal<Vec<SourceRow>>,
+    id: u64,
+    update: impl FnOnce(&mut SourceRow),
+) {
+    set_sources.update(|sources| {
+        if let Some(source) = sources.iter_mut().find(|source| source.id == id) {
+            update(source);
+        }
+    });
+}
+
+fn move_source(set_sources: WriteSignal<Vec<SourceRow>>, id: u64, offset: isize) {
+    set_sources.update(|sources| {
+        let Some(index) = sources.iter().position(|source| source.id == id) else {
+            return;
+        };
+        let target = index.saturating_add_signed(offset);
+        if target < sources.len() {
+            sources.swap(index, target);
+        }
+    });
+}
+
+fn duplicate_source(
+    set_sources: WriteSignal<Vec<SourceRow>>,
+    id: u64,
+    next_source_id: ReadSignal<u64>,
+    set_next_source_id: WriteSignal<u64>,
+) {
+    let new_id = next_source_id.get_untracked();
+    set_next_source_id.set(new_id + 1);
+    set_sources.update(|sources| {
+        let Some(index) = sources.iter().position(|source| source.id == id) else {
+            return;
+        };
+        let mut duplicate = sources[index].clone();
+        duplicate.id = new_id;
+        sources.insert(index + 1, duplicate);
+    });
+}
+
+fn validate_source(source: &SourceRow) -> Option<String> {
+    if let Some(issue) = &source.picked.issue {
+        return Some(issue.message.clone());
+    }
+    if source.picked.features.has_forms {
+        return Some("Interactive forms are not yet supported by Merge.".to_owned());
+    }
+    if source.picked.password_required && source.password.is_empty() {
+        return Some("Enter the PDF password before running Merge.".to_owned());
+    }
+    let selection = source.selection.trim();
+    if selection.is_empty() {
+        return None;
+    }
+    let parsed = PageSelection::from_str(selection).map_err(|error| error.to_string());
+    match (parsed, source.picked.page_count) {
+        (Err(error), _) => Some(error),
+        (Ok(selection), Some(total)) => selection
+            .resolve(total)
+            .err()
+            .map(|error| error.to_string()),
+        (Ok(_), None) => None,
+    }
+}
+
+fn planned_page_count(sources: &[SourceRow]) -> Option<u32> {
+    sources.iter().try_fold(0_u32, |total, source| {
+        if validate_source(source).is_some() {
+            return None;
+        }
+        let pages = match (source.selection.trim(), source.picked.page_count) {
+            (_, None) => return None,
+            ("", Some(page_count)) => page_count,
+            (selection, Some(page_count)) => u32::try_from(
+                PageSelection::from_str(selection)
+                    .ok()?
+                    .resolve(page_count)
+                    .ok()?
+                    .len(),
+            )
+            .ok()?,
+        };
+        total.checked_add(pages)
+    })
+}
+
+fn can_run(
+    sources: &[SourceRow],
+    destination: Option<&PickedMergeDestination>,
+    engine: &MergeEngineStatus,
+    task: &TaskState,
+) -> bool {
+    sources.len() >= 2
+        && sources
+            .iter()
+            .all(|source| validate_source(source).is_none())
+        && destination.is_some()
+        && engine.ready
+        && !matches!(task, TaskState::Running { .. })
+}
+
+#[derive(Clone, Copy)]
+struct MergeRequestOptions {
+    replace_existing: bool,
+    bookmark_policy: MergeBookmarkPolicy,
+    add_blank_page_if_odd: bool,
+    add_filename_footer: bool,
+    toc_policy: MergeTocPolicy,
+}
+
+fn make_request(
+    operation_id: String,
+    sources: &[SourceRow],
+    destination: &PickedMergeDestination,
+    options: MergeRequestOptions,
+) -> MergeRunRequest {
+    MergeRunRequest {
+        operation_id,
+        sources: sources
+            .iter()
+            .map(|source| MergeInputRequest {
+                path_token: source.picked.path_token.clone(),
+                page_selection: (!source.selection.trim().is_empty())
+                    .then(|| source.selection.trim().to_owned()),
+                password: (!source.password.is_empty()).then(|| source.password.clone()),
+            })
+            .collect(),
+        output_token: destination.path_token.clone(),
+        replace_existing: options.replace_existing,
+        bookmark_policy: options.bookmark_policy,
+        add_blank_page_if_odd: options.add_blank_page_if_odd,
+        add_filename_footer: options.add_filename_footer,
+        toc_policy: options.toc_policy,
+    }
+}
+
+fn browser_sources() -> Vec<PickedMergeSource> {
+    vec![
+        PickedMergeSource {
+            path_token: "browser-quarterly".to_owned(),
+            file_name: "quarterly-report.pdf".to_owned(),
+            display_path: "Demo files / quarterly-report.pdf".to_owned(),
+            page_count: Some(6),
+            features: MergeSourceFeatures {
+                encrypted: false,
+                has_bookmarks: true,
+                has_forms: false,
+            },
+            password_required: false,
+            issue: None,
+        },
+        PickedMergeSource {
+            path_token: "browser-appendix".to_owned(),
+            file_name: "appendix.pdf".to_owned(),
+            display_path: "Demo files / appendix.pdf".to_owned(),
+            page_count: Some(3),
+            features: MergeSourceFeatures::default(),
+            password_required: false,
+            issue: None,
+        },
+    ]
+}
+
+fn browser_result(
+    sources: &[SourceRow],
+    bookmark_policy: MergeBookmarkPolicy,
+    toc_policy: MergeTocPolicy,
+) -> MergeRunResult {
+    let bookmark_entries = match bookmark_policy {
+        MergeBookmarkPolicy::Discard => 0,
+        MergeBookmarkPolicy::OneEntryPerDocument
+        | MergeBookmarkPolicy::RetainAsOneEntryPerDocument => sources.len(),
+        MergeBookmarkPolicy::Retain => sources
+            .iter()
+            .filter(|source| source.picked.features.has_bookmarks)
+            .count(),
+    };
+    MergeRunResult {
+        output_display: "merged-document.pdf".to_owned(),
+        source_count: sources.len(),
+        page_count: planned_page_count(sources)
+            .unwrap_or_default()
+            .saturating_add(u32::from(!matches!(toc_policy, MergeTocPolicy::None))),
+        bookmark_sources_discarded: usize::from(bookmark_policy == MergeBookmarkPolicy::Discard)
+            * sources
+                .iter()
+                .filter(|source| source.picked.features.has_bookmarks)
+                .count(),
+        bookmark_entries,
+        engine_id: "deterministic-browser-adapter".to_owned(),
+        engine_version: "P4.2".to_owned(),
+    }
+}
+
+fn complete_browser_merge_after_delay(
+    operation_id: String,
+    report: MergeRunResult,
+    task: ReadSignal<TaskState>,
+    set_task: WriteSignal<TaskState>,
+) {
+    let callback = Closure::once_into_js(move || {
+        let still_running = matches!(
+            task.get_untracked(),
+            TaskState::Running {
+                operation_id: current,
+                ..
+            } if current == operation_id
+        );
+        if still_running {
+            set_task.set(TaskState::Completed(report));
+        }
+    });
+    if let Some(window) = web_sys::window() {
+        let _ = window
+            .set_timeout_with_callback_and_timeout_and_arguments_0(callback.unchecked_ref(), 650);
+    }
+}
