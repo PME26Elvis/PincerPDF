@@ -35,6 +35,9 @@ the adapter fails closed with `capability_unavailable` rather than silently
 dropping the entry. Split-only output vectors that repeat a source page also
 fail closed when a surviving outline would have more than one valid output
 occurrence; Merge retains its separately documented first-occurrence policy.
+Direct-page outline nodes also carry QPDF's expansion state through
+reconstruction, and `/Count` values are computed over all descendants with the
+PDF-specified negative form for collapsed nodes.
 
 ## Invariants
 
