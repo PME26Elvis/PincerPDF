@@ -279,4 +279,3 @@ mod tests {
         assert_eq!(error.source_index, Some(2));
     }
 }
-

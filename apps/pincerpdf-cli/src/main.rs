@@ -201,4 +201,3 @@ fn print_help() {
     println!("  pincerpdf-cli merge <OUTPUT.pdf> <SOURCE.pdf> <SOURCE.pdf> [SOURCE.pdf ...]");
     println!("  pincerpdf-cli --version");
 }
-

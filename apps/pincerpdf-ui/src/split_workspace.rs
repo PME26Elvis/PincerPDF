@@ -406,4 +406,3 @@ fn complete_browser_split_after_delay(
             .set_timeout_with_callback_and_timeout_and_arguments_0(callback.unchecked_ref(), 650);
     }
 }
-
