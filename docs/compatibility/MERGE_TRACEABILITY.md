@@ -1,8 +1,8 @@
 # Merge feature and legacy-test traceability
 
-- Updated: 2026-07-31
+- Updated: 2026-08-03
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
-- Current checkpoint: P4.4 document-level bookmark reconstruction
+- Current checkpoint: P4.8 table of contents (filename and document-title modes)
 
 This ledger distinguishes a verified behavior from a complete Merge feature.
 Rows remain partial until every policy named by the phase-one specification has
@@ -14,11 +14,11 @@ executable evidence.
 | --- | --- | --- | --- | --- |
 | MERGE-001 | Multiple inputs, ordering and duplicates | Verified | Rust planner/service tests; real QPDF/MuPDF ordered and duplicate-page contract | Add stress/performance thresholds during hardening |
 | MERGE-002 | Per-input page ranges | Verified | Parser properties plus real disjoint, reordered, bounded and open-ended-to-last-page selections | Add only stress/performance coverage during hardening |
-| MERGE-003 | Bookmark policies | Partial | Discard-and-report plus one top-level entry per ordered document are verified; generated titles and destination pages are checked through QPDF JSON | Retain source trees and retain them under one document entry |
+| MERGE-003 | Bookmark policies | Partial | All four typed policies are verified with QPDF JSON: discard, one entry, retained relevant hierarchy, and retained hierarchy under a document entry | Define/verify non-page destinations, actions, style, color and open-state fidelity |
 | MERGE-004 | AcroForm policies | Partial | Form-bearing input is rejected before output creation | Rename fields, merge, flatten and discard |
-| MERGE-005 | Table of contents | Planned | None | Filename and document-title modes |
-| MERGE-006 | Blank page after odd input | Planned | None | Typed parity plan and rendered contract |
-| MERGE-007 | Filename footer | Planned | None | Content overlay, Unicode filename and rendering evidence |
+| MERGE-005 | Table of contents | Partial | Real QPDF/MuPDF contract verifies generated filename and metadata-title contents pages, source first-page numbers, filename fallback and bookmark offsets; browser E2E verifies both explicit policies | Unicode typography and visual golden baseline |
+| MERGE-006 | Blank page after odd input | Verified | Real QPDF/MuPDF contract verifies per-source insertion, final-source insertion, source-matched MediaBox/CropBox/rotation, empty text extraction, inherited `/Pages` geometry and bookmark destination offset remapping; browser E2E verifies the control | Add only stress/performance coverage during hardening |
+| MERGE-007 | Filename footer | Partial | Real QPDF/MuPDF contract verifies a per-output-page source filename overlay, source geometry preservation, blank-page omission and text-aware top/bottom quiet-band placement; browser E2E verifies the explicit control | Embedded Unicode font, non-ASCII filename fidelity, annotation/form/image collision semantics and visual baseline |
 | MERGE-008 | Page normalization | Partial | `None` preserves MediaBox, CropBox and rotation across mixed geometry | Same width and orientation-aware same width |
 | MERGE-009 | Single valid output | Verified baseline | QPDF structure/page count, MuPDF text/render, atomic output and system-dialog flow | Revalidate for every advanced-policy combination |
 
@@ -37,15 +37,32 @@ through a Unicode long output path. It verifies:
 The last item records current safe baseline behavior, not the final
 table-of-contents or document-metadata product policy.
 
+## Filename footer policy
+
+The current P4.7 implementation generates a private one-page-per-output-page
+overlay after QPDF page assembly. Each overlay page copies the contributing
+source page's MediaBox, CropBox and rotation. `MuPDF` structured-text bounds
+are used when available to avoid an occupied bottom band by choosing a
+deterministic quiet top or bottom band; generated odd-page blanks deliberately
+receive no footer. The overlay is applied before any bookmark reconstruction,
+so output outline destinations continue to refer to the final page objects.
+
+The first contract slice uses a built-in Helvetica/WinAnsi resource and
+therefore preserves ASCII filenames only. Non-ASCII names are replaced with a
+visible fallback marker rather than being silently emitted as invalid PDF
+literal bytes. Embedded Unicode fonts and semantic collision handling for
+forms, annotations, images and rotated writing remain explicit follow-up work
+under MERGE-007.
+
 ## Document-level bookmark policy
 
-ADR-021 defines the first non-discard policy. PincerPDF reconstructs a new
+ADR-021 defines document entries and ADR-022 defines source-outline retention. PincerPDF reconstructs a new
 outline tree only after QPDF has assembled the selected pages, using the actual
 output page object references rather than source references.
 
 Windows real-engine evidence proves:
 
-- source file names become ordered top-level titles;
+- source file base names become ordered top-level titles;
 - the first entry targets output page 1;
 - the second entry targets output page 2 when the first source contributes one
   selected page;
@@ -54,10 +71,13 @@ Windows real-engine evidence proves:
 - the complete catalog survives the JSON update while the trailer is not
   replaced.
 
-The semantic Windows system-dialog path additionally selects two complete
-three-page inputs and verifies entries at output pages 1 and 4. Retaining and
-remapping the source outline hierarchy remains pending, so `MERGE-003` stays
-Partial.
+The real-engine source-outline contract additionally selects source pages 2-3
+from a nested-outline fixture. It prunes excluded `Chapter 1`, retains
+`Chapter 2` at output page 1 and its `Appendix` child at output page 2. The
+grouped policy places that retained hierarchy below the fixture base-name entry
+at output page 2 after a preceding plain source. `MERGE-003` stays Partial only
+because non-page destinations and outline presentation attributes remain out of
+scope.
 
 ## Legacy test migration
 

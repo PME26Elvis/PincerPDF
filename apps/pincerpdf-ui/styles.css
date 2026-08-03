@@ -752,6 +752,32 @@ main {
   animation: panel-enter var(--motion-base) cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+.split-workspace .split-source-summary {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.split-source-summary strong {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.split-source-summary small {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.split-rule-options {
+  display: grid;
+  gap: 0.75rem;
+}
+
 .merge-heading {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

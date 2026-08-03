@@ -327,6 +327,8 @@ pub struct MergeEngineInput {
     pub source: PathBuf,
     /// Stable user-facing title used by generated document-level bookmarks.
     pub document_title: String,
+    /// Optional source metadata title used by document-title contents mode.
+    pub metadata_title: Option<String>,
     /// Exact one-based page order, including deliberate duplicates.
     pub pages: Vec<PageNumber>,
     /// Optional source password.
@@ -342,6 +344,12 @@ pub struct MergeEngineRequest {
     pub output: PathBuf,
     /// Explicit bookmark behavior for the generated output.
     pub bookmark_policy: BookmarkPolicy,
+    /// Whether a blank page follows every source contributing an odd page count.
+    pub add_blank_page_if_odd: bool,
+    /// Whether each output page receives its source filename as a footer.
+    pub add_filename_footer: bool,
+    /// Whether the adapter should prepend a generated table-of-contents page.
+    pub toc_policy: MergeTocPolicy,
 }
 
 /// Successful adapter result before application-level semantic verification.
@@ -382,6 +390,22 @@ pub enum BookmarkPolicy {
     Discard,
     /// Create one top-level bookmark for each ordered source entry.
     OneEntryPerDocument,
+    /// Rebuild the relevant source outline trees at the output root.
+    Retain,
+    /// Group every rebuilt source outline tree below one document-level entry.
+    RetainAsOneEntryPerDocument,
+}
+
+/// Table-of-contents policy applied to a merged output.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum MergeTocPolicy {
+    /// Do not prepend a generated table of contents.
+    #[default]
+    None,
+    /// Prepend one or more pages listing source filenames and first pages.
+    FileNames,
+    /// Prepend one or more pages listing source metadata titles and first pages.
+    DocumentTitles,
 }
 
 /// Application-level execution options.
@@ -391,6 +415,12 @@ pub struct MergeExecutionOptions {
     pub output_policy: ExistingOutputPolicy,
     /// Explicit output bookmark behavior.
     pub bookmark_policy: BookmarkPolicy,
+    /// Insert a blank page after each odd-page source, including the final source.
+    pub add_blank_page_if_odd: bool,
+    /// Add the contributing source filename to the bottom of each output page.
+    pub add_filename_footer: bool,
+    /// Generated table-of-contents policy.
+    pub toc_policy: MergeTocPolicy,
     /// Native-process limits and cancellation.
     pub control: ExecutionControl,
 }
@@ -400,6 +430,9 @@ impl Default for MergeExecutionOptions {
         Self {
             output_policy: ExistingOutputPolicy::Fail,
             bookmark_policy: BookmarkPolicy::Discard,
+            add_blank_page_if_odd: false,
+            add_filename_footer: false,
+            toc_policy: MergeTocPolicy::None,
             control: ExecutionControl::default(),
         }
     }
@@ -584,22 +617,11 @@ impl<'engine, E: MergeEngine + ?Sized> MergeService<'engine, E> {
         Self { engine }
     }
 
-    /// Inspects, plans, executes, verifies, and atomically finalizes one merge request.
-    ///
-    /// Bookmark behavior is explicit. Inputs containing forms are rejected.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`MergeError`] for capability, input, engine, verification, or filesystem failures.
-    pub fn execute(
+    fn plan_inputs(
         &self,
         request: &MergeRequest,
         options: &MergeExecutionOptions,
-    ) -> Result<MergeReport, MergeError> {
-        validate_tool_capabilities(ToolKind::Merge, &self.engine.capabilities())
-            .map_err(MergeError::MissingCapabilities)?;
-        ensure_output_does_not_alias_source(request)?;
-
+    ) -> Result<(Vec<MergeEngineInput>, u32, usize), MergeError> {
         let mut inputs = Vec::with_capacity(request.sources.len());
         let mut expected_pages = 0_u32;
         let mut bookmark_sources_discarded = 0_usize;
@@ -623,7 +645,9 @@ impl<'engine, E: MergeEngine + ?Sized> MergeService<'engine, E> {
             if metadata.has_forms {
                 return Err(MergeError::FormsUnsupported { source_index });
             }
-            bookmark_sources_discarded += usize::from(metadata.has_bookmarks);
+            if options.bookmark_policy == BookmarkPolicy::Discard {
+                bookmark_sources_discarded += usize::from(metadata.has_bookmarks);
+            }
             let pages = resolve_source_pages(source, &metadata).map_err(|error| {
                 MergeError::InvalidSelection {
                     source_index,
@@ -635,13 +659,49 @@ impl<'engine, E: MergeEngine + ?Sized> MergeService<'engine, E> {
                     MergeError::OutputIo("merge page plan exceeds supported size".to_owned())
                 })?)
                 .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
+            if options.add_blank_page_if_odd && pages.len() % 2 == 1 {
+                expected_pages = expected_pages
+                    .checked_add(1)
+                    .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
+            }
             inputs.push(MergeEngineInput {
                 source: source.path.clone(),
                 document_title: source_document_title(source.path()),
+                metadata_title: metadata.document_title,
                 pages,
                 password: source.password.clone(),
             });
         }
+
+        Ok((inputs, expected_pages, bookmark_sources_discarded))
+    }
+
+    /// Inspects, plans, executes, verifies, and atomically finalizes one merge request.
+    ///
+    /// Bookmark behavior is explicit. Inputs containing forms are rejected.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`MergeError`] for capability, input, engine, verification, or filesystem failures.
+    pub fn execute(
+        &self,
+        request: &MergeRequest,
+        options: &MergeExecutionOptions,
+    ) -> Result<MergeReport, MergeError> {
+        validate_tool_capabilities(ToolKind::Merge, &self.engine.capabilities())
+            .map_err(MergeError::MissingCapabilities)?;
+        ensure_output_does_not_alias_source(request)?;
+
+        let (inputs, mut expected_pages, bookmark_sources_discarded) =
+            self.plan_inputs(request, options)?;
+        let toc_pages = generated_toc_page_count(options.toc_policy, inputs.len());
+        expected_pages = expected_pages
+            .checked_add(u32::try_from(toc_pages).map_err(|_| {
+                MergeError::OutputIo(
+                    "generated table of contents exceeds supported size".to_owned(),
+                )
+            })?)
+            .ok_or_else(|| MergeError::OutputIo("merge page plan overflowed".to_owned()))?;
 
         let mut transaction = OutputTransaction::begin(request.output(), options.output_policy)?;
         let engine_result = self
@@ -651,6 +711,9 @@ impl<'engine, E: MergeEngine + ?Sized> MergeService<'engine, E> {
                     inputs,
                     output: transaction.temporary_path().to_path_buf(),
                     bookmark_policy: options.bookmark_policy,
+                    add_blank_page_if_odd: options.add_blank_page_if_odd,
+                    add_filename_footer: options.add_filename_footer,
+                    toc_policy: options.toc_policy,
                 },
                 &options.control,
             )
@@ -697,7 +760,10 @@ fn verify_bookmark_policy(
 ) -> Result<(), MergeError> {
     let expected = match policy {
         BookmarkPolicy::Discard => 0,
-        BookmarkPolicy::OneEntryPerDocument => source_count,
+        BookmarkPolicy::OneEntryPerDocument | BookmarkPolicy::RetainAsOneEntryPerDocument => {
+            source_count
+        }
+        BookmarkPolicy::Retain => engine_result.bookmark_entries,
     };
     if engine_result.bookmark_entries != expected {
         return Err(MergeError::BookmarkCountMismatch {
@@ -707,13 +773,24 @@ fn verify_bookmark_policy(
     }
     match policy {
         BookmarkPolicy::Discard if metadata.has_bookmarks => Err(MergeError::UnexpectedBookmarks),
-        BookmarkPolicy::OneEntryPerDocument if !metadata.has_bookmarks => {
+        BookmarkPolicy::OneEntryPerDocument | BookmarkPolicy::RetainAsOneEntryPerDocument
+            if !metadata.has_bookmarks =>
+        {
             Err(MergeError::BookmarkCountMismatch {
                 expected,
                 actual: 0,
             })
         }
-        BookmarkPolicy::Discard | BookmarkPolicy::OneEntryPerDocument => Ok(()),
+        BookmarkPolicy::Retain if engine_result.bookmark_entries > 0 && !metadata.has_bookmarks => {
+            Err(MergeError::BookmarkCountMismatch {
+                expected,
+                actual: 0,
+            })
+        }
+        BookmarkPolicy::Discard
+        | BookmarkPolicy::OneEntryPerDocument
+        | BookmarkPolicy::Retain
+        | BookmarkPolicy::RetainAsOneEntryPerDocument => Ok(()),
     }
 }
 
@@ -722,6 +799,15 @@ fn source_document_title(source: &Path) -> String {
         || source.display().to_string(),
         |name| name.to_string_lossy().into_owned(),
     )
+}
+
+fn generated_toc_page_count(policy: MergeTocPolicy, source_count: usize) -> usize {
+    match policy {
+        MergeTocPolicy::None => 0,
+        MergeTocPolicy::FileNames | MergeTocPolicy::DocumentTitles => {
+            source_count.saturating_add(34) / 35
+        }
+    }
 }
 
 fn ensure_output_does_not_alias_source(request: &MergeRequest) -> Result<(), MergeError> {
@@ -909,6 +995,7 @@ mod tests {
                 } else {
                     3
                 },
+                document_title: None,
                 encrypted: false,
                 pdf_version: Some("1.7".to_owned()),
                 has_bookmarks: if is_output {
@@ -932,11 +1019,20 @@ mod tests {
                 .iter()
                 .map(|input| input.pages.len())
                 .sum::<usize>();
+            let pages = pages
+                + usize::from(request.add_blank_page_if_odd)
+                    * request
+                        .inputs
+                        .iter()
+                        .filter(|input| input.pages.len() % 2 == 1)
+                        .count();
             let pages = u32::try_from(pages).expect("test page count fits u32");
             self.output_pages.store(pages, AtomicOrdering::Release);
             let bookmark_entries = match request.bookmark_policy {
                 BookmarkPolicy::Discard => 0,
-                BookmarkPolicy::OneEntryPerDocument => request.inputs.len(),
+                BookmarkPolicy::OneEntryPerDocument
+                | BookmarkPolicy::RetainAsOneEntryPerDocument => request.inputs.len(),
+                BookmarkPolicy::Retain => 1,
             };
             self.output_has_bookmarks
                 .store(bookmark_entries > 0, AtomicOrdering::Release);
@@ -949,6 +1045,20 @@ mod tests {
                 evidence: Vec::new(),
             })
         }
+    }
+
+    #[test]
+    fn filename_toc_pagination_is_deterministic_and_bounded() {
+        assert_eq!(
+            generated_toc_page_count(MergeTocPolicy::None, usize::MAX),
+            0
+        );
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 0), 0);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 1), 1);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 35), 1);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 36), 2);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 70), 2);
+        assert_eq!(generated_toc_page_count(MergeTocPolicy::FileNames, 71), 3);
     }
 
     fn unique_path(name: &str) -> PathBuf {

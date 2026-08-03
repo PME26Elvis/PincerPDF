@@ -3,11 +3,13 @@
 
 use pincerpdf_application::validate_tool_capabilities;
 use pincerpdf_domain::{PageNumber, PageSelection, ToolKind};
-use pincerpdf_engine_api::{CapabilitySet, PdfCapability};
+use pincerpdf_engine_api::{CapabilitySet, InspectOptions, PdfCapability, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{MergeExecutionOptions, MergeRequest, MergeService, MergeSource};
+use pincerpdf_split::{SplitRule, plan_split};
 use std::env;
 use std::error::Error;
+use std::num::NonZeroU64;
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -55,9 +57,96 @@ fn run(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>
             println!("{output}");
             Ok(())
         }
+        Some("split-plan") => split_plan(arguments),
+        Some("split") => split(arguments),
         Some("merge") => merge(arguments),
         Some(command) => Err(format!("unknown command: {command}").into()),
     }
+}
+
+fn split(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>> {
+    let output_directory = PathBuf::from(
+        arguments
+            .next()
+            .ok_or("split output directory is required")?,
+    );
+    let source = PathBuf::from(arguments.next().ok_or("split source path is required")?);
+    let rule_text = arguments.next().ok_or("split rule is required")?;
+    if arguments.next().is_some() {
+        return Err("split accepts exactly three arguments".into());
+    }
+    let adapter = QpdfAdapter::discover()?;
+    let metadata = adapter.inspect(&source, InspectOptions::default())?;
+    let control = pincerpdf_merge::ExecutionControl::default();
+    let rule = if rule_text.eq_ignore_ascii_case("bookmarks")
+        || rule_text
+            .strip_prefix("bookmarks:")
+            .is_some_and(|depth| depth.parse::<u32>().is_ok())
+    {
+        let depth = rule_text
+            .strip_prefix("bookmarks:")
+            .map(str::parse::<u32>)
+            .transpose()?
+            .unwrap_or(0);
+        SplitRule::Bookmarks(
+            adapter.inspect_bookmark_boundaries_at_depth(&source, depth, &control)?,
+        )
+    } else if let Some(value) = rule_text.strip_prefix("size:") {
+        let max_bytes = value
+            .parse::<u64>()
+            .ok()
+            .and_then(NonZeroU64::new)
+            .ok_or("size rule must be size:<positive-bytes>")?;
+        let estimates = adapter
+            .estimate_page_sizes(&source, metadata.page_count, &control)?
+            .estimates;
+        SplitRule::BySize {
+            max_bytes,
+            page_estimates: estimates,
+        }
+    } else {
+        rule_text.parse::<SplitRule>()?
+    };
+    let plan = plan_split(&source, metadata.page_count, &rule)?;
+    let report = adapter.split(&plan, &output_directory, &control)?;
+    for output in report.outputs {
+        println!("split.output={}", output.display());
+    }
+    println!("split.parts={}", plan.parts.len());
+    Ok(())
+}
+
+fn split_plan(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>> {
+    let source = PathBuf::from(
+        arguments
+            .next()
+            .ok_or("split-plan source path is required")?,
+    );
+    let total_pages = arguments
+        .next()
+        .ok_or("split-plan total page count is required")?
+        .parse::<u32>()?;
+    let rule = arguments
+        .next()
+        .ok_or("split-plan rule is required")?
+        .parse::<SplitRule>()?;
+    if arguments.next().is_some() {
+        return Err("split-plan accepts exactly three arguments".into());
+    }
+    let plan = plan_split(source, total_pages, &rule)?;
+    for part in plan.parts {
+        let pages = part
+            .pages
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        println!(
+            "split.part={} pages={} stem={}",
+            part.ordinal, pages, part.filename_stem
+        );
+    }
+    Ok(())
 }
 
 fn merge(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>> {
@@ -103,6 +192,12 @@ fn print_help() {
     println!("USAGE:");
     println!("  pincerpdf-cli doctor");
     println!("  pincerpdf-cli selection <EXPRESSION> <TOTAL_PAGES>");
+    println!(
+        "  pincerpdf-cli split-plan <SOURCE.pdf> <TOTAL_PAGES> <every-page|every:N|RANGE;RANGE>"
+    );
+    println!(
+        "  pincerpdf-cli split <OUTPUT_DIR> <SOURCE.pdf> <bookmarks[:DEPTH]|size:BYTES|every-page|every:N|RANGE;RANGE>"
+    );
     println!("  pincerpdf-cli merge <OUTPUT.pdf> <SOURCE.pdf> <SOURCE.pdf> [SOURCE.pdf ...]");
     println!("  pincerpdf-cli --version");
 }

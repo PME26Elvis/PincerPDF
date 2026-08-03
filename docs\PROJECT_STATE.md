@@ -37,7 +37,6 @@
 - P5.1 materialization now reconstructs surviving source outline hierarchy for every output part, remaps page destinations through the exact ordered page vector, prunes dangling leaves, and verifies the rebuilt outline with QPDF before atomic finalization.
 - P5.1 split evidence is green on the current PR head: native command-boundary outputs, nested bookmark depth, reconstructed outline destinations, Linux portable checks, and desktop/compact screenshot baselines all passed.
 - Split outline reconstruction now fails closed with `capability_unavailable` for named destinations, unresolved/action-backed entries, and ambiguous duplicate-page destination identity; Merge's documented first-occurrence duplicate policy is unchanged.
-- Split bookmark materialization now carries QPDF expansion state, writes descendant-correct `/Count` values including the negative collapsed form, and has Rust unit coverage for exact Unicode titles and closed nested outlines. Real-engine Unicode/style fixtures remain a separate gate.
 - P4.2 production WebView2 and real Windows system-dialog acceptance completed.
 
 ## Rust foundation evidence
@@ -529,27 +528,26 @@ same parent but uses a compact hidden name so QPDF can open it without changing
 the final output path. The Unicode/long-path geometry contract is green on the
 local Windows toolchain after this adjustment.
 
-## P5.2 latest split evidence
+## P5.1 latest split evidence
 
-The current P5.2 PR head passed the Linux quality run `153`, PDF engine
-capability probe run `112`, and Application shell run `130`. The portable
-workspace suite now includes 24 passing QPDF adapter unit tests, including
-exact Unicode outline titles, nested hierarchy, collapsed expansion state and
-descendant-correct PDF `/Count` values. The native Split command-boundary
-contract and browser acceptance remain green. The application-shell artifact
-is `8852222069` with digest
-`sha256:a6f5d72a7c46bca344d39b544ee323b05146f86bc47a1cc09e557fe8264e931f`.
-The PDF capability artifact is `8851987689` with digest
-`sha256:8a688e422859301270a061c6a5004f8d4019a37759697afef91f2241b5816a7e`.
-No Python runtime was used in the local development or validation loop.
+The current P5.1 PR head passed the Linux quality run `126`, PDF engine
+capability probe run `85`, and Application shell run `103`. The native Split
+command-boundary contract passed with registered opaque path tokens, nested
+bookmark depth, page-count conservation, reconstructed surviving outlines and
+atomic output cleanup. The application-shell artifact is `8850378380` with
+digest `sha256:389e734c1c9c1a78e064a465bd428773f51086543e15d34ad7996972e8ebbdc2`.
+Its desktop and compact screenshot baselines were inspected after resetting
+the page scroll position before each full-page capture; no clipping, overlap or
+unexpected sidebar displacement was observed. No Python runtime was used in
+the local development or validation loop.
 
 ## Exact next actions
 
 1. Add dedicated real-engine fixtures for named destinations, action-backed
-   outlines, and outline style/color attributes so safe preservation policies
+   outlines, and outline presentation attributes so safe preservation policies
    can replace the current fail-closed gates.
-2. Extend Split contract evidence for Unicode outline titles, expansion state,
-   and duplicate-page identity once the fixture policy is defined.
+2. Extend Split contract evidence for Unicode outline titles and duplicate-page
+   identity once the fixture policy is defined.
 3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
    especially Unicode typography and semantic overlay collisions.
 

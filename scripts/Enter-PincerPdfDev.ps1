@@ -8,7 +8,10 @@ $resolvedDevRoot = [System.IO.Path]::GetFullPath($DevRoot)
 $env:PINCERPDF_DEV_ROOT = $resolvedDevRoot
 $env:CARGO_HOME = Join-Path $resolvedDevRoot "rust\cargo"
 $env:RUSTUP_HOME = Join-Path $resolvedDevRoot "rust\rustup"
-$env:CARGO_TARGET_DIR = Join-Path $resolvedDevRoot "target"
+$repositoryRoot = Split-Path -Parent $PSScriptRoot
+$preferredTargetDir = Join-Path $resolvedDevRoot "target"
+$preferredTempDir = Join-Path $resolvedDevRoot "tmp"
+$env:CARGO_TARGET_DIR = $preferredTargetDir
 $env:NPM_CONFIG_CACHE = Join-Path $resolvedDevRoot "cache\npm"
 $env:PNPM_HOME = Join-Path $resolvedDevRoot "pnpm"
 $env:PNPM_STORE_DIR = Join-Path $resolvedDevRoot "cache\pnpm-store"
@@ -25,8 +28,24 @@ $env:PLAYWRIGHT_BROWSERS_PATH = Join-Path $resolvedDevRoot "cache\playwright"
 $env:XDG_CACHE_HOME = Join-Path $resolvedDevRoot "cache"
 $env:XDG_CONFIG_HOME = Join-Path $resolvedDevRoot "config"
 $env:XDG_DATA_HOME = Join-Path $resolvedDevRoot "data"
-$env:TEMP = Join-Path $resolvedDevRoot "tmp"
+$env:TEMP = $preferredTempDir
 $env:TMP = $env:TEMP
+
+try {
+    New-Item -ItemType Directory -Force $preferredTargetDir, $preferredTempDir | Out-Null
+    $writeProbe = Join-Path $preferredTargetDir ".pincerpdf-write-probe-$PID"
+    [System.IO.File]::WriteAllText($writeProbe, "ok")
+    Remove-Item -LiteralPath $writeProbe -Force -ErrorAction SilentlyContinue
+}
+catch {
+    $fallbackRoot = Join-Path $repositoryRoot "target-local"
+    $fallbackTemp = Join-Path $fallbackRoot "tmp"
+    New-Item -ItemType Directory -Force $fallbackTemp | Out-Null
+    $env:CARGO_TARGET_DIR = $fallbackRoot
+    $env:TEMP = $fallbackTemp
+    $env:TMP = $fallbackTemp
+    Write-Output "D-drive build directory is not writable; using repository-local target fallback: $fallbackRoot"
+}
 if ($env:NO_COLOR -and $env:NO_COLOR -notin @("true", "false")) {
     $env:NO_COLOR = "true"
 }

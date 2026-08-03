@@ -16,6 +16,7 @@ pincerpdf-engine-api = { path = "../../../crates/pincerpdf-engine-api" }
 pincerpdf-engine-qpdf = { path = "../../../crates/pincerpdf-engine-qpdf" }
 pincerpdf-filesystem = { path = "../../../crates/pincerpdf-filesystem" }
 pincerpdf-merge = { path = "../../../crates/pincerpdf-merge" }
+pincerpdf-split = { path = "../../../crates/pincerpdf-split" }
 serde = { version = "=1.0.229", features = ["derive"] }
 tauri = { version = "=2.11.5" }
 tauri-plugin-dialog = { version = "=2.7.2" }

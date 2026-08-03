@@ -184,6 +184,33 @@ def make_geometry_metadata(path: Path) -> dict[str, object]:
     return write_pdf(path, objects, root=1, info=9)
 
 
+def make_inherited_geometry(path: Path) -> dict[str, object]:
+    """Exercise page geometry inherited from a /Pages node."""
+    objects = [
+        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R >>'),
+        PdfObject(
+            2,
+            b'<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 /MediaBox [0 0 420 620] '
+            b'/CropBox [20 30 400 580] /Rotate 180 >>',
+        ),
+        PdfObject(
+            3,
+            b'<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 20 0 R >> >> '
+            b'/Contents 4 0 R >>',
+        ),
+        PdfObject(4, stream(content('Inherited geometry first', x=36, y=540))),
+        PdfObject(
+            5,
+            b'<< /Type /Page /Parent 2 0 R /Rotate 90 /Resources << /Font << /F1 20 0 R >> >> '
+            b'/Contents 6 0 R >>',
+        ),
+        PdfObject(6, stream(content('Inherited geometry rotated child', x=36, y=520))),
+    ]
+    objects.extend(PdfObject(number, b'<< >>') for number in range(7, 20))
+    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
+    return write_pdf(path, objects, root=1)
+
+
 def main() -> int:
     output = Path(sys.argv[1] if len(sys.argv) > 1 else 'tests/fixtures/pdf/generated')
     output.mkdir(parents=True, exist_ok=True)
@@ -192,6 +219,7 @@ def main() -> int:
         make_bookmarks(output / 'bookmarks.pdf'),
         make_form(output / 'acroform.pdf'),
         make_geometry_metadata(output / 'geometry-metadata.pdf'),
+        make_inherited_geometry(output / 'geometry-inherited.pdf'),
     ]
     manifest = {'schema': 1, 'fixtures': fixtures}
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')

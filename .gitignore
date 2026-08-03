@@ -1,4 +1,5 @@
 /target/
+/target-local/
 /dist/
 **/dist/
 /src-tauri/target/
@@ -7,12 +8,14 @@
 /pnpm-lock.yaml
 /.pincer-local/
 /.artifacts/
+/apps/pincerpdf-ui/.artifacts/
 /test-results/
 /playwright-report/
 /screenshots-actual/
 /screenshots-diff/
 /motion-recordings/
 /.fixtures-private/
+/tests/fixtures/pdf/generated/
 /deliverables/
 .env
 .env.*

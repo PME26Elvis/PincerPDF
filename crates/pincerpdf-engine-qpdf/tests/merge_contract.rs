@@ -5,7 +5,7 @@ use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{
     BookmarkPolicy, MergeError, MergeExecutionOptions, MergeRequest, MergeService, MergeSource,
-    SecretString,
+    MergeTocPolicy, SecretString,
 };
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -92,11 +92,13 @@ fn qpdf_outlines(path: &Path) -> serde_json::Value {
 
 #[test]
 #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+#[allow(clippy::too_many_lines)]
 fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
     let fixtures = fixture_root();
     let plain = fixtures.join("plain-three-pages.pdf");
     let bookmarks = fixtures.join("bookmarks.pdf");
     let form = fixtures.join("acroform.pdf");
+    let inherited_geometry = fixtures.join("geometry-inherited.pdf");
     let work = unique_directory();
     let retain_evidence = std::env::var_os("PINCERPDF_MERGE_EVIDENCE_DIR").is_some();
     if work.exists() {
@@ -145,7 +147,219 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
         previous = position + marker.len();
     }
 
+    let footer_output = work.join("filename-footers.pdf");
+    let footer_request = MergeRequest::new(
+        [
+            MergeSource::new(&plain).with_selection("3,1".parse().expect("valid selection")),
+            MergeSource::new(&bookmarks).with_selection("2-3".parse().expect("valid selection")),
+        ],
+        &footer_output,
+    )
+    .expect("valid filename-footer request");
+    let footer_report = service
+        .execute(
+            &footer_request,
+            &MergeExecutionOptions {
+                add_filename_footer: true,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("filename footer merge succeeds");
+    assert_eq!(footer_report.page_count, 4);
+    qpdf_check(&footer_output);
+    let footer_text = mutool_text(&footer_output);
+    assert!(footer_text.matches("plain-three-pages").count() >= 2);
+    assert!(footer_text.matches("bookmarks").count() >= 2);
+
+    let toc_output = work.join("filename-table-of-contents.pdf");
+    let toc_request = MergeRequest::new(
+        [MergeSource::new(&plain), MergeSource::new(&bookmarks)],
+        &toc_output,
+    )
+    .expect("valid table-of-contents request");
+    let toc_report = service
+        .execute(
+            &toc_request,
+            &MergeExecutionOptions {
+                bookmark_policy: BookmarkPolicy::OneEntryPerDocument,
+                toc_policy: MergeTocPolicy::FileNames,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("filename table of contents merge succeeds");
+    assert_eq!(toc_report.page_count, 7);
+    qpdf_check(&toc_output);
+    let toc_text = mutool_text(&toc_output);
+    assert!(toc_text.contains("Table of contents"));
+    assert!(toc_text.contains("plain-three-pages"));
+    assert!(toc_text.contains("bookmarks"));
+    let toc_outlines = qpdf_outlines(&toc_output);
+    assert_eq!(toc_outlines["outlines"][0]["destpageposfrom1"], 2);
+    assert_eq!(toc_outlines["outlines"][1]["destpageposfrom1"], 5);
+
+    let title_toc_output = work.join("document-title-table-of-contents.pdf");
+    let title_toc_request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("geometry-metadata.pdf")),
+            MergeSource::new(&plain),
+        ],
+        &title_toc_output,
+    )
+    .expect("valid document-title table-of-contents request");
+    let title_toc_report = service
+        .execute(
+            &title_toc_request,
+            &MergeExecutionOptions {
+                toc_policy: MergeTocPolicy::DocumentTitles,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("document-title table of contents merge succeeds");
+    assert_eq!(title_toc_report.page_count, 7);
+    qpdf_check(&title_toc_output);
+    let title_toc_text = mutool_text(&title_toc_output);
+    assert!(title_toc_text.contains("Geometry metadata source"));
+    assert!(title_toc_text.contains("PincerPDF fixture"));
+
+    let blank_output = work.join("odd-page-blanks.pdf");
+    let blank_request = MergeRequest::new(
+        [
+            MergeSource::new(&plain),
+            MergeSource::new(&bookmarks).with_selection("2-3".parse().expect("valid selection")),
+        ],
+        &blank_output,
+    )
+    .expect("valid odd-page merge request");
+    let blank_report = service
+        .execute(
+            &blank_request,
+            &MergeExecutionOptions {
+                add_blank_page_if_odd: true,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("odd-page blank insertion succeeds");
+    assert_eq!(blank_report.page_count, 6);
+    qpdf_check(&blank_output);
+    assert_eq!(
+        mutool_value(&blank_output, "pages/4/MediaBox"),
+        "[ 0 0 612 792 ]"
+    );
+    assert_eq!(mutool_value(&blank_output, "pages/4/Rotate"), "90");
+    let blank_text = Command::new("mutool")
+        .args(["draw", "-q", "-F", "txt", "-o", "-"])
+        .arg(&blank_output)
+        .arg("4")
+        .output()
+        .expect("render blank page starts");
+    assert!(blank_text.status.success());
+    assert!(
+        String::from_utf8_lossy(&blank_text.stdout)
+            .trim()
+            .is_empty()
+    );
+
+    let geometry_blank_output = work.join("odd-page-geometry-blanks.pdf");
+    let geometry_blank_request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("geometry-metadata.pdf"))
+                .with_selection("1".parse().expect("valid geometry selection")),
+            MergeSource::new(&bookmarks).with_selection("2-3".parse().expect("valid selection")),
+        ],
+        &geometry_blank_output,
+    )
+    .expect("valid geometry odd-page request");
+    let geometry_blank_report = service
+        .execute(
+            &geometry_blank_request,
+            &MergeExecutionOptions {
+                add_blank_page_if_odd: true,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("geometry-matched blank insertion succeeds");
+    assert_eq!(geometry_blank_report.page_count, 4);
+    qpdf_check(&geometry_blank_output);
+    assert_eq!(
+        mutool_value(&geometry_blank_output, "pages/2/MediaBox"),
+        "[ 0 0 300 500 ]"
+    );
+    assert_eq!(
+        mutool_value(&geometry_blank_output, "pages/2/CropBox"),
+        "[ 10 20 290 480 ]"
+    );
+    assert_eq!(
+        mutool_value(&geometry_blank_output, "pages/2/Rotate"),
+        "null"
+    );
+    let geometry_blank_text = Command::new("mutool")
+        .args(["draw", "-q", "-F", "txt", "-o", "-"])
+        .arg(&geometry_blank_output)
+        .arg("2")
+        .output()
+        .expect("render geometry blank page starts");
+    assert!(geometry_blank_text.status.success());
+    assert!(
+        String::from_utf8_lossy(&geometry_blank_text.stdout)
+            .trim()
+            .is_empty()
+    );
+
+    let inherited_blank_output = work.join("inherited-geometry-blanks.pdf");
+    let inherited_blank_request = MergeRequest::new(
+        [
+            MergeSource::new(&inherited_geometry)
+                .with_selection("1".parse().expect("valid inherited selection")),
+            MergeSource::new(&plain).with_selection("2".parse().expect("valid selection")),
+        ],
+        &inherited_blank_output,
+    )
+    .expect("valid inherited geometry request");
+    service
+        .execute(
+            &inherited_blank_request,
+            &MergeExecutionOptions {
+                add_blank_page_if_odd: true,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("inherited geometry blank insertion succeeds");
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/MediaBox"),
+        "[ 0 0 420 620 ]"
+    );
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/CropBox"),
+        "[ 20 30 400 580 ]"
+    );
+    assert_eq!(
+        mutool_value(&inherited_blank_output, "pages/2/Rotate"),
+        "180"
+    );
+
+    let bookmarked_blank_output = work.join("odd-page-bookmarks.pdf");
+    let bookmarked_blank_request = MergeRequest::new(
+        [MergeSource::new(&plain), MergeSource::new(&bookmarks)],
+        &bookmarked_blank_output,
+    )
+    .expect("valid odd-page bookmark request");
+    service
+        .execute(
+            &bookmarked_blank_request,
+            &MergeExecutionOptions {
+                add_blank_page_if_odd: true,
+                bookmark_policy: BookmarkPolicy::OneEntryPerDocument,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("bookmarks remain mapped after blank insertion");
+    let outlines = qpdf_outlines(&bookmarked_blank_output);
+    assert_eq!(outlines["outlines"][0]["destpageposfrom1"], 1);
+    assert_eq!(outlines["outlines"][1]["destpageposfrom1"], 5);
+
     merge_one_entry_per_document(&adapter, &fixtures, &work);
+    merge_retained_source_bookmarks(&adapter, &fixtures, &work);
+    merge_retained_bookmarks_under_document_entries(&adapter, &fixtures, &work);
 
     let forms_output = work.join("forms.pdf");
     let forms_request = MergeRequest::new(
@@ -158,7 +372,6 @@ fn merge_core_preserves_order_rejects_forms_and_redacts_passwords() {
         Err(MergeError::FormsUnsupported { source_index: 0 })
     ));
     assert!(!forms_output.exists());
-
     let encrypted = work.join("encrypted.pdf");
     let encrypted_status = Command::new("qpdf")
         .args(["--encrypt", "p4-secret", "p4-owner", "256", "--"])
@@ -220,14 +433,101 @@ fn merge_one_entry_per_document(adapter: &QpdfAdapter, fixtures: &Path, work: &P
 
     assert_eq!(report.page_count, 3);
     assert_eq!(report.bookmark_entries, 2);
-    assert_eq!(report.bookmark_sources_discarded, 1);
+    assert_eq!(report.bookmark_sources_discarded, 0);
     qpdf_check(&output);
     let outlines = qpdf_outlines(&output);
     assert_eq!(outlines["outlines"].as_array().map(Vec::len), Some(2));
-    assert_eq!(outlines["outlines"][0]["title"], "plain-three-pages.pdf");
+    assert_eq!(outlines["outlines"][0]["title"], "plain-three-pages");
     assert_eq!(outlines["outlines"][0]["destpageposfrom1"], 1);
-    assert_eq!(outlines["outlines"][1]["title"], "bookmarks.pdf");
+    assert_eq!(outlines["outlines"][1]["title"], "bookmarks");
     assert_eq!(outlines["outlines"][1]["destpageposfrom1"], 2);
+}
+
+fn merge_retained_source_bookmarks(adapter: &QpdfAdapter, fixtures: &Path, work: &Path) {
+    let output = work.join("retained-source-bookmarks.pdf");
+    let request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("bookmarks.pdf"))
+                .with_selection("2-3".parse().expect("valid selection")),
+            MergeSource::new(fixtures.join("plain-three-pages.pdf"))
+                .with_selection("1".parse().expect("valid selection")),
+        ],
+        &output,
+    )
+    .expect("valid retained-bookmark request");
+    let report = MergeService::new(adapter)
+        .execute(
+            &request,
+            &MergeExecutionOptions {
+                bookmark_policy: BookmarkPolicy::Retain,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("retained source bookmarks succeed");
+
+    assert_eq!(report.page_count, 3);
+    assert_eq!(report.bookmark_entries, 1);
+    assert_eq!(report.bookmark_sources_discarded, 0);
+    qpdf_check(&output);
+    let outlines = qpdf_outlines(&output);
+    assert_eq!(outlines["outlines"].as_array().map(Vec::len), Some(1));
+    assert_eq!(outlines["outlines"][0]["title"], "Chapter 2");
+    assert_eq!(outlines["outlines"][0]["destpageposfrom1"], 1);
+    assert_eq!(outlines["outlines"][0]["kids"][0]["title"], "Appendix");
+    assert_eq!(outlines["outlines"][0]["kids"][0]["destpageposfrom1"], 2);
+}
+
+fn merge_retained_bookmarks_under_document_entries(
+    adapter: &QpdfAdapter,
+    fixtures: &Path,
+    work: &Path,
+) {
+    let output = work.join("retained-under-document-bookmarks.pdf");
+    let request = MergeRequest::new(
+        [
+            MergeSource::new(fixtures.join("plain-three-pages.pdf"))
+                .with_selection("3".parse().expect("valid selection")),
+            MergeSource::new(fixtures.join("bookmarks.pdf"))
+                .with_selection("2-3".parse().expect("valid selection")),
+        ],
+        &output,
+    )
+    .expect("valid grouped-bookmark request");
+    let report = MergeService::new(adapter)
+        .execute(
+            &request,
+            &MergeExecutionOptions {
+                bookmark_policy: BookmarkPolicy::RetainAsOneEntryPerDocument,
+                ..MergeExecutionOptions::default()
+            },
+        )
+        .expect("grouped source bookmarks succeed");
+
+    assert_eq!(report.page_count, 3);
+    assert_eq!(report.bookmark_entries, 2);
+    assert_eq!(report.bookmark_sources_discarded, 0);
+    qpdf_check(&output);
+    let outlines = qpdf_outlines(&output);
+    assert_eq!(outlines["outlines"].as_array().map(Vec::len), Some(2));
+    assert_eq!(outlines["outlines"][0]["title"], "plain-three-pages");
+    assert_eq!(outlines["outlines"][0]["destpageposfrom1"], 1);
+    assert!(
+        outlines["outlines"][0]["kids"]
+            .as_array()
+            .is_some_and(Vec::is_empty)
+    );
+    assert_eq!(outlines["outlines"][1]["title"], "bookmarks");
+    assert_eq!(outlines["outlines"][1]["destpageposfrom1"], 2);
+    assert_eq!(outlines["outlines"][1]["kids"][0]["title"], "Chapter 2");
+    assert_eq!(outlines["outlines"][1]["kids"][0]["destpageposfrom1"], 2);
+    assert_eq!(
+        outlines["outlines"][1]["kids"][0]["kids"][0]["title"],
+        "Appendix"
+    );
+    assert_eq!(
+        outlines["outlines"][1]["kids"][0]["kids"][0]["destpageposfrom1"],
+        3
+    );
 }
 
 fn merge_parity_preserves_geometry_discards_metadata_and_supports_unicode_long_paths(

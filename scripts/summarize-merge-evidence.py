@@ -55,19 +55,29 @@ def command_version(*args: str | Path) -> str:
 
 
 def outline_summary(document: dict[str, object]) -> list[dict[str, object]]:
-    """Retain only stable outline semantics from QPDF JSON."""
+    """Retain the stable recursive outline semantics from QPDF JSON."""
     outlines = document.get("outlines")
     if not isinstance(outlines, list):
         raise RuntimeError("QPDF outline JSON omitted the outlines array")
-    return [
-        {
-            "title": entry["title"],
-            "page": entry["destpageposfrom1"],
-            "children": len(entry["kids"]),
-        }
-        for entry in outlines
-        if isinstance(entry, dict)
-    ]
+
+    def summarize(entries: list[object]) -> list[dict[str, object]]:
+        result: list[dict[str, object]] = []
+        for entry in entries:
+            if not isinstance(entry, dict):
+                raise RuntimeError("QPDF outline JSON contained a non-object item")
+            children = entry.get("kids")
+            if not isinstance(children, list):
+                raise RuntimeError("QPDF outline JSON omitted bookmark children")
+            result.append(
+                {
+                    "title": entry["title"],
+                    "page": entry.get("destpageposfrom1"),
+                    "children": summarize(children),
+                }
+            )
+        return result
+
+    return summarize(outlines)
 
 
 def main() -> int:
@@ -78,10 +88,14 @@ def main() -> int:
         / "幾何-metadata.pdf"
     )
     bookmark_output = root / "one-entry-bookmarks.pdf"
+    retained_output = root / "retained-source-bookmarks.pdf"
+    grouped_output = root / "retained-under-document-bookmarks.pdf"
     outputs = [
         root / "ordered.pdf",
         root / "encrypted-merge.pdf",
         bookmark_output,
+        retained_output,
+        grouped_output,
         parity_output,
     ]
     missing = [str(path) for path in outputs if not path.is_file()]
@@ -89,7 +103,7 @@ def main() -> int:
         raise SystemExit(f"missing merge evidence outputs: {', '.join(missing)}")
 
     report = {
-        "schema": 2,
+        "schema": 3,
         "qpdf_version": command_version("qpdf", "--version"),
         "mutool_version": command_version("mutool", "-v"),
         "outputs": {},
@@ -127,18 +141,15 @@ def main() -> int:
             for page in range(1, 6)
         ],
     }
-    report["bookmark_policy"] = {
-        "mode": "one_entry_per_document",
-        "outlines": outline_summary(
-            json.loads(
-                command(
-                    "qpdf",
-                    "--json=2",
-                    "--json-key=outlines",
-                    bookmark_output,
-                )
-            )
-        ),
+    report["bookmark_policies"] = {
+        mode: outline_summary(
+            json.loads(command("qpdf", "--json=2", "--json-key=outlines", output))
+        )
+        for mode, output in (
+            ("one_entry_per_document", bookmark_output),
+            ("retain", retained_output),
+            ("retain_as_one_entry_per_document", grouped_output),
+        )
     }
 
     serialized = json.dumps(report, indent=2, sort_keys=True) + "\n"

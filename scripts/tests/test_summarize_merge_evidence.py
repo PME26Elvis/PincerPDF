@@ -49,7 +49,7 @@ class CanonicalTextTests(unittest.TestCase):
 
 
 class OutlineSummaryTests(unittest.TestCase):
-    """Keep only title, destination page and hierarchy evidence."""
+    """Keep title, destination page and recursive hierarchy evidence."""
 
     def test_extracts_stable_outline_semantics(self) -> None:
         self.assertEqual(
@@ -57,23 +57,33 @@ class OutlineSummaryTests(unittest.TestCase):
                 {
                     "outlines": [
                         {
-                            "title": "first.pdf",
+                            "title": "first",
                             "destpageposfrom1": 1,
                             "kids": [],
                             "object": "19 0 R",
                         },
                         {
-                            "title": "second.pdf",
+                            "title": "second",
                             "destpageposfrom1": 4,
-                            "kids": [{"title": "ignored child detail"}],
+                            "kids": [
+                                {
+                                    "title": "Appendix",
+                                    "destpageposfrom1": 5,
+                                    "kids": [],
+                                }
+                            ],
                             "object": "20 0 R",
                         },
                     ]
                 }
             ),
             [
-                {"title": "first.pdf", "page": 1, "children": 0},
-                {"title": "second.pdf", "page": 4, "children": 1},
+                {"title": "first", "page": 1, "children": []},
+                {
+                    "title": "second",
+                    "page": 4,
+                    "children": [{"title": "Appendix", "page": 5, "children": []}],
+                },
             ],
         )
 

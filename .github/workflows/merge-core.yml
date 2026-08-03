@@ -11,6 +11,7 @@ on:
       - "apps/pincerpdf-cli/**"
       - "crates/pincerpdf-merge/**"
       - "crates/pincerpdf-engine-qpdf/**"
+      - "crates/pincerpdf-split/**"
       - "scripts/summarize-merge-evidence.py"
       - "scripts/tests/**"
       - "tests/fixtures/pdf/**"
@@ -65,6 +66,7 @@ jobs:
               cargo test --workspace --all-targets
               python3 -m unittest discover -s scripts/tests -p "test_*.py"
               make merge-contract
+              make split-contract
               cargo run --locked -q -p pincerpdf-cli -- doctor | tee .artifacts/merge-core/doctor.txt
             '
 
@@ -85,6 +87,7 @@ jobs:
             echo "- form inputs rejected before merge"
             echo "- encrypted input password evidence remained redacted"
             echo "- temporary sibling output was semantically verified before atomic finalization"
+            echo "- engine-independent split planning and QPDF page-conserving materialization passed"
             echo "- mixed MediaBox/CropBox/rotation geometry was preserved"
             echo "- Unicode long input/output paths and explicit metadata discard were verified"
             echo "- document-level bookmark titles and output-page destinations were rebuilt and verified"
@@ -95,6 +98,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: merge-core-evidence
-          path: .artifacts/merge-core
+          path: |
+            .artifacts/merge-core
+            .artifacts/split-core
           if-no-files-found: error
           retention-days: 14

@@ -7,14 +7,18 @@ use pincerpdf_engine_api::{
     CapabilitySet, EngineError, EngineIdentity, InspectOptions, PdfCapability, PdfEnginePort,
     PdfMetadata,
 };
+use pincerpdf_filesystem::{ExistingOutputPolicy, OutputPathPlan, plan_output_path};
 use pincerpdf_merge::{
     BookmarkPolicy, CancellationToken, CommandEvidence, ExecutionControl, MergeEngineInput,
-    MergeEnginePort, MergeEngineRequest, MergeEngineResult, SecretString,
+    MergeEnginePort, MergeEngineRequest, MergeEngineResult, MergeTocPolicy, SecretString,
 };
+use pincerpdf_split::{BookmarkBoundary, PageSizeEstimate, SplitPlan};
 use serde_json::{Map, Value, json};
 use std::ffi::OsString;
+use std::fmt::Write as _;
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
+use std::num::NonZeroU64;
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -25,12 +29,17 @@ use std::time::{Duration, Instant};
 use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 
 static NEXT_TEMP_ID: AtomicU64 = AtomicU64::new(1);
+// Keeps combined-output serialization overhead from invalidating a
+// single-page measurement used by the engine-independent size planner.
+const SPLIT_SIZE_SAFETY_MARGIN_BYTES: u64 = 4096;
 
 /// Configuration for external QPDF execution.
 #[derive(Clone, Debug)]
 pub struct QpdfConfig {
     /// QPDF executable name or path.
     pub executable: PathBuf,
+    /// `MuPDF` text extractor used for collision-aware overlay placement.
+    pub text_executable: PathBuf,
     /// Limits used for discovery and inspection commands.
     pub inspection_control: ExecutionControl,
 }
@@ -39,6 +48,7 @@ impl Default for QpdfConfig {
     fn default() -> Self {
         Self {
             executable: PathBuf::from("qpdf"),
+            text_executable: PathBuf::from("mutool"),
             inspection_control: ExecutionControl::new(
                 Duration::from_secs(30),
                 64 * 1024,
@@ -53,6 +63,54 @@ impl Default for QpdfConfig {
 pub struct QpdfAdapter {
     config: QpdfConfig,
     identity: EngineIdentity,
+}
+
+/// Verified outputs and redacted QPDF evidence for one split materialization.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SplitMaterializationReport {
+    /// Atomically finalized output paths in plan order.
+    pub outputs: Vec<PathBuf>,
+    /// External-command evidence for each extraction and count verification.
+    pub evidence: Vec<CommandEvidence>,
+}
+
+/// Conservative single-page size estimates used by size-based split planning.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct SplitSizeEstimateReport {
+    /// One estimate per source page, in one-based order.
+    pub estimates: Vec<PageSizeEstimate>,
+    /// Redacted QPDF evidence for each single-page materialization.
+    pub evidence: Vec<CommandEvidence>,
+}
+
+struct SplitOutputGuard {
+    plans: Vec<OutputPathPlan>,
+    finalized: Vec<PathBuf>,
+    committed: bool,
+}
+
+impl SplitOutputGuard {
+    fn new(plans: Vec<OutputPathPlan>) -> Self {
+        Self {
+            plans,
+            finalized: Vec::new(),
+            committed: false,
+        }
+    }
+}
+
+impl Drop for SplitOutputGuard {
+    fn drop(&mut self) {
+        if self.committed {
+            return;
+        }
+        for plan in &self.plans {
+            let _ = fs::remove_file(&plan.temporary_path);
+        }
+        for output in &self.finalized {
+            let _ = fs::remove_file(output);
+        }
+    }
 }
 
 impl QpdfAdapter {
@@ -106,6 +164,376 @@ impl QpdfAdapter {
             .map_err(|failure| map_process_failure(&failure, password_supplied))
     }
 
+    /// Materializes an engine-independent split plan into atomically finalized
+    /// one-output-per-part PDFs.
+    ///
+    /// Existing destination files are rejected. Every QPDF invocation writes
+    /// to a hidden sibling first, verifies its page count, then renames it into
+    /// place. If any part fails, already-created outputs are removed so a
+    /// partial split is never reported as successful.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when the output directory, source alias, QPDF
+    /// process, page count or finalization policy is invalid.
+    #[allow(clippy::too_many_lines)]
+    pub fn split(
+        &self,
+        plan: &SplitPlan,
+        output_directory: &Path,
+        control: &ExecutionControl,
+    ) -> Result<SplitMaterializationReport, EngineError> {
+        if !output_directory.is_dir() {
+            return Err(EngineError::new(
+                ErrorCode::OutputWriteFailed,
+                format!(
+                    "split output directory is not a directory: {}",
+                    output_directory.display()
+                ),
+            ));
+        }
+        if plan.parts.is_empty() {
+            return Err(EngineError::new(
+                ErrorCode::InvalidInput,
+                "split plan contains no output parts",
+            ));
+        }
+        let canonical_source = plan.source.canonicalize().map_err(|error| {
+            EngineError::new(
+                ErrorCode::InputUnreadable,
+                format!(
+                    "cannot resolve split source {}: {error}",
+                    plan.source.display()
+                ),
+            )
+        })?;
+        let mut planned = Vec::with_capacity(plan.parts.len());
+        for part in &plan.parts {
+            let final_path = output_directory.join(format!("{}.pdf", part.filename_stem));
+            let final_exists = final_path.try_exists().map_err(|error| {
+                EngineError::new(ErrorCode::OutputWriteFailed, error.to_string())
+            })?;
+            let final_canonical = final_path.canonicalize().ok();
+            if final_canonical.as_deref() == Some(canonical_source.as_path()) {
+                return Err(EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    "split output would overwrite its source PDF",
+                ));
+            }
+            let token = format!("split_{}", part.ordinal);
+            let output_plan = plan_output_path(
+                &final_path,
+                final_exists,
+                ExistingOutputPolicy::Fail,
+                &token,
+            )
+            .map_err(|error| EngineError::new(ErrorCode::OutputConflict, error.to_string()))?;
+            planned.push(output_plan);
+        }
+
+        let mut guard = SplitOutputGuard::new(planned.clone());
+        let mut evidence = Vec::new();
+        let outline_capture = self.run_qpdf(
+            &[
+                OsString::from("--json=2"),
+                OsString::from("--json-key=outlines"),
+                qpdf_path(&plan.source),
+            ],
+            vec![
+                "--json=2".to_owned(),
+                "--json-key=outlines".to_owned(),
+                plan.source.display().to_string(),
+            ],
+            &ExecutionControl::new(
+                control.timeout(),
+                control.output_limit_bytes().max(32 * 1024 * 1024),
+                control.cancellation().clone(),
+            ),
+            false,
+        )?;
+        ensure_complete_json(&outline_capture.evidence, "split source bookmark tree")?;
+        let outline_json = outline_capture.evidence.stdout.clone();
+        evidence.push(outline_capture.evidence);
+
+        let document_title = plan.source.file_name().map_or_else(
+            || "document.pdf".to_owned(),
+            |name| name.to_string_lossy().into_owned(),
+        );
+        for (part, output_plan) in plan.parts.iter().zip(&planned) {
+            let page_spec = page_specification(&part.pages);
+            let raw_output = TemporaryPath::new("split-raw", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create private split staging directory: {error}"),
+                )
+            })?;
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(&plan.source),
+                    OsString::from(&page_spec),
+                    OsString::from("--"),
+                    qpdf_path(raw_output.path()),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    plan.source.display().to_string(),
+                    page_spec,
+                    "--".to_owned(),
+                    raw_output.path().display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(capture.evidence);
+
+            let split_input = MergeEngineInput {
+                source: plan.source.clone(),
+                document_title: document_title.clone(),
+                metadata_title: None,
+                pages: part.pages.clone(),
+                password: None,
+            };
+            let bookmark_plan = BookmarkPlan {
+                // Bookmark page positions are one-based throughout the QPDF
+                // update and verification boundary, including one-page parts.
+                roots: parse_source_bookmarks_rejecting_ambiguous_duplicates(
+                    &outline_json,
+                    &split_input,
+                    1,
+                )?,
+            };
+            if bookmark_plan.roots.is_empty() {
+                stage_split_output(raw_output.path(), &output_plan.temporary_path)?;
+            } else {
+                let bookmarked_output =
+                    TemporaryPath::new("split-bookmarked", "pdf").map_err(|error| {
+                        EngineError::new(
+                            ErrorCode::Internal,
+                            format!("cannot create private bookmark staging directory: {error}"),
+                        )
+                    })?;
+                self.add_bookmark_plan(
+                    raw_output.path(),
+                    bookmarked_output.path(),
+                    &bookmark_plan,
+                    std::slice::from_ref(&split_input),
+                    control,
+                    &mut evidence,
+                )?;
+                stage_split_output(bookmarked_output.path(), &output_plan.temporary_path)?;
+            }
+            let page_capture = self.run_qpdf(
+                &[
+                    OsString::from("--show-npages"),
+                    qpdf_path(&output_plan.temporary_path),
+                ],
+                vec![
+                    "--show-npages".to_owned(),
+                    output_plan.temporary_path.display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            let actual = parse_qpdf_page_count(&page_capture.evidence.stdout, "split")?;
+            evidence.push(page_capture.evidence);
+            let expected = u32::try_from(part.pages.len()).map_err(|_| {
+                EngineError::new(ErrorCode::InvalidInput, "split part page count overflowed")
+            })?;
+            if actual != expected {
+                return Err(EngineError::new(
+                    ErrorCode::EngineFailure,
+                    format!(
+                        "split output page conservation failed: expected {expected}, got {actual}"
+                    ),
+                ));
+            }
+            if let Some(limit) = plan.size_limit_bytes {
+                let actual_bytes = fs::metadata(&output_plan.temporary_path)
+                    .map_err(|error| {
+                        EngineError::new(
+                            ErrorCode::OutputWriteFailed,
+                            format!("cannot inspect split output size: {error}"),
+                        )
+                    })?
+                    .len();
+                if actual_bytes > limit.get() {
+                    return Err(EngineError::new(
+                        ErrorCode::OutputWriteFailed,
+                        format!(
+                            "split output exceeded byte limit: expected at most {}, got {actual_bytes}",
+                            limit.get()
+                        ),
+                    ));
+                }
+            }
+            fs::rename(&output_plan.temporary_path, &output_plan.final_path).map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot finalize split output: {error}"),
+                )
+            })?;
+            guard.finalized.push(output_plan.final_path.clone());
+        }
+        let outputs = guard.finalized.clone();
+        guard.committed = true;
+        Ok(SplitMaterializationReport { outputs, evidence })
+    }
+
+    /// Extracts ordered top-level bookmark page boundaries for bookmark-based
+    /// split planning. This remains the compatibility default; callers that
+    /// deliberately opt into a nested outline level should use
+    /// [`Self::inspect_bookmark_boundaries_at_depth`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when QPDF cannot produce complete outline JSON
+    /// or a selected outline lacks a usable page destination/title.
+    pub fn inspect_bookmark_boundaries(
+        &self,
+        source: &Path,
+        control: &ExecutionControl,
+    ) -> Result<Vec<BookmarkBoundary>, EngineError> {
+        let capture = self.run_qpdf(
+            &[
+                OsString::from("--json=2"),
+                OsString::from("--json-key=outlines"),
+                qpdf_path(source),
+            ],
+            vec![
+                "--json=2".to_owned(),
+                "--json-key=outlines".to_owned(),
+                source.display().to_string(),
+            ],
+            control,
+            false,
+        )?;
+        ensure_complete_json(&capture.evidence, "split bookmark boundaries")?;
+        parse_bookmark_boundaries(&capture.evidence.stdout)
+    }
+
+    /// Extracts ordered bookmark boundaries at one explicit zero-based outline
+    /// depth. A depth of `0` is equivalent to
+    /// [`Self::inspect_bookmark_boundaries`]. Nodes at other depths are still
+    /// traversed so a nested policy cannot accidentally ignore a valid child.
+    /// Destinations are validated only for the selected depth; a parent or
+    /// intermediate node without a destination may still contain usable
+    /// descendants.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when QPDF cannot produce complete outline JSON
+    /// or a selected outline lacks a usable page destination/title.
+    pub fn inspect_bookmark_boundaries_at_depth(
+        &self,
+        source: &Path,
+        depth: u32,
+        control: &ExecutionControl,
+    ) -> Result<Vec<BookmarkBoundary>, EngineError> {
+        let capture = self.run_qpdf(
+            &[
+                OsString::from("--json=2"),
+                OsString::from("--json-key=outlines"),
+                qpdf_path(source),
+            ],
+            vec![
+                "--json=2".to_owned(),
+                "--json-key=outlines".to_owned(),
+                source.display().to_string(),
+            ],
+            control,
+            false,
+        )?;
+        ensure_complete_json(&capture.evidence, "split bookmark boundaries")?;
+        parse_bookmark_boundaries_at_depth(&capture.evidence.stdout, depth)
+    }
+
+    /// Materializes each source page once to measure a conservative size
+    /// estimate for size-based split planning. The estimates deliberately use
+    /// the same QPDF page assembly path as final split outputs rather than
+    /// treating source object byte spans as interchangeable with serialized
+    /// output bytes.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`EngineError`] when a page cannot be materialized or its
+    /// temporary output has no measurable bytes.
+    pub fn estimate_page_sizes(
+        &self,
+        source: &Path,
+        total_pages: u32,
+        control: &ExecutionControl,
+    ) -> Result<SplitSizeEstimateReport, EngineError> {
+        if total_pages == 0 {
+            return Err(EngineError::new(
+                ErrorCode::InvalidInput,
+                "cannot estimate sizes for a zero-page source",
+            ));
+        }
+        let mut estimates = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
+        let mut evidence = Vec::with_capacity(usize::try_from(total_pages).unwrap_or(0));
+        for page in 1..=total_pages {
+            let temporary = TemporaryPath::new("split-size-estimate", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot create private split-size estimate: {error}"),
+                )
+            })?;
+            let page_number = PageNumber::new(page).map_err(|_| {
+                EngineError::new(ErrorCode::InvalidInput, "split page number overflowed")
+            })?;
+            let page_spec = page_specification(&[page_number]);
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(source),
+                    OsString::from(&page_spec),
+                    OsString::from("--"),
+                    qpdf_path(temporary.path()),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    source.display().to_string(),
+                    page_spec,
+                    "--".to_owned(),
+                    "<private-split-size-estimate>".to_owned(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(capture.evidence);
+            let bytes = fs::metadata(temporary.path())
+                .map_err(|error| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("cannot inspect split-size estimate for page {page}: {error}"),
+                    )
+                })?
+                .len();
+            let estimated_bytes = bytes
+                .checked_add(SPLIT_SIZE_SAFETY_MARGIN_BYTES)
+                .and_then(NonZeroU64::new)
+                .ok_or_else(|| {
+                    EngineError::new(
+                        ErrorCode::EngineFailure,
+                        format!("QPDF produced an invalid split-size estimate for page {page}"),
+                    )
+                })?;
+            estimates.push(PageSizeEstimate {
+                page: page_number,
+                estimated_bytes,
+            });
+        }
+        Ok(SplitSizeEstimateReport {
+            estimates,
+            evidence,
+        })
+    }
+
     fn prepare_merge_sources(
         &self,
         inputs: &[MergeEngineInput],
@@ -141,8 +569,8 @@ impl QpdfAdapter {
                     &[
                         password_file.argument(),
                         OsString::from("--decrypt"),
-                        input.source.as_os_str().to_os_string(),
-                        decrypted.path().as_os_str().to_os_string(),
+                        qpdf_path(&input.source),
+                        qpdf_path(decrypted.path()),
                     ],
                     vec![
                         "--password-file=<redacted>".to_owned(),
@@ -164,23 +592,226 @@ impl QpdfAdapter {
             .collect()
     }
 
-    fn add_document_bookmarks(
+    fn bookmark_plan(
+        &self,
+        request: &MergeEngineRequest,
+        prepared: &[PreparedSource],
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Result<BookmarkPlan, EngineError> {
+        let policy = request.bookmark_policy;
+        let inputs = &request.inputs;
+        let toc_pages = toc_page_count(request.toc_policy, inputs.len());
+        if prepared.len() != inputs.len() {
+            return Err(EngineError::new(
+                ErrorCode::Internal,
+                "prepared Merge sources no longer match the request",
+            ));
+        }
+        let json_control = json_capture_control(control, inputs.len(), inputs);
+        let mut output_offset = toc_pages.saturating_add(1);
+        let mut roots = Vec::new();
+        for (prepared_source, input) in prepared.iter().zip(inputs) {
+            let source_roots = if matches!(
+                policy,
+                BookmarkPolicy::Retain | BookmarkPolicy::RetainAsOneEntryPerDocument
+            ) {
+                let capture = self.run_qpdf(
+                    &[
+                        OsString::from("--json=2"),
+                        OsString::from("--json-key=outlines"),
+                        qpdf_path(&prepared_source.path),
+                    ],
+                    vec![
+                        "--json=2".to_owned(),
+                        "--json-key=outlines".to_owned(),
+                        prepared_source.path.display().to_string(),
+                    ],
+                    &json_control,
+                    false,
+                )?;
+                ensure_complete_json(&capture.evidence, "source bookmark tree")?;
+                let parsed =
+                    parse_source_bookmarks(&capture.evidence.stdout, input, output_offset)?;
+                evidence.push(capture.evidence);
+                parsed
+            } else {
+                Vec::new()
+            };
+
+            match policy {
+                BookmarkPolicy::Discard => {}
+                BookmarkPolicy::OneEntryPerDocument => roots.push(BookmarkPlanNode {
+                    title: document_bookmark_title(&input.document_title),
+                    page_position: Some(output_offset),
+                    is_open: true,
+                    children: Vec::new(),
+                }),
+                BookmarkPolicy::Retain => roots.extend(source_roots),
+                BookmarkPolicy::RetainAsOneEntryPerDocument => roots.push(BookmarkPlanNode {
+                    title: document_bookmark_title(&input.document_title),
+                    page_position: Some(output_offset),
+                    is_open: true,
+                    children: source_roots,
+                }),
+            }
+            let contributed_pages = input.pages.len()
+                + usize::from(request.add_blank_page_if_odd && input.pages.len() % 2 == 1);
+            output_offset = output_offset
+                .checked_add(contributed_pages)
+                .ok_or_else(|| {
+                    EngineError::new(
+                        ErrorCode::InvalidInput,
+                        "bookmark page-position plan overflowed",
+                    )
+                })?;
+        }
+        Ok(BookmarkPlan { roots })
+    }
+
+    fn page_geometry(
+        &self,
+        source: &Path,
+        page: PageNumber,
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Result<PdfPageGeometry, EngineError> {
+        let capture = self.run_qpdf(
+            &[
+                OsString::from("--json=2"),
+                OsString::from("--json-key=pages"),
+                qpdf_path(source),
+            ],
+            vec![
+                "--json=2".to_owned(),
+                "--json-key=pages".to_owned(),
+                source.display().to_string(),
+            ],
+            &json_capture_control(
+                control,
+                1,
+                &[MergeEngineInput {
+                    source: source.to_path_buf(),
+                    document_title: String::new(),
+                    metadata_title: None,
+                    pages: vec![page],
+                    password: None,
+                }],
+            ),
+            false,
+        )?;
+        ensure_complete_json(&capture.evidence, "source page geometry")?;
+        let page_object = parse_page_object_reference(&capture.evidence.stdout, page)?;
+        evidence.push(capture.evidence);
+
+        let mut geometry = PdfPageGeometry::default();
+        let mut current = Some(page_object);
+        for _ in 0..64 {
+            let Some((object, generation)) = current else {
+                break;
+            };
+            if generation != 0 {
+                return Err(invalid_qpdf_json(
+                    "source page object used an unsupported non-zero generation",
+                ));
+            }
+            let option = format!("--show-object={object}");
+            let capture = self.run_qpdf(
+                &[
+                    OsString::from(&option),
+                    OsString::from("--"),
+                    qpdf_path(source),
+                ],
+                vec![
+                    option.clone(),
+                    "--".to_owned(),
+                    source.display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            ensure_complete_text(&capture.evidence, "source page geometry")?;
+            let object_text = capture.evidence.stdout.clone();
+            evidence.push(capture.evidence);
+            geometry.media_box = geometry
+                .media_box
+                .or(parse_pdf_number_array(&object_text, "/MediaBox")?);
+            geometry.crop_box = geometry
+                .crop_box
+                .or(parse_pdf_number_array(&object_text, "/CropBox")?);
+            geometry.rotate = geometry
+                .rotate
+                .or(parse_pdf_integer(&object_text, "/Rotate")?);
+            current = parse_pdf_reference(&object_text, "/Parent")?;
+            if geometry.media_box.is_some() && current.is_none() {
+                break;
+            }
+        }
+        let Some(media_box) = geometry.media_box else {
+            return Err(invalid_qpdf_json(
+                "source page geometry omitted an inherited /MediaBox",
+            ));
+        };
+        Ok(PdfPageGeometry {
+            media_box: Some(media_box),
+            crop_box: geometry.crop_box,
+            rotate: geometry.rotate,
+        })
+    }
+
+    /// Reads bounded `MuPDF` structured-text output so footer placement can avoid
+    /// the page's occupied bottom band. A missing renderer is deliberately a
+    /// non-fatal capability downgrade: the deterministic geometry-only position
+    /// remains safe and keeps QPDF-only installations usable.
+    fn page_text_bounds(
+        &self,
+        source: &Path,
+        page: PageNumber,
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Option<TextBounds> {
+        let page = page.get().to_string();
+        let capture = run_process(
+            &self.config.text_executable,
+            &[
+                OsString::from("draw"),
+                OsString::from("-F"),
+                OsString::from("stext"),
+                qpdf_path(source),
+                OsString::from(&page),
+            ],
+            vec![
+                "draw".to_owned(),
+                "-F".to_owned(),
+                "stext".to_owned(),
+                source.display().to_string(),
+                page,
+            ],
+            control,
+        )
+        .ok()?;
+        let bounds = parse_stext_bounds(&capture.evidence.stdout);
+        evidence.push(capture.evidence);
+        bounds
+    }
+
+    fn add_bookmark_plan(
         &self,
         input: &Path,
         output: &Path,
+        plan: &BookmarkPlan,
         inputs: &[MergeEngineInput],
         control: &ExecutionControl,
         evidence: &mut Vec<CommandEvidence>,
     ) -> Result<usize, EngineError> {
-        let expected = bookmark_expectations(inputs)?;
-        let json_control = json_capture_control(control, expected.len(), inputs);
+        let json_control = json_capture_control(control, plan.node_count(), inputs);
         let layout_capture = self.run_qpdf(
             &[
                 OsString::from("--json=2"),
                 OsString::from("--json-key=pages"),
                 OsString::from("--json-key=qpdf"),
                 OsString::from("--json-object=trailer"),
-                input.as_os_str().to_os_string(),
+                qpdf_path(input),
             ],
             vec![
                 "--json=2".to_owned(),
@@ -193,7 +824,7 @@ impl QpdfAdapter {
             false,
         )?;
         ensure_complete_json(&layout_capture.evidence, "bookmark page layout")?;
-        let layout = parse_outline_layout(&layout_capture.evidence.stdout, &expected)?;
+        let layout = parse_outline_layout(&layout_capture.evidence.stdout)?;
         evidence.push(layout_capture.evidence);
 
         let object_selector = format!(
@@ -205,7 +836,7 @@ impl QpdfAdapter {
                 OsString::from("--json=2"),
                 OsString::from("--json-key=qpdf"),
                 OsString::from(&object_selector),
-                input.as_os_str().to_os_string(),
+                qpdf_path(input),
             ],
             vec![
                 "--json=2".to_owned(),
@@ -220,7 +851,7 @@ impl QpdfAdapter {
         let catalog = parse_catalog(&catalog_capture.evidence.stdout, &layout.catalog_reference)?;
         evidence.push(catalog_capture.evidence);
 
-        let update = build_bookmark_update(&layout, catalog, &expected)?;
+        let update = build_bookmark_update(&layout, catalog, &plan.roots)?;
         let update_path = TemporaryPath::new("bookmark-update", "json").map_err(|error| {
             EngineError::new(
                 ErrorCode::Internal,
@@ -232,11 +863,7 @@ impl QpdfAdapter {
         let mut update_argument = OsString::from("--update-from-json=");
         update_argument.push(update_path.path());
         let update_capture = self.run_qpdf(
-            &[
-                input.as_os_str().to_os_string(),
-                update_argument,
-                output.as_os_str().to_os_string(),
-            ],
+            &[qpdf_path(input), update_argument, qpdf_path(output)],
             vec![
                 input.display().to_string(),
                 "--update-from-json=<private-bookmark-plan>".to_owned(),
@@ -248,7 +875,7 @@ impl QpdfAdapter {
         evidence.push(update_capture.evidence);
 
         let check_capture = self.run_qpdf(
-            &[OsString::from("--check"), output.as_os_str().to_os_string()],
+            &[OsString::from("--check"), qpdf_path(output)],
             vec!["--check".to_owned(), output.display().to_string()],
             control,
             false,
@@ -259,7 +886,7 @@ impl QpdfAdapter {
             &[
                 OsString::from("--json=2"),
                 OsString::from("--json-key=outlines"),
-                output.as_os_str().to_os_string(),
+                qpdf_path(output),
             ],
             vec![
                 "--json=2".to_owned(),
@@ -270,9 +897,9 @@ impl QpdfAdapter {
             false,
         )?;
         ensure_complete_json(&outline_capture.evidence, "generated bookmark tree")?;
-        verify_document_bookmarks(&outline_capture.evidence.stdout, &expected)?;
+        verify_bookmark_plan(&outline_capture.evidence.stdout, &plan.roots)?;
         evidence.push(outline_capture.evidence);
-        Ok(expected.len())
+        Ok(plan.roots.len())
     }
 }
 
@@ -314,7 +941,7 @@ impl PdfEnginePort for QpdfAdapter {
         let (password_args, password_display) = password_arguments(password_file.as_ref());
         let mut page_args = password_args.clone();
         page_args.push(OsString::from("--show-npages"));
-        page_args.push(source.as_os_str().to_os_string());
+        page_args.push(qpdf_path(source));
         let mut page_display = password_display.clone();
         page_display.push("--show-npages".to_owned());
         page_display.push(source.display().to_string());
@@ -338,7 +965,7 @@ impl PdfEnginePort for QpdfAdapter {
 
         let mut encryption_args = password_args.clone();
         encryption_args.push(OsString::from("--show-encryption"));
-        encryption_args.push(source.as_os_str().to_os_string());
+        encryption_args.push(qpdf_path(source));
         let mut encryption_display = password_display.clone();
         encryption_display.push("--show-encryption".to_owned());
         encryption_display.push(source.display().to_string());
@@ -364,8 +991,8 @@ impl PdfEnginePort for QpdfAdapter {
         qdf_args.extend([
             OsString::from("--qdf"),
             OsString::from("--object-streams=disable"),
-            source.as_os_str().to_os_string(),
-            qdf_path.path().as_os_str().to_os_string(),
+            qpdf_path(source),
+            qpdf_path(qdf_path.path()),
         ]);
         let mut qdf_display = password_display;
         qdf_display.extend([
@@ -389,6 +1016,7 @@ impl PdfEnginePort for QpdfAdapter {
 
         Ok(PdfMetadata {
             page_count,
+            document_title: qdf_document_title(&qdf),
             encrypted,
             pdf_version: read_pdf_version(source),
             has_bookmarks: qdf_catalog_has_key(&qdf, "/Outlines"),
@@ -398,6 +1026,7 @@ impl PdfEnginePort for QpdfAdapter {
 }
 
 impl MergeEnginePort for QpdfAdapter {
+    #[allow(clippy::too_many_lines)]
     fn merge(
         &self,
         request: &MergeEngineRequest,
@@ -411,51 +1040,241 @@ impl MergeEnginePort for QpdfAdapter {
         }
         let mut evidence = Vec::new();
         let prepared = self.prepare_merge_sources(&request.inputs, control, &mut evidence)?;
+        let toc_pages = toc_page_count(request.toc_policy, request.inputs.len());
+        let bookmark_plan = self.bookmark_plan(request, &prepared, control, &mut evidence)?;
+        let reconstruct_bookmarks = !bookmark_plan.roots.is_empty();
 
+        let blank_pages = prepared
+            .iter()
+            .zip(&request.inputs)
+            .map(|(prepared_source, input)| {
+                if !request.add_blank_page_if_odd || input.pages.len() % 2 == 0 {
+                    return Ok(None);
+                }
+                let last_page = input.pages.last().copied().ok_or_else(|| {
+                    EngineError::new(
+                        ErrorCode::InvalidInput,
+                        "odd-page Merge input unexpectedly had no selected final page",
+                    )
+                })?;
+                let geometry =
+                    self.page_geometry(&prepared_source.path, last_page, control, &mut evidence)?;
+                let blank_page = TemporaryPath::new("merge-blank-page", "pdf")
+                    .map_err(|error| EngineError::new(ErrorCode::Internal, error.to_string()))?;
+                write_blank_page(blank_page.path(), &geometry).map_err(|error| {
+                    EngineError::new(
+                        ErrorCode::Internal,
+                        format!("cannot create geometry-matched blank page: {error}"),
+                    )
+                })?;
+                Ok(Some(GeneratedBlankPage {
+                    file: blank_page,
+                    geometry,
+                }))
+            })
+            .collect::<Result<Vec<_>, EngineError>>()?;
         let mut args = vec![OsString::from("--empty"), OsString::from("--pages")];
         let mut display_args = vec!["--empty".to_owned(), "--pages".to_owned()];
-        for source in &prepared {
+        for (source, blank_page) in prepared.iter().zip(&blank_pages) {
             let page_spec = page_specification(&source.pages);
-            args.push(source.path.as_os_str().to_os_string());
+            args.push(qpdf_path(&source.path));
             args.push(OsString::from(&page_spec));
             display_args.push(source.path.display().to_string());
             display_args.push(page_spec);
+            if let Some(blank_page) = blank_page {
+                args.push(qpdf_path(blank_page.file.path()));
+                args.push(OsString::from("1"));
+                display_args.push("<generated-blank-page>".to_owned());
+                display_args.push("1".to_owned());
+            }
         }
-        let assembled = (request.bookmark_policy == BookmarkPolicy::OneEntryPerDocument)
-            .then(|| TemporaryPath::new("merge-outline-base", "pdf"))
+        let needs_staging = reconstruct_bookmarks
+            || request.add_filename_footer
+            || !matches!(request.toc_policy, MergeTocPolicy::None);
+        let assembled = needs_staging
+            .then(|| TemporaryPath::new("merge-assembly-base", "pdf"))
             .transpose()
             .map_err(|error| {
                 EngineError::new(
                     ErrorCode::Internal,
-                    format!("cannot create private outline staging directory: {error}"),
+                    format!("cannot create private Merge staging directory: {error}"),
                 )
             })?;
         let merge_output = assembled
             .as_ref()
             .map_or(request.output.as_path(), TemporaryPath::path);
         args.push(OsString::from("--"));
-        args.push(merge_output.as_os_str().to_os_string());
+        args.push(qpdf_path(merge_output));
         display_args.push("--".to_owned());
         display_args.push(merge_output.display().to_string());
         let merge_capture = self.run_qpdf(&args, display_args, control, false)?;
         evidence.push(merge_capture.evidence);
 
-        let bookmark_entries = match request.bookmark_policy {
-            BookmarkPolicy::Discard => 0,
-            BookmarkPolicy::OneEntryPerDocument => self.add_document_bookmarks(
-                merge_output,
+        let footer_output = if request.add_filename_footer {
+            let output = TemporaryPath::new("merge-footer-output", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create private filename-footer output: {error}"),
+                )
+            })?;
+            let overlay = TemporaryPath::new("merge-footer-overlay", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create private filename-footer overlay: {error}"),
+                )
+            })?;
+            let mut footer_pages = Vec::new();
+            for ((source, input), blank_page) in
+                prepared.iter().zip(&request.inputs).zip(&blank_pages)
+            {
+                let title = document_bookmark_title(&input.document_title);
+                for page in &source.pages {
+                    let geometry =
+                        self.page_geometry(&source.path, *page, control, &mut evidence)?;
+                    let text_bounds =
+                        self.page_text_bounds(&source.path, *page, control, &mut evidence);
+                    footer_pages.push(FooterOverlayPage {
+                        position: Some(footer_position_with_text(&geometry, text_bounds)),
+                        geometry,
+                        text: Some(title.clone()),
+                    });
+                }
+                if let Some(blank_page) = blank_page {
+                    footer_pages.push(FooterOverlayPage {
+                        geometry: blank_page.geometry.clone(),
+                        text: None,
+                        position: None,
+                    });
+                }
+            }
+            write_footer_overlay(overlay.path(), &footer_pages).map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create filename-footer overlay: {error}"),
+                )
+            })?;
+            let overlay_capture = self.run_qpdf(
+                &[
+                    qpdf_path(merge_output),
+                    OsString::from("--overlay"),
+                    qpdf_path(overlay.path()),
+                    OsString::from("--"),
+                    qpdf_path(output.path()),
+                ],
+                vec![
+                    merge_output.display().to_string(),
+                    "--overlay".to_owned(),
+                    "<generated-filename-footer-overlay>".to_owned(),
+                    "--".to_owned(),
+                    output.path().display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(overlay_capture.evidence);
+            Some(output)
+        } else {
+            None
+        };
+
+        let toc_output = if toc_pages > 0 {
+            let output = TemporaryPath::new("merge-toc-output", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create private table-of-contents output: {error}"),
+                )
+            })?;
+            let toc_pdf = TemporaryPath::new("merge-toc-pages", "pdf").map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create private table-of-contents PDF: {error}"),
+                )
+            })?;
+            let entries = toc_entries(
+                &prepared,
+                &request.inputs,
+                &blank_pages,
+                request.toc_policy,
+                toc_pages,
+            );
+            write_toc_pdf(toc_pdf.path(), &entries, toc_pages).map_err(|error| {
+                EngineError::new(
+                    ErrorCode::Internal,
+                    format!("cannot create generated table of contents: {error}"),
+                )
+            })?;
+            let source_output = footer_output
+                .as_ref()
+                .map_or(merge_output, TemporaryPath::path);
+            let source_page_count = prepared
+                .iter()
+                .zip(&blank_pages)
+                .map(|(source, blank)| source.pages.len() + usize::from(blank.is_some()))
+                .sum::<usize>();
+            let source_page_spec = format!("1-{source_page_count}");
+            let toc_page_spec = format!("1-{toc_pages}");
+            let toc_capture = self.run_qpdf(
+                &[
+                    OsString::from("--empty"),
+                    OsString::from("--pages"),
+                    qpdf_path(toc_pdf.path()),
+                    OsString::from(&toc_page_spec),
+                    qpdf_path(source_output),
+                    OsString::from(&source_page_spec),
+                    OsString::from("--"),
+                    qpdf_path(output.path()),
+                ],
+                vec![
+                    "--empty".to_owned(),
+                    "--pages".to_owned(),
+                    "<generated-toc-pages>".to_owned(),
+                    toc_page_spec,
+                    source_output.display().to_string(),
+                    source_page_spec,
+                    "--".to_owned(),
+                    output.path().display().to_string(),
+                ],
+                control,
+                false,
+            )?;
+            evidence.push(toc_capture.evidence);
+            Some(output)
+        } else {
+            None
+        };
+
+        let pre_bookmark_output = toc_output.as_ref().map_or_else(
+            || {
+                footer_output
+                    .as_ref()
+                    .map_or(merge_output, TemporaryPath::path)
+            },
+            TemporaryPath::path,
+        );
+        if !reconstruct_bookmarks && pre_bookmark_output != request.output.as_path() {
+            fs::rename(pre_bookmark_output, &request.output).map_err(|error| {
+                EngineError::new(
+                    ErrorCode::OutputWriteFailed,
+                    format!("cannot finalize generated Merge output: {error}"),
+                )
+            })?;
+        }
+
+        let bookmark_entries = if reconstruct_bookmarks {
+            self.add_bookmark_plan(
+                pre_bookmark_output,
                 &request.output,
+                &bookmark_plan,
                 &request.inputs,
                 control,
                 &mut evidence,
-            )?,
+            )?
+        } else {
+            0
         };
 
         let page_capture = self.run_qpdf(
-            &[
-                OsString::from("--show-npages"),
-                request.output.as_os_str().to_os_string(),
-            ],
+            &[OsString::from("--show-npages"), qpdf_path(&request.output)],
             vec![
                 "--show-npages".to_owned(),
                 request.output.display().to_string(),
@@ -503,10 +1322,140 @@ fn page_specification(pages: &[PageNumber]) -> String {
         .join(",")
 }
 
-#[derive(Debug, Eq, PartialEq)]
-struct BookmarkExpectation {
+fn toc_page_count(policy: MergeTocPolicy, source_count: usize) -> usize {
+    match policy {
+        MergeTocPolicy::None => 0,
+        MergeTocPolicy::FileNames | MergeTocPolicy::DocumentTitles => {
+            source_count.saturating_add(34) / 35
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct PdfPageGeometry {
+    media_box: Option<[String; 4]>,
+    crop_box: Option<[String; 4]>,
+    rotate: Option<i32>,
+}
+
+fn parse_page_object_reference(
+    document: &str,
+    page: PageNumber,
+) -> Result<(u64, u64), EngineError> {
+    let value = parse_qpdf_json(document, "source page geometry")?;
+    let pages = json_array(&value, "pages", "source page geometry")?;
+    let entry = pages
+        .iter()
+        .find(|entry| {
+            entry
+                .get("pageposfrom1")
+                .and_then(Value::as_u64)
+                .is_some_and(|position| position == u64::from(page.get()))
+        })
+        .ok_or_else(|| invalid_qpdf_json("source page geometry omitted the selected page"))?;
+    let reference = entry
+        .get("object")
+        .and_then(Value::as_str)
+        .ok_or_else(|| invalid_qpdf_json("source page geometry omitted the page object"))?;
+    parse_indirect_reference(reference, "source page")
+}
+
+fn parse_pdf_number_array(document: &str, key: &str) -> Result<Option<[String; 4]>, EngineError> {
+    let Some(key_start) = document.find(key) else {
+        return Ok(None);
+    };
+    let after_key = &document[key_start + key.len()..];
+    let Some(open) = after_key.find('[') else {
+        return Err(invalid_qpdf_json(format!("{key} was not an array")));
+    };
+    let after_open = &after_key[open + 1..];
+    let Some(close) = after_open.find(']') else {
+        return Err(invalid_qpdf_json(format!("{key} array was not closed")));
+    };
+    let values = after_open[..close]
+        .split_whitespace()
+        .map(|value| {
+            value
+                .parse::<f64>()
+                .ok()
+                .filter(|number| number.is_finite())
+                .map_or_else(
+                    || {
+                        Err(invalid_qpdf_json(format!(
+                            "{key} contained a non-numeric value"
+                        )))
+                    },
+                    |_| Ok(value.to_owned()),
+                )
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    if values.len() != 4 {
+        return Err(invalid_qpdf_json(format!(
+            "{key} must contain exactly four numbers"
+        )));
+    }
+    values
+        .try_into()
+        .map(Some)
+        .map_err(|_| invalid_qpdf_json(format!("{key} could not be normalized")))
+}
+
+fn parse_pdf_integer(document: &str, key: &str) -> Result<Option<i32>, EngineError> {
+    let Some(key_start) = document.find(key) else {
+        return Ok(None);
+    };
+    let value = document[key_start + key.len()..]
+        .split_whitespace()
+        .next()
+        .ok_or_else(|| invalid_qpdf_json(format!("{key} omitted its value")))?;
+    value
+        .parse::<i32>()
+        .map(Some)
+        .map_err(|_| invalid_qpdf_json(format!("{key} contained a non-integer value")))
+}
+
+fn parse_pdf_reference(document: &str, key: &str) -> Result<Option<(u64, u64)>, EngineError> {
+    let Some(key_start) = document.find(key) else {
+        return Ok(None);
+    };
+    let value = document[key_start + key.len()..]
+        .split_whitespace()
+        .take(3)
+        .collect::<Vec<_>>();
+    if value.len() < 3 || value[2] != "R" {
+        return Err(invalid_qpdf_json(format!(
+            "{key} was not an indirect reference"
+        )));
+    }
+    parse_indirect_reference(&value[..3].join(" "), key).map(Some)
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct BookmarkPlanNode {
     title: String,
-    page_position: usize,
+    page_position: Option<usize>,
+    is_open: bool,
+    children: Vec<Self>,
+}
+
+#[derive(Debug, Default, Eq, PartialEq)]
+struct BookmarkPlan {
+    roots: Vec<BookmarkPlanNode>,
+}
+
+impl BookmarkPlan {
+    fn node_count(&self) -> usize {
+        count_bookmark_nodes(&self.roots)
+    }
+}
+
+#[derive(Debug)]
+struct AssignedBookmarkNode {
+    id: u64,
+    title: String,
+    page_position: Option<usize>,
+    is_open: bool,
+    children: Vec<Self>,
 }
 
 struct OutlineLayout {
@@ -515,37 +1464,328 @@ struct OutlineLayout {
     catalog_reference: String,
     catalog_object: u64,
     catalog_generation: u64,
-    destination_objects: Vec<String>,
+    page_objects: Vec<String>,
 }
 
-fn bookmark_expectations(
-    inputs: &[MergeEngineInput],
-) -> Result<Vec<BookmarkExpectation>, EngineError> {
-    let mut page_position = 1_usize;
-    inputs
+fn document_bookmark_title(title: &str) -> String {
+    Path::new(title)
+        .file_stem()
+        .filter(|stem| !stem.is_empty())
+        .map_or_else(
+            || title.to_owned(),
+            |stem| stem.to_string_lossy().into_owned(),
+        )
+}
+
+fn count_bookmark_nodes(nodes: &[BookmarkPlanNode]) -> usize {
+    nodes.iter().fold(0_usize, |count, node| {
+        count
+            .saturating_add(1)
+            .saturating_add(count_bookmark_nodes(&node.children))
+    })
+}
+
+fn count_assigned_bookmark_nodes(nodes: &[AssignedBookmarkNode]) -> usize {
+    nodes.iter().fold(0_usize, |count, node| {
+        count
+            .saturating_add(1)
+            .saturating_add(count_assigned_bookmark_nodes(&node.children))
+    })
+}
+
+fn parse_source_bookmarks(
+    document: &str,
+    input: &MergeEngineInput,
+    output_offset: usize,
+) -> Result<Vec<BookmarkPlanNode>, EngineError> {
+    parse_source_bookmarks_with_policy(document, input, output_offset, false)
+}
+
+/// Parses Split outlines with a fail-closed destination identity policy.
+///
+/// Merge deliberately retains its first-occurrence policy for duplicate source
+/// pages; Split cannot make that choice without changing which output part a
+/// user-selected duplicate belongs to, so it rejects the ambiguous case.
+fn parse_source_bookmarks_rejecting_ambiguous_duplicates(
+    document: &str,
+    input: &MergeEngineInput,
+    output_offset: usize,
+) -> Result<Vec<BookmarkPlanNode>, EngineError> {
+    parse_source_bookmarks_with_policy(document, input, output_offset, true)
+}
+
+fn parse_source_bookmarks_with_policy(
+    document: &str,
+    input: &MergeEngineInput,
+    output_offset: usize,
+    reject_ambiguous_duplicate_destinations: bool,
+) -> Result<Vec<BookmarkPlanNode>, EngineError> {
+    const MAX_OUTLINE_DEPTH: usize = 128;
+    const MAX_OUTLINE_NODES: usize = 20_000;
+    let value = parse_qpdf_json(document, "source bookmark tree")?;
+    let outlines = json_array(&value, "outlines", "source bookmark tree")?;
+    let mut observed_nodes = 0_usize;
+    outlines
         .iter()
-        .map(|input| {
-            if input.pages.is_empty() {
-                return Err(EngineError::new(
-                    ErrorCode::InvalidInput,
-                    "cannot create a document bookmark for an empty page contribution",
+        .map(|entry| {
+            parse_source_bookmark_node(
+                entry,
+                input,
+                output_offset,
+                reject_ambiguous_duplicate_destinations,
+                0,
+                &mut observed_nodes,
+                MAX_OUTLINE_DEPTH,
+                MAX_OUTLINE_NODES,
+            )
+        })
+        .filter_map(Result::transpose)
+        .collect()
+}
+
+fn parse_bookmark_boundaries(document: &str) -> Result<Vec<BookmarkBoundary>, EngineError> {
+    parse_bookmark_boundaries_at_depth(document, 0)
+}
+
+fn parse_bookmark_boundaries_at_depth(
+    document: &str,
+    selected_depth: u32,
+) -> Result<Vec<BookmarkBoundary>, EngineError> {
+    const MAX_OUTLINE_DEPTH: u32 = 128;
+    const MAX_OUTLINE_NODES: usize = 20_000;
+    let value = parse_qpdf_json(document, "split bookmark boundaries")?;
+    let outlines = json_array(&value, "outlines", "split bookmark boundaries")?;
+    let mut boundaries = Vec::new();
+    let mut observed_nodes = 0_usize;
+    for entry in outlines {
+        collect_bookmark_boundaries(
+            entry,
+            0,
+            selected_depth,
+            &mut observed_nodes,
+            MAX_OUTLINE_DEPTH,
+            MAX_OUTLINE_NODES,
+            &mut boundaries,
+        )?;
+    }
+    Ok(boundaries)
+}
+
+fn collect_bookmark_boundaries(
+    entry: &Value,
+    depth: u32,
+    selected_depth: u32,
+    observed_nodes: &mut usize,
+    max_depth: u32,
+    max_nodes: usize,
+    boundaries: &mut Vec<BookmarkBoundary>,
+) -> Result<(), EngineError> {
+    if depth > max_depth {
+        return Err(invalid_qpdf_json(
+            "split bookmark tree exceeded the supported depth",
+        ));
+    }
+    *observed_nodes = observed_nodes.saturating_add(1);
+    if *observed_nodes > max_nodes {
+        return Err(invalid_qpdf_json(
+            "split bookmark tree exceeded the supported node count",
+        ));
+    }
+    let ordinal = *observed_nodes - 1;
+    let title = entry
+        .get("title")
+        .and_then(Value::as_str)
+        .filter(|title| !title.trim().is_empty())
+        .ok_or_else(|| {
+            invalid_qpdf_json(format!(
+                "split bookmark {ordinal} omitted a non-empty title"
+            ))
+        })?;
+    if depth == selected_depth {
+        let page = entry
+            .get("destpageposfrom1")
+            .and_then(Value::as_u64)
+            .and_then(|page| u32::try_from(page).ok())
+            .and_then(|page| PageNumber::new(page).ok())
+            .ok_or_else(|| {
+                invalid_qpdf_json(format!(
+                    "split bookmark {ordinal} at depth {selected_depth} omitted a valid page destination"
+                ))
+            })?;
+        boundaries.push(BookmarkBoundary {
+            title: title.to_owned(),
+            page,
+            depth,
+        });
+    }
+    if let Some(children) = entry.get("kids").and_then(Value::as_array) {
+        for child in children {
+            collect_bookmark_boundaries(
+                child,
+                depth.saturating_add(1),
+                selected_depth,
+                observed_nodes,
+                max_depth,
+                max_nodes,
+                boundaries,
+            )?;
+        }
+    }
+    Ok(())
+}
+
+// The recursive parser keeps its bounded-depth/node counters explicit at the
+// call site; the split-only duplicate policy is the one additional safety
+// switch shared by every descendant.
+#[allow(clippy::too_many_arguments)]
+fn parse_source_bookmark_node(
+    entry: &Value,
+    input: &MergeEngineInput,
+    output_offset: usize,
+    reject_ambiguous_duplicate_destinations: bool,
+    depth: usize,
+    observed_nodes: &mut usize,
+    max_depth: usize,
+    max_nodes: usize,
+) -> Result<Option<BookmarkPlanNode>, EngineError> {
+    if depth > max_depth {
+        return Err(invalid_qpdf_json(
+            "source bookmark tree exceeded the supported depth",
+        ));
+    }
+    *observed_nodes = observed_nodes.saturating_add(1);
+    if *observed_nodes > max_nodes {
+        return Err(invalid_qpdf_json(
+            "source bookmark tree exceeded the supported node count",
+        ));
+    }
+    let title = entry
+        .get("title")
+        .and_then(Value::as_str)
+        .ok_or_else(|| invalid_qpdf_json("source bookmark item omitted its title"))?
+        .to_owned();
+    let children = entry
+        .get("kids")
+        .and_then(Value::as_array)
+        .ok_or_else(|| invalid_qpdf_json("source bookmark item omitted its children"))?
+        .iter()
+        .map(|child| {
+            parse_source_bookmark_node(
+                child,
+                input,
+                output_offset,
+                reject_ambiguous_duplicate_destinations,
+                depth.saturating_add(1),
+                observed_nodes,
+                max_depth,
+                max_nodes,
+            )
+        })
+        .filter_map(Result::transpose)
+        .collect::<Result<Vec<_>, _>>()?;
+    let destination_kind = entry
+        .get("dest")
+        .map_or(OutlineDestinationKind::Absent, |dest| {
+            if dest.is_array() {
+                OutlineDestinationKind::PageArray
+            } else if dest.is_null() {
+                OutlineDestinationKind::Null
+            } else if dest.is_string() {
+                OutlineDestinationKind::Named
+            } else {
+                OutlineDestinationKind::Unsupported
+            }
+        });
+    let has_action = entry.get("action").is_some();
+    let unsupported = match destination_kind {
+        OutlineDestinationKind::Named | OutlineDestinationKind::Unsupported => true,
+        OutlineDestinationKind::Null => has_action || children.is_empty(),
+        OutlineDestinationKind::Absent | OutlineDestinationKind::PageArray => false,
+    };
+    if unsupported {
+        return Err(unsupported_outline_destination(
+            title.as_str(),
+            destination_kind,
+            has_action,
+        ));
+    }
+    let source_page = entry
+        .get("destpageposfrom1")
+        .and_then(Value::as_u64)
+        .and_then(|page| u32::try_from(page).ok());
+    let is_open = entry.get("open").and_then(Value::as_bool).unwrap_or(true);
+    let page_position = source_page
+        .map(|source_page| {
+            let positions = input
+                .pages
+                .iter()
+                .enumerate()
+                .filter_map(|(index, page)| (page.get() == source_page).then_some(index))
+                .collect::<Vec<_>>();
+            if reject_ambiguous_duplicate_destinations && positions.len() > 1 {
+                return Err(unsupported_duplicate_destination(
+                    title.as_str(),
+                    source_page,
+                    positions.len(),
                 ));
             }
-            let expectation = BookmarkExpectation {
-                title: input.document_title.clone(),
-                page_position,
-            };
-            page_position = page_position
-                .checked_add(input.pages.len())
-                .ok_or_else(|| {
-                    EngineError::new(
-                        ErrorCode::InvalidInput,
-                        "bookmark page-position plan overflowed",
-                    )
-                })?;
-            Ok(expectation)
+            Ok(positions
+                .first()
+                .and_then(|relative| output_offset.checked_add(*relative)))
         })
-        .collect()
+        .transpose()?
+        .flatten();
+    if page_position.is_none() && children.is_empty() {
+        return Ok(None);
+    }
+    Ok(Some(BookmarkPlanNode {
+        title,
+        page_position,
+        is_open,
+        children,
+    }))
+}
+
+fn unsupported_duplicate_destination(
+    title: &str,
+    source_page: u32,
+    occurrences: usize,
+) -> EngineError {
+    EngineError::new(
+        ErrorCode::CapabilityUnavailable,
+        format!(
+            "split cannot safely reconstruct bookmark {title:?}: source page {source_page} occurs {occurrences} times in the selected output; destination identity is ambiguous"
+        ),
+    )
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OutlineDestinationKind {
+    Absent,
+    PageArray,
+    Named,
+    Null,
+    Unsupported,
+}
+
+fn unsupported_outline_destination(
+    title: &str,
+    kind: OutlineDestinationKind,
+    has_action: bool,
+) -> EngineError {
+    let description = if has_action || kind == OutlineDestinationKind::Null {
+        "an action or unresolved destination"
+    } else if kind == OutlineDestinationKind::Named {
+        "a named destination"
+    } else {
+        "an unsupported destination shape"
+    };
+    EngineError::new(
+        ErrorCode::CapabilityUnavailable,
+        format!(
+            "split cannot safely reconstruct bookmark {title:?}: source outline uses {description}; only direct page destinations are currently supported"
+        ),
+    )
 }
 
 fn json_capture_control(
@@ -570,10 +1810,7 @@ fn json_capture_control(
     )
 }
 
-fn parse_outline_layout(
-    document: &str,
-    expected: &[BookmarkExpectation],
-) -> Result<OutlineLayout, EngineError> {
+fn parse_outline_layout(document: &str) -> Result<OutlineLayout, EngineError> {
     let value = parse_qpdf_json(document, "bookmark page layout")?;
     let qpdf = json_array(&value, "qpdf", "bookmark page layout")?;
     let metadata = qpdf.first().cloned().ok_or_else(|| {
@@ -598,18 +1835,17 @@ fn parse_outline_layout(
         parse_indirect_reference(&catalog_reference, "catalog")?;
 
     let pages = json_array(&value, "pages", "bookmark page layout")?;
-    let destination_objects = expected
+    let page_objects = pages
         .iter()
-        .map(|expectation| {
-            pages
-                .get(expectation.page_position.saturating_sub(1))
-                .and_then(|page| page.get("object"))
+        .enumerate()
+        .map(|(index, page)| {
+            page.get("object")
                 .and_then(Value::as_str)
                 .map(ToOwned::to_owned)
                 .ok_or_else(|| {
                     invalid_qpdf_json(format!(
-                        "bookmark destination page {} was absent from QPDF JSON",
-                        expectation.page_position
+                        "output page {} was absent from QPDF JSON",
+                        index + 1
                     ))
                 })
         })
@@ -621,7 +1857,7 @@ fn parse_outline_layout(
         catalog_reference,
         catalog_object,
         catalog_generation,
-        destination_objects,
+        page_objects,
     })
 }
 
@@ -643,21 +1879,24 @@ fn parse_catalog(document: &str, reference: &str) -> Result<Map<String, Value>, 
 fn build_bookmark_update(
     layout: &OutlineLayout,
     mut catalog: Map<String, Value>,
-    expected: &[BookmarkExpectation],
+    roots: &[BookmarkPlanNode],
 ) -> Result<Value, EngineError> {
+    if roots.is_empty() {
+        return Err(invalid_qpdf_json(
+            "cannot build an empty reconstructed bookmark tree",
+        ));
+    }
     let outline_id = layout.max_object_id.checked_add(1).ok_or_else(|| {
         invalid_qpdf_json("cannot allocate the output outline-root object identifier")
     })?;
     let first_item_id = outline_id.checked_add(1).ok_or_else(|| {
         invalid_qpdf_json("cannot allocate the first output bookmark object identifier")
     })?;
-    let last_item_id = first_item_id
-        .checked_add(
-            u64::try_from(expected.len().saturating_sub(1)).map_err(|_| {
-                invalid_qpdf_json("bookmark entry count exceeds the supported object range")
-            })?,
-        )
-        .ok_or_else(|| invalid_qpdf_json("bookmark object identifier plan overflowed"))?;
+    let mut next_item_id = first_item_id;
+    let assigned_roots = assign_bookmark_nodes(roots, &mut next_item_id)?;
+    let last_item_id = next_item_id
+        .checked_sub(1)
+        .ok_or_else(|| invalid_qpdf_json("bookmark object identifier plan underflowed"))?;
     let outline_reference = indirect_reference(outline_id);
 
     catalog.insert(
@@ -678,49 +1917,14 @@ fn build_bookmark_update(
         format!("obj:{outline_reference}"),
         json!({
             "value": {
-                "/Count": expected.len(),
-                "/First": indirect_reference(first_item_id),
-                "/Last": indirect_reference(last_item_id),
+                "/Count": count_assigned_bookmark_nodes(&assigned_roots),
+                "/First": indirect_reference(assigned_roots[0].id),
+                "/Last": indirect_reference(assigned_roots[assigned_roots.len() - 1].id),
                 "/Type": "/Outlines"
             }
         }),
     );
-
-    for (index, (expectation, destination)) in
-        expected.iter().zip(&layout.destination_objects).enumerate()
-    {
-        let item_id = first_item_id
-            .checked_add(u64::try_from(index).map_err(|_| {
-                invalid_qpdf_json("bookmark index exceeds the supported object range")
-            })?)
-            .ok_or_else(|| invalid_qpdf_json("bookmark object identifier overflowed"))?;
-        let mut item = Map::new();
-        item.insert("/Dest".to_owned(), json!([destination, "/Fit"]));
-        item.insert(
-            "/Parent".to_owned(),
-            Value::String(outline_reference.clone()),
-        );
-        item.insert(
-            "/Title".to_owned(),
-            Value::String(format!("u:{}", expectation.title)),
-        );
-        if index > 0 {
-            item.insert(
-                "/Prev".to_owned(),
-                Value::String(indirect_reference(item_id - 1)),
-            );
-        }
-        if index + 1 < expected.len() {
-            item.insert(
-                "/Next".to_owned(),
-                Value::String(indirect_reference(item_id + 1)),
-            );
-        }
-        objects.insert(
-            format!("obj:{}", indirect_reference(item_id)),
-            json!({ "value": Value::Object(item) }),
-        );
-    }
+    render_bookmark_nodes(&assigned_roots, &outline_reference, layout, &mut objects)?;
 
     let mut metadata = layout.metadata.clone();
     metadata
@@ -740,35 +1944,142 @@ fn build_bookmark_update(
     }))
 }
 
-fn verify_document_bookmarks(
-    document: &str,
-    expected: &[BookmarkExpectation],
+fn assign_bookmark_nodes(
+    nodes: &[BookmarkPlanNode],
+    next_item_id: &mut u64,
+) -> Result<Vec<AssignedBookmarkNode>, EngineError> {
+    nodes
+        .iter()
+        .map(|node| {
+            let id = *next_item_id;
+            *next_item_id = next_item_id
+                .checked_add(1)
+                .ok_or_else(|| invalid_qpdf_json("bookmark object identifier plan overflowed"))?;
+            let children = assign_bookmark_nodes(&node.children, next_item_id)?;
+            Ok(AssignedBookmarkNode {
+                id,
+                title: node.title.clone(),
+                page_position: node.page_position,
+                is_open: node.is_open,
+                children,
+            })
+        })
+        .collect()
+}
+
+fn render_bookmark_nodes(
+    nodes: &[AssignedBookmarkNode],
+    parent_reference: &str,
+    layout: &OutlineLayout,
+    objects: &mut Map<String, Value>,
 ) -> Result<(), EngineError> {
+    for (index, node) in nodes.iter().enumerate() {
+        let mut item = Map::new();
+        item.insert(
+            "/Parent".to_owned(),
+            Value::String(parent_reference.to_owned()),
+        );
+        item.insert(
+            "/Title".to_owned(),
+            Value::String(format!("u:{}", node.title)),
+        );
+        if let Some(page_position) = node.page_position {
+            let destination = layout
+                .page_objects
+                .get(page_position.saturating_sub(1))
+                .ok_or_else(|| {
+                    invalid_qpdf_json(format!(
+                        "bookmark destination page {page_position} was absent from QPDF JSON"
+                    ))
+                })?;
+            item.insert("/Dest".to_owned(), json!([destination, "/Fit"]));
+        }
+        if index > 0 {
+            item.insert(
+                "/Prev".to_owned(),
+                Value::String(indirect_reference(nodes[index - 1].id)),
+            );
+        }
+        if index + 1 < nodes.len() {
+            item.insert(
+                "/Next".to_owned(),
+                Value::String(indirect_reference(nodes[index + 1].id)),
+            );
+        }
+        if let Some(first_child) = node.children.first() {
+            item.insert(
+                "/First".to_owned(),
+                Value::String(indirect_reference(first_child.id)),
+            );
+            item.insert(
+                "/Last".to_owned(),
+                Value::String(indirect_reference(
+                    node.children.last().map_or(0, |child| child.id),
+                )),
+            );
+            item.insert(
+                "/Count".to_owned(),
+                Value::from({
+                    let descendants = i64::try_from(count_assigned_bookmark_nodes(&node.children))
+                        .map_err(|_| {
+                            invalid_qpdf_json("bookmark child count exceeds the supported range")
+                        })?;
+                    if node.is_open {
+                        descendants
+                    } else {
+                        -descendants
+                    }
+                }),
+            );
+        }
+        let reference = indirect_reference(node.id);
+        objects.insert(
+            format!("obj:{reference}"),
+            json!({ "value": Value::Object(item) }),
+        );
+        render_bookmark_nodes(&node.children, &reference, layout, objects)?;
+    }
+    Ok(())
+}
+
+fn verify_bookmark_plan(document: &str, expected: &[BookmarkPlanNode]) -> Result<(), EngineError> {
     let value = parse_qpdf_json(document, "generated bookmark tree")?;
     let outlines = json_array(&value, "outlines", "generated bookmark tree")?;
-    if outlines.len() != expected.len() {
+    verify_bookmark_nodes(outlines, expected)
+}
+
+fn verify_bookmark_nodes(
+    actual: &[Value],
+    expected: &[BookmarkPlanNode],
+) -> Result<(), EngineError> {
+    if actual.len() != expected.len() {
         return Err(invalid_qpdf_json(format!(
             "generated bookmark count mismatch: expected {}, observed {}",
             expected.len(),
-            outlines.len()
+            actual.len()
         )));
     }
-    for (entry, expectation) in outlines.iter().zip(expected) {
+    for (entry, expectation) in actual.iter().zip(expected) {
         let title = entry.get("title").and_then(Value::as_str);
         let page_position = entry.get("destpageposfrom1").and_then(Value::as_u64);
-        let has_children = entry
+        let is_open = entry.get("open").and_then(Value::as_bool);
+        let children = entry
             .get("kids")
             .and_then(Value::as_array)
-            .is_some_and(|children| !children.is_empty());
+            .ok_or_else(|| invalid_qpdf_json("generated bookmark item omitted its children"))?;
         if title != Some(expectation.title.as_str())
-            || page_position != u64::try_from(expectation.page_position).ok()
-            || has_children
+            || page_position
+                != expectation
+                    .page_position
+                    .and_then(|page| u64::try_from(page).ok())
+            || is_open.is_some_and(|open| open != expectation.is_open)
         {
             return Err(invalid_qpdf_json(format!(
-                "generated bookmark did not match title {:?} at page {}",
-                expectation.title, expectation.page_position
+                "generated bookmark did not match title {:?} at its planned destination",
+                expectation.title
             )));
         }
+        verify_bookmark_nodes(children, &expectation.children)?;
     }
     Ok(())
 }
@@ -809,6 +2120,16 @@ fn ensure_complete_json(evidence: &CommandEvidence, context: &str) -> Result<(),
     if evidence.stdout_truncated {
         Err(invalid_qpdf_json(format!(
             "QPDF {context} JSON exceeded the bounded capture limit"
+        )))
+    } else {
+        Ok(())
+    }
+}
+
+fn ensure_complete_text(evidence: &CommandEvidence, context: &str) -> Result<(), EngineError> {
+    if evidence.stdout_truncated {
+        Err(invalid_qpdf_json(format!(
+            "QPDF {context} output exceeded the bounded capture limit"
         )))
     } else {
         Ok(())
@@ -857,6 +2178,142 @@ fn qdf_catalog_has_key(qdf: &[u8], key: &str) -> bool {
         .any(|object| object.contains("/Type /Catalog") && object.contains(key))
 }
 
+fn qdf_document_title(qdf: &[u8]) -> Option<String> {
+    let marker = b"/Title";
+    let start = qdf
+        .windows(marker.len())
+        .position(|window| window == marker)?
+        + marker.len();
+    let mut cursor = start;
+    while qdf.get(cursor).is_some_and(u8::is_ascii_whitespace) {
+        cursor = cursor.saturating_add(1);
+    }
+    let value = match qdf.get(cursor).copied()? {
+        b'(' => {
+            let (bytes, _) = parse_pdf_literal(&qdf[cursor..])?;
+            bytes
+        }
+        b'<' => parse_pdf_hex_string(&qdf[cursor..])?,
+        _ => return None,
+    };
+    decode_pdf_text(&value)
+}
+
+fn parse_pdf_literal(document: &[u8]) -> Option<(Vec<u8>, usize)> {
+    if document.first().copied()? != b'(' {
+        return None;
+    }
+    let mut output = Vec::new();
+    let mut depth = 1_u32;
+    let mut cursor = 1_usize;
+    while let Some(&byte) = document.get(cursor) {
+        cursor = cursor.saturating_add(1);
+        match byte {
+            b'(' => {
+                depth = depth.saturating_add(1);
+                output.push(byte);
+            }
+            b')' => {
+                depth = depth.saturating_sub(1);
+                if depth == 0 {
+                    return Some((output, cursor));
+                }
+                output.push(byte);
+            }
+            b'\\' => {
+                let escaped = document.get(cursor).copied()?;
+                cursor = cursor.saturating_add(1);
+                match escaped {
+                    b'n' => output.push(b'\n'),
+                    b'r' => output.push(b'\r'),
+                    b't' => output.push(b'\t'),
+                    b'b' => output.push(8),
+                    b'f' => output.push(12),
+                    b'(' | b')' | b'\\' => output.push(escaped),
+                    b'\r' => {
+                        if document.get(cursor) == Some(&b'\n') {
+                            cursor = cursor.saturating_add(1);
+                        }
+                    }
+                    b'\n' => {}
+                    digit if (b'0'..=b'7').contains(&digit) => {
+                        let mut value = u32::from(digit - b'0');
+                        for _ in 0..2 {
+                            let Some(next) = document.get(cursor).copied() else {
+                                break;
+                            };
+                            if !(b'0'..=b'7').contains(&next) {
+                                break;
+                            }
+                            value = value
+                                .saturating_mul(8)
+                                .saturating_add(u32::from(next - b'0'));
+                            cursor = cursor.saturating_add(1);
+                        }
+                        output.push(u8::try_from(value).unwrap_or(b'?'));
+                    }
+                    other => output.push(other),
+                }
+            }
+            other => output.push(other),
+        }
+    }
+    None
+}
+
+fn parse_pdf_hex_string(document: &[u8]) -> Option<Vec<u8>> {
+    if document.first().copied()? != b'<' {
+        return None;
+    }
+    let mut nibbles = Vec::new();
+    for byte in document.iter().copied().skip(1) {
+        if byte == b'>' {
+            break;
+        }
+        if byte.is_ascii_whitespace() {
+            continue;
+        }
+        nibbles.push(hex_nibble(byte)?);
+    }
+    if nibbles.len() % 2 == 1 {
+        nibbles.push(0);
+    }
+    Some(
+        nibbles
+            .chunks_exact(2)
+            .map(|pair| (pair[0] << 4) | pair[1])
+            .collect(),
+    )
+}
+
+fn hex_nibble(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
+}
+
+fn decode_pdf_text(bytes: &[u8]) -> Option<String> {
+    let decoded = if bytes.starts_with(&[0xfe, 0xff]) {
+        let units = bytes[2..]
+            .chunks_exact(2)
+            .map(|pair| u16::from_be_bytes([pair[0], pair[1]]))
+            .collect::<Vec<_>>();
+        String::from_utf16_lossy(&units)
+    } else {
+        String::from_utf8(bytes.to_vec()).unwrap_or_else(|_| {
+            bytes
+                .iter()
+                .map(|byte| char::from(*byte))
+                .collect::<String>()
+        })
+    };
+    let title = decoded.trim_matches('\0').trim().to_owned();
+    (!title.is_empty()).then_some(title)
+}
+
 fn read_pdf_version(source: &Path) -> Option<String> {
     let mut file = File::open(source).ok()?;
     let mut header = [0_u8; 16];
@@ -874,6 +2331,30 @@ struct PreparedSource {
     pages: Vec<PageNumber>,
     _password_file: Option<PasswordFile>,
     _decrypted: Option<TemporaryPath>,
+}
+
+struct GeneratedBlankPage {
+    file: TemporaryPath,
+    geometry: PdfPageGeometry,
+}
+
+struct FooterOverlayPage {
+    geometry: PdfPageGeometry,
+    text: Option<String>,
+    position: Option<(f64, f64)>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct TextBounds {
+    /// Top-most text coordinate reported by `MuPDF` (top-origin page space).
+    top: f64,
+    /// Bottom-most text coordinate reported by `MuPDF` (top-origin page space).
+    bottom: f64,
+}
+
+struct TocEntry {
+    title: String,
+    page_position: usize,
 }
 
 struct PasswordFile {
@@ -899,6 +2380,355 @@ impl PasswordFile {
         argument.push(self.temporary.path());
         argument
     }
+}
+
+fn write_blank_page(path: &Path, geometry: &PdfPageGeometry) -> io::Result<()> {
+    let media_box = geometry
+        .media_box
+        .as_ref()
+        .expect("blank page geometry always has a media box");
+    let media_box = media_box.join(" ");
+    let crop_box = geometry
+        .crop_box
+        .as_ref()
+        .map(|values| format!(" /CropBox [{}]", values.join(" ")))
+        .unwrap_or_default();
+    let rotate = geometry
+        .rotate
+        .map_or_else(String::new, |value| format!(" /Rotate {value}"));
+    let objects = [
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n".to_owned(),
+        "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n".to_owned(),
+        format!(
+            "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [{media_box}]{crop_box}{rotate} /Contents 4 0 R >>\nendobj\n"
+        ),
+        "4 0 obj\n<< /Length 0 >>\nstream\nendstream\nendobj\n".to_owned(),
+    ];
+    let mut bytes = b"%PDF-1.7\n".to_vec();
+    let mut offsets = Vec::with_capacity(objects.len());
+    for object in objects {
+        offsets.push(bytes.len());
+        bytes.extend_from_slice(object.as_bytes());
+    }
+    let xref = bytes.len();
+    bytes.extend_from_slice("xref\n0 5\n0000000000 65535 f \n".as_bytes());
+    for offset in offsets {
+        bytes.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+    }
+    bytes.extend_from_slice(
+        format!("trailer\n<< /Size 5 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").as_bytes(),
+    );
+    fs::write(path, bytes)
+}
+
+fn write_footer_overlay(path: &Path, pages: &[FooterOverlayPage]) -> io::Result<()> {
+    let page_count = pages.len();
+    let font_object = 3_usize;
+    let first_page_object = 4_usize;
+    let first_content_object = first_page_object + page_count;
+    let object_count = first_content_object + page_count - 1;
+    let kids = (0..page_count)
+        .map(|index| format!("{} 0 R", first_page_object + index))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut objects = vec![
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n".to_owned(),
+        format!(
+            "2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {page_count} >>\nendobj\n"
+        ),
+        "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n".to_owned(),
+    ];
+    for (index, page) in pages.iter().enumerate() {
+        let page_object = first_page_object + index;
+        let content_object = first_content_object + index;
+        let media_box = page
+            .geometry
+            .media_box
+            .as_ref()
+            .expect("footer overlay page geometry always has a media box")
+            .join(" ");
+        let crop_box = page
+            .geometry
+            .crop_box
+            .as_ref()
+            .map(|values| format!(" /CropBox [{}]", values.join(" ")))
+            .unwrap_or_default();
+        let rotate = page
+            .geometry
+            .rotate
+            .map_or_else(String::new, |value| format!(" /Rotate {value}"));
+        objects.push(format!(
+            "{page_object} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [{media_box}]{crop_box}{rotate} /Resources << /Font << /F1 {font_object} 0 R >> >> /Contents {content_object} 0 R >>\nendobj\n"
+        ));
+        let stream = page.text.as_deref().map_or_else(String::new, |text| {
+            let (x, y) = page
+                .position
+                .unwrap_or_else(|| footer_position(&page.geometry));
+            format!(
+                "BT /F1 8 Tf {x:.2} {y:.2} Td ({}) Tj ET\n",
+                pdf_literal(text)
+            )
+        });
+        objects.push(format!(
+            "{content_object} 0 obj\n<< /Length {} >>\nstream\n{stream}endstream\nendobj\n",
+            stream.len()
+        ));
+    }
+
+    let mut bytes = b"%PDF-1.7\n".to_vec();
+    let mut offsets = Vec::with_capacity(objects.len());
+    for object in objects {
+        offsets.push(bytes.len());
+        bytes.extend_from_slice(object.as_bytes());
+    }
+    let xref = bytes.len();
+    bytes.extend_from_slice(
+        format!("xref\n0 {}\n0000000000 65535 f \n", object_count + 1).as_bytes(),
+    );
+    for offset in offsets {
+        bytes.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+    }
+    bytes.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            object_count + 1
+        )
+        .as_bytes(),
+    );
+    fs::write(path, bytes)
+}
+
+fn footer_position(geometry: &PdfPageGeometry) -> (f64, f64) {
+    let box_values = geometry.crop_box.as_ref().or(geometry.media_box.as_ref());
+    let Some(box_values) = box_values else {
+        return (24.0, 18.0);
+    };
+    let parse = |value: &str| value.parse::<f64>().unwrap_or(0.0);
+    (parse(&box_values[0]) + 24.0, parse(&box_values[1]) + 18.0)
+}
+
+const FOOTER_QUIET_BAND: f64 = 36.0;
+
+fn footer_position_with_text(
+    geometry: &PdfPageGeometry,
+    text_bounds: Option<TextBounds>,
+) -> (f64, f64) {
+    let box_values = geometry.crop_box.as_ref().or(geometry.media_box.as_ref());
+    let Some(box_values) = box_values else {
+        return footer_position(geometry);
+    };
+    let parse = |value: &str| value.parse::<f64>().unwrap_or(0.0);
+    let x0 = parse(&box_values[0]);
+    let y0 = parse(&box_values[1]);
+    let y1 = parse(&box_values[3]);
+    let bottom = (x0 + 24.0, y0 + 18.0);
+    let Some(bounds) = text_bounds else {
+        return bottom;
+    };
+
+    // MuPDF reports structured-text boxes in a top-origin coordinate system;
+    // PDF overlay coordinates use the opposite origin. Keep a 36pt quiet band
+    // around either edge and use whichever edge has more available clearance.
+    let content_low = y1 - bounds.bottom;
+    let content_high = y1 - bounds.top;
+    let bottom_clearance = content_low - y0;
+    let top_clearance = y1 - content_high;
+    if bottom_clearance >= FOOTER_QUIET_BAND || bottom_clearance >= top_clearance {
+        return bottom;
+    }
+    if top_clearance >= FOOTER_QUIET_BAND {
+        return (x0 + 24.0, y1 - 24.0);
+    }
+
+    // A page with text touching both edges has no collision-free band. Pick the
+    // roomier edge deterministically; semantic text remains visible and the
+    // evidence layer records that placement was bounded by page geometry.
+    if top_clearance > bottom_clearance {
+        (x0 + 24.0, y1 - 24.0)
+    } else {
+        bottom
+    }
+}
+
+fn parse_stext_bounds(text: &str) -> Option<TextBounds> {
+    let mut bounds = None;
+    for line in text.lines() {
+        let Some(start) = line.find("bbox=\"") else {
+            continue;
+        };
+        let values = line[start + 6..]
+            .split_once('"')
+            .map(|(value, _)| value)
+            .and_then(|value| {
+                let values = value
+                    .split_whitespace()
+                    .map(str::parse::<f64>)
+                    .collect::<Result<Vec<_>, _>>()
+                    .ok()?;
+                (values.len() == 4).then_some(values)
+            });
+        let Some(values) = values else {
+            continue;
+        };
+        if !values.iter().all(|value| value.is_finite()) {
+            continue;
+        }
+        let entry = bounds.get_or_insert(TextBounds {
+            top: values[1],
+            bottom: values[3],
+        });
+        entry.top = entry.top.min(values[1]);
+        entry.bottom = entry.bottom.max(values[3]);
+    }
+    bounds
+}
+
+fn pdf_literal(text: &str) -> String {
+    text.chars()
+        .map(|character| match character {
+            '\\' => "\\\\".to_owned(),
+            '(' => "\\(".to_owned(),
+            ')' => "\\)".to_owned(),
+            '\n' | '\r' | '\t' => " ".to_owned(),
+            character if character.is_ascii() && !character.is_ascii_control() => {
+                character.to_string()
+            }
+            _ => "?".to_owned(),
+        })
+        .collect()
+}
+
+fn toc_entries(
+    prepared: &[PreparedSource],
+    inputs: &[MergeEngineInput],
+    blank_pages: &[Option<GeneratedBlankPage>],
+    toc_policy: MergeTocPolicy,
+    toc_pages: usize,
+) -> Vec<TocEntry> {
+    let mut page_position = toc_pages.saturating_add(1);
+    let mut entries = Vec::with_capacity(inputs.len());
+    for ((source, input), blank_page) in prepared.iter().zip(inputs).zip(blank_pages) {
+        entries.push(TocEntry {
+            title: toc_title(input, toc_policy),
+            page_position,
+        });
+        page_position = page_position
+            .saturating_add(source.pages.len())
+            .saturating_add(usize::from(blank_page.is_some()));
+    }
+    entries
+}
+
+fn toc_title(input: &MergeEngineInput, policy: MergeTocPolicy) -> String {
+    match policy {
+        MergeTocPolicy::DocumentTitles => input
+            .metadata_title
+            .as_deref()
+            .filter(|title| !title.trim().is_empty())
+            .map_or_else(
+                || document_bookmark_title(&input.document_title),
+                ToOwned::to_owned,
+            ),
+        MergeTocPolicy::None | MergeTocPolicy::FileNames => {
+            document_bookmark_title(&input.document_title)
+        }
+    }
+}
+
+fn write_toc_pdf(path: &Path, entries: &[TocEntry], page_count: usize) -> io::Result<()> {
+    let font_object = 3_usize;
+    let first_page_object = 4_usize;
+    let first_content_object = first_page_object + page_count;
+    let object_count = first_content_object + page_count - 1;
+    let kids = (0..page_count)
+        .map(|index| format!("{} 0 R", first_page_object + index))
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut objects = vec![
+        "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n".to_owned(),
+        format!(
+            "2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {page_count} >>\nendobj\n"
+        ),
+        "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj\n".to_owned(),
+    ];
+    for index in 0..page_count {
+        let page_object = first_page_object + index;
+        let content_object = first_content_object + index;
+        objects.push(format!(
+            "{page_object} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 {font_object} 0 R >> >> /Contents {content_object} 0 R >>\nendobj\n"
+        ));
+        let mut stream = String::from("BT /F1 16 Tf 48 800 Td (Table of contents) Tj ET\n");
+        stream.push_str("BT /F1 8 Tf\n");
+        for (line_index, entry) in entries
+            .chunks(35)
+            .nth(index)
+            .unwrap_or_default()
+            .iter()
+            .enumerate()
+        {
+            let y = 770_i32 - i32::try_from(line_index).unwrap_or(0) * 20;
+            let _ = writeln!(
+                stream,
+                "1 0 0 1 48 {y} Tm ({}) Tj",
+                pdf_literal(&format!("{}    page {}", entry.title, entry.page_position))
+            );
+        }
+        stream.push_str("ET\n");
+        objects.push(format!(
+            "{content_object} 0 obj\n<< /Length {} >>\nstream\n{stream}endstream\nendobj\n",
+            stream.len()
+        ));
+    }
+
+    let mut bytes = b"%PDF-1.7\n".to_vec();
+    let mut offsets = Vec::with_capacity(objects.len());
+    for object in objects {
+        offsets.push(bytes.len());
+        bytes.extend_from_slice(object.as_bytes());
+    }
+    let xref = bytes.len();
+    bytes.extend_from_slice(
+        format!("xref\n0 {}\n0000000000 65535 f \n", object_count + 1).as_bytes(),
+    );
+    for offset in offsets {
+        bytes.extend_from_slice(format!("{offset:010} 00000 n \n").as_bytes());
+    }
+    bytes.extend_from_slice(
+        format!(
+            "trailer\n<< /Size {} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n",
+            object_count + 1
+        )
+        .as_bytes(),
+    );
+    fs::write(path, bytes)
+}
+
+fn qpdf_path(path: &Path) -> OsString {
+    path.as_os_str().to_os_string()
+}
+
+fn parse_qpdf_page_count(stdout: &str, context: &str) -> Result<u32, EngineError> {
+    stdout.trim().parse::<u32>().map_err(|_| {
+        EngineError::new(
+            ErrorCode::EngineFailure,
+            format!("qpdf returned a non-integer {context} page count"),
+        )
+    })
+}
+
+fn stage_split_output(source: &Path, destination: &Path) -> Result<(), EngineError> {
+    fs::copy(source, destination).map_err(|error| {
+        EngineError::new(
+            ErrorCode::OutputWriteFailed,
+            format!("cannot stage split output: {error}"),
+        )
+    })?;
+    fs::remove_file(source).map_err(|error| {
+        EngineError::new(
+            ErrorCode::OutputWriteFailed,
+            format!("cannot clean split staging output: {error}"),
+        )
+    })
 }
 
 struct TemporaryPath {
@@ -1238,38 +3068,416 @@ mod tests {
     }
 
     #[test]
-    fn document_bookmark_plan_preserves_source_order_and_page_offsets() {
-        let inputs = vec![
-            MergeEngineInput {
-                source: PathBuf::from("first.pdf"),
-                document_title: "first.pdf".to_owned(),
-                pages: vec![
-                    PageNumber::new(3).expect("valid"),
-                    PageNumber::new(1).expect("valid"),
-                ],
-                password: None,
-            },
-            MergeEngineInput {
-                source: PathBuf::from("first.pdf"),
-                document_title: "first.pdf".to_owned(),
-                pages: vec![PageNumber::new(2).expect("valid")],
-                password: None,
-            },
-        ];
+    fn page_geometry_parser_accepts_boxes_rotation_and_parent_reference() {
+        let page = "<< /Type /Page /Parent 12 0 R /MediaBox [ -10 -20 612 792 ] /CropBox [ 0 0 600 700 ] /Rotate 270 >>";
+        assert_eq!(
+            parse_pdf_number_array(page, "/MediaBox").expect("media box"),
+            Some([
+                "-10".to_owned(),
+                "-20".to_owned(),
+                "612".to_owned(),
+                "792".to_owned(),
+            ])
+        );
+        assert_eq!(
+            parse_pdf_number_array(page, "/CropBox").expect("crop box"),
+            Some([
+                "0".to_owned(),
+                "0".to_owned(),
+                "600".to_owned(),
+                "700".to_owned(),
+            ])
+        );
+        assert_eq!(
+            parse_pdf_integer(page, "/Rotate").expect("rotation"),
+            Some(270)
+        );
+        assert_eq!(
+            parse_pdf_reference(page, "/Parent").expect("parent"),
+            Some((12, 0))
+        );
+    }
+
+    #[test]
+    fn footer_position_prefers_the_visible_crop_box() {
+        let geometry = PdfPageGeometry {
+            media_box: Some([
+                "-10".to_owned(),
+                "-20".to_owned(),
+                "612".to_owned(),
+                "792".to_owned(),
+            ]),
+            crop_box: Some([
+                "20".to_owned(),
+                "30".to_owned(),
+                "580".to_owned(),
+                "760".to_owned(),
+            ]),
+            rotate: None,
+        };
+        assert_eq!(footer_position(&geometry), (44.0, 48.0));
+    }
+
+    #[test]
+    fn footer_position_moves_to_top_when_bottom_band_is_occupied() {
+        let geometry = PdfPageGeometry {
+            media_box: Some([
+                "0".to_owned(),
+                "0".to_owned(),
+                "600".to_owned(),
+                "800".to_owned(),
+            ]),
+            crop_box: None,
+            rotate: None,
+        };
+        let bounds = TextBounds {
+            top: 60.0,
+            bottom: 790.0,
+        };
+        assert_eq!(
+            footer_position_with_text(&geometry, Some(bounds)),
+            (24.0, 776.0)
+        );
+    }
+
+    #[test]
+    fn structured_text_bounds_are_bounded_to_block_boxes() {
+        let text = r#"<page id="page1">
+<block bbox="72 52.65 168.01 77.38">
+<line bbox="72 702 200 720">
+</line>
+</block>
+</page>"#;
+        assert_eq!(
+            parse_stext_bounds(text),
+            Some(TextBounds {
+                top: 52.65,
+                bottom: 720.0,
+            })
+        );
+    }
+
+    #[test]
+    fn qdf_document_title_decodes_literal_and_utf16_hex_values() {
+        assert_eq!(
+            qdf_document_title(b"4 0 obj\n<< /Title (Quarterly \\(draft\\)) >>\nendobj"),
+            Some("Quarterly (draft)".to_owned())
+        );
+        assert_eq!(
+            qdf_document_title(b"4 0 obj\n<< /Title <FEFF00500069006E0063> >>\nendobj"),
+            Some("Pinc".to_owned())
+        );
+    }
+
+    #[test]
+    fn qdf_document_title_ignores_empty_and_malformed_values() {
+        assert_eq!(qdf_document_title(b"<< /Title () >>"), None);
+        assert_eq!(qdf_document_title(b"<< /Title (unterminated >>"), None);
+        assert_eq!(qdf_document_title(b"<< /Title <GG> >>"), None);
+    }
+
+    #[test]
+    fn document_title_contents_falls_back_to_filename() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("report.pdf"),
+            document_title: "report.pdf".to_owned(),
+            metadata_title: Some("  ".to_owned()),
+            pages: vec![PageNumber::new(1).expect("valid")],
+            password: None,
+        };
+        assert_eq!(toc_title(&input, MergeTocPolicy::DocumentTitles), "report");
+        assert_eq!(toc_title(&input, MergeTocPolicy::FileNames), "report");
+    }
+
+    #[test]
+    fn source_bookmark_plan_prunes_excluded_leaves_and_maps_selected_pages() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("bookmarks.pdf"),
+            document_title: "bookmarks.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(2).expect("valid"),
+                PageNumber::new(3).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [
+            {"title":"Chapter 1","destpageposfrom1":1,"kids":[]},
+            {"title":"Chapter 2","destpageposfrom1":2,"kids":[
+              {"title":"Appendix","destpageposfrom1":3,"kids":[]}
+            ]}
+          ]
+        }"#;
 
         assert_eq!(
-            bookmark_expectations(&inputs).expect("bookmark plan"),
+            parse_source_bookmarks(source, &input, 4).expect("source plan"),
+            vec![BookmarkPlanNode {
+                title: "Chapter 2".to_owned(),
+                page_position: Some(4),
+                is_open: true,
+                children: vec![BookmarkPlanNode {
+                    title: "Appendix".to_owned(),
+                    page_position: Some(5),
+                    is_open: true,
+                    children: Vec::new(),
+                }],
+            }]
+        );
+        assert_eq!(document_bookmark_title("bookmarks.pdf"), "bookmarks");
+    }
+
+    #[test]
+    fn source_bookmark_parser_preserves_unicode_titles_and_hierarchy() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("unicode-bookmarks.pdf"),
+            document_title: "unicode-bookmarks.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(2).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"第一章 — 導言 📄",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "open":false,
+            "kids":[{
+              "title":"節 1.1 · 概要",
+              "dest":["4 0 R","/Fit"],
+              "destpageposfrom1":2,
+              "kids":[]
+            }]
+          }]
+        }"#;
+
+        let plan = parse_source_bookmarks(source, &input, 1).expect("unicode plan");
+        assert_eq!(plan[0].title, "第一章 — 導言 📄");
+        assert_eq!(plan[0].page_position, Some(1));
+        assert!(!plan[0].is_open);
+        assert_eq!(plan[0].children[0].title, "節 1.1 · 概要");
+        assert_eq!(plan[0].children[0].page_position, Some(2));
+    }
+
+    #[test]
+    fn source_bookmark_parser_rejects_named_destination_leaves() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("named-destination.pdf"),
+            document_title: "named-destination.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![PageNumber::new(1).expect("valid")],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Named chapter",
+            "dest":"u:chapter-one",
+            "kids":[]
+          }]
+        }"#;
+
+        let error = parse_source_bookmarks(source, &input, 1)
+            .expect_err("named destinations must not be silently discarded");
+        assert_eq!(error.code(), ErrorCode::CapabilityUnavailable);
+        assert!(error.to_string().contains("named destination"));
+    }
+
+    #[test]
+    fn source_bookmark_parser_rejects_action_or_unresolved_destinations() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("action-bookmark.pdf"),
+            document_title: "action-bookmark.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![PageNumber::new(1).expect("valid")],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Open web resource",
+            "dest":null,
+            "action":{"type":"/URI"},
+            "kids":[]
+          }]
+        }"#;
+
+        let error = parse_source_bookmarks(source, &input, 1)
+            .expect_err("actions must not be silently discarded");
+        assert_eq!(error.code(), ErrorCode::CapabilityUnavailable);
+        assert!(error.to_string().contains("action"));
+    }
+
+    #[test]
+    fn source_bookmark_parser_keeps_unresolved_container_with_surviving_child() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("container-bookmark.pdf"),
+            document_title: "container-bookmark.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![PageNumber::new(1).expect("valid")],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Container",
+            "dest":null,
+            "kids":[{
+              "title":"Page one",
+              "dest":["3 0 R","/Fit"],
+              "destpageposfrom1":1,
+              "kids":[]
+            }]
+          }]
+        }"#;
+
+        let plan = parse_source_bookmarks(source, &input, 1).expect("container is valid");
+        assert_eq!(plan.len(), 1);
+        assert_eq!(plan[0].title, "Container");
+        assert_eq!(plan[0].page_position, None);
+        assert_eq!(plan[0].children[0].page_position, Some(1));
+    }
+
+    #[test]
+    fn split_bookmark_parser_rejects_ambiguous_duplicate_page_destinations() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("duplicate-pages.pdf"),
+            document_title: "duplicate-pages.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(1).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Page one",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "kids":[]
+          }]
+        }"#;
+
+        let error = parse_source_bookmarks_rejecting_ambiguous_duplicates(source, &input, 1)
+            .expect_err("duplicate page destination must be explicit");
+        assert_eq!(error.code(), ErrorCode::CapabilityUnavailable);
+        assert!(
+            error
+                .to_string()
+                .contains("destination identity is ambiguous")
+        );
+    }
+
+    #[test]
+    fn merge_bookmark_parser_retains_first_duplicate_page_occurrence() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("duplicate-pages.pdf"),
+            document_title: "duplicate-pages.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(1).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Page one",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "kids":[]
+          }]
+        }"#;
+
+        let plan = parse_source_bookmarks(source, &input, 1).expect("merge policy is stable");
+        assert_eq!(plan[0].page_position, Some(1));
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_keeps_only_ordered_top_level_page_targets() {
+        let json = r#"{
+          "outlines": [
+            {"title":"Intro","destpageposfrom1":1,"kids":[]},
+            {"title":"Chapter 2","destpageposfrom1":3,"kids":[
+              {"title":"Appendix","destpageposfrom1":4,"kids":[]}
+            ]}
+          ]
+        }"#;
+        assert_eq!(
+            parse_bookmark_boundaries(json).expect("valid boundaries"),
             vec![
-                BookmarkExpectation {
-                    title: "first.pdf".to_owned(),
-                    page_position: 1,
+                BookmarkBoundary {
+                    title: "Intro".to_owned(),
+                    page: PageNumber::new(1).expect("page"),
+                    depth: 0,
                 },
-                BookmarkExpectation {
-                    title: "first.pdf".to_owned(),
-                    page_position: 3,
+                BookmarkBoundary {
+                    title: "Chapter 2".to_owned(),
+                    page: PageNumber::new(3).expect("page"),
+                    depth: 0,
                 },
             ]
         );
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_selects_nested_depth_and_preserves_order() {
+        let json = r#"{
+          "outlines": [
+            {"title":"Chapter 1","destpageposfrom1":1,"kids":[
+              {"title":"Section 1.1","destpageposfrom1":1,"kids":[]},
+              {"title":"Section 1.2","destpageposfrom1":2,"kids":[]}
+            ]},
+            {"title":"Chapter 2","destpageposfrom1":3,"kids":[
+              {"title":"Section 2.1","destpageposfrom1":3,"kids":[]}
+            ]}
+          ]
+        }"#;
+        assert_eq!(
+            parse_bookmark_boundaries_at_depth(json, 1).expect("nested boundaries"),
+            vec![
+                BookmarkBoundary {
+                    title: "Section 1.1".to_owned(),
+                    page: PageNumber::new(1).expect("page"),
+                    depth: 1,
+                },
+                BookmarkBoundary {
+                    title: "Section 1.2".to_owned(),
+                    page: PageNumber::new(2).expect("page"),
+                    depth: 1,
+                },
+                BookmarkBoundary {
+                    title: "Section 2.1".to_owned(),
+                    page: PageNumber::new(3).expect("page"),
+                    depth: 1,
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_allows_unresolved_intermediate_destinations() {
+        let json = r#"{
+          "outlines": [{"title":"Chapter","kids":[
+            {"title":"Section","destpageposfrom1":2,"kids":[]}
+          ]}]
+        }"#;
+        let boundaries = parse_bookmark_boundaries_at_depth(json, 1).expect("child boundary");
+        assert_eq!(boundaries[0].title, "Section");
+        assert_eq!(boundaries[0].page.get(), 2);
+    }
+
+    #[test]
+    fn bookmark_boundary_parser_rejects_missing_selected_destination() {
+        let json = r#"{
+          "outlines": [{"title":"Chapter","destpageposfrom1":1,"kids":[
+            {"title":"Section","kids":[]}
+          ]}]
+        }"#;
+        let error = parse_bookmark_boundaries_at_depth(json, 1).expect_err("missing target");
+        assert!(error.to_string().contains("depth 1"));
+        assert!(error.to_string().contains("valid page destination"));
     }
 
     #[test]
@@ -1284,7 +3492,7 @@ mod tests {
             catalog_reference: "1 0 R".to_owned(),
             catalog_object: 1,
             catalog_generation: 0,
-            destination_objects: vec!["3 0 R".to_owned(), "5 0 R".to_owned()],
+            page_objects: vec!["3 0 R".to_owned(), "5 0 R".to_owned(), "7 0 R".to_owned()],
         };
         let catalog = json!({
             "/Pages": "2 0 R",
@@ -1295,13 +3503,22 @@ mod tests {
         .expect("catalog object")
         .clone();
         let expected = vec![
-            BookmarkExpectation {
-                title: "one.pdf".to_owned(),
-                page_position: 1,
+            BookmarkPlanNode {
+                title: "one".to_owned(),
+                page_position: Some(1),
+                is_open: true,
+                children: vec![BookmarkPlanNode {
+                    title: "child".to_owned(),
+                    page_position: Some(3),
+                    is_open: true,
+                    children: Vec::new(),
+                }],
             },
-            BookmarkExpectation {
-                title: "two.pdf".to_owned(),
-                page_position: 3,
+            BookmarkPlanNode {
+                title: "two".to_owned(),
+                page_position: Some(2),
+                is_open: true,
+                children: Vec::new(),
             },
         ];
 
@@ -1317,14 +3534,59 @@ mod tests {
             objects["obj:1 0 R"]["value"]["/Lang"],
             Value::String("u:en".to_owned())
         );
-        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(2));
+        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(3));
         assert_eq!(
             objects["obj:9 0 R"]["value"]["/Dest"][0],
             Value::String("3 0 R".to_owned())
         );
         assert_eq!(
             objects["obj:10 0 R"]["value"]["/Dest"][0],
+            Value::String("7 0 R".to_owned())
+        );
+        assert_eq!(
+            objects["obj:11 0 R"]["value"]["/Dest"][0],
             Value::String("5 0 R".to_owned())
         );
+    }
+
+    #[test]
+    fn bookmark_update_preserves_closed_nested_outline_state() {
+        let layout = OutlineLayout {
+            metadata: json!({
+                "jsonversion": 2,
+                "pdfversion": "1.7",
+                "maxobjectid": 7
+            }),
+            max_object_id: 7,
+            catalog_reference: "1 0 R".to_owned(),
+            catalog_object: 1,
+            catalog_generation: 0,
+            page_objects: vec!["3 0 R".to_owned()],
+        };
+        let catalog = json!({"/Pages": "2 0 R", "/Type": "/Catalog"})
+            .as_object()
+            .expect("catalog object")
+            .clone();
+        let expected = vec![BookmarkPlanNode {
+            title: "Root".to_owned(),
+            page_position: Some(1),
+            is_open: true,
+            children: vec![BookmarkPlanNode {
+                title: "Closed".to_owned(),
+                page_position: None,
+                is_open: false,
+                children: vec![BookmarkPlanNode {
+                    title: "Leaf".to_owned(),
+                    page_position: Some(1),
+                    is_open: true,
+                    children: Vec::new(),
+                }],
+            }],
+        }];
+
+        let update = build_bookmark_update(&layout, catalog, &expected).expect("bookmark update");
+        let objects = update["qpdf"][1].as_object().expect("update objects");
+        assert_eq!(objects["obj:8 0 R"]["value"]["/Count"], Value::from(3));
+        assert_eq!(objects["obj:10 0 R"]["value"]["/Count"], Value::from(-1));
     }
 }
