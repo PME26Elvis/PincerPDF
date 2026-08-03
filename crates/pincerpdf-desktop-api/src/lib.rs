@@ -71,7 +71,7 @@ pub struct PickedSplitSource {
     pub display_path: String,
     /// Page count when inspection succeeded without a password.
     pub page_count: Option<u32>,
-    /// Whether the source has a usable top-level bookmark outline.
+    /// Whether the source has a usable bookmark outline at any depth.
     pub has_bookmarks: bool,
     /// Safe per-source problem when the file cannot be accepted immediately.
     pub issue: Option<CommandError>,
@@ -279,3 +279,4 @@ mod tests {
         assert_eq!(error.source_index, Some(2));
     }
 }
+
