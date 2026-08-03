@@ -758,11 +758,11 @@ main {
   padding: 1rem 1.15rem;
   border: 1px solid var(--line);
   border-radius: 0.85rem;
-  background: var(--surface-muted);
+  background: var(--surface-soft);
 }
 
 .split-source-summary strong {
-  color: var(--text-strong);
+  color: var(--text);
   font-size: 1rem;
 }
 
