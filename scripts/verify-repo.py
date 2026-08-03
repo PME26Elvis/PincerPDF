@@ -39,6 +39,8 @@ REQUIRED_FILES = (
     "apps/pincerpdf-desktop/src-tauri/icons/icon.svg",
     "crates/pincerpdf-merge/Cargo.toml",
     "crates/pincerpdf-merge/src/lib.rs",
+    "crates/pincerpdf-split/Cargo.toml",
+    "crates/pincerpdf-split/src/lib.rs",
     "crates/pincerpdf-desktop-api/Cargo.toml",
     "crates/pincerpdf-desktop-api/src/lib.rs",
     "crates/pincerpdf-engine-qpdf/Cargo.toml",
@@ -58,6 +60,7 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-024-filename-table-of-contents.md",
     "docs/architecture/adr/ADR-025-document-title-table-of-contents.md",
     "docs/architecture/adr/ADR-026-text-aware-footer-placement.md",
+    "docs/architecture/adr/ADR-027-split-planner-boundary.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -88,6 +91,7 @@ REQUIRED_MEMBERS = {
     "crates/pincerpdf-engine-qpdf",
     "crates/pincerpdf-filesystem",
     "crates/pincerpdf-merge",
+    "crates/pincerpdf-split",
 }
 
 BANNED_TRACKED_PARTS = {
@@ -138,6 +142,7 @@ def verify_dependency_locks() -> None:
         "pincerpdf-desktop-api",
         "pincerpdf-merge",
         "pincerpdf-engine-qpdf",
+        "pincerpdf-split",
         "tauri",
         "tauri-plugin-dialog",
         "leptos",

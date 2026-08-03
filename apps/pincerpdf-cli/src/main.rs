@@ -6,6 +6,7 @@ use pincerpdf_domain::{PageNumber, PageSelection, ToolKind};
 use pincerpdf_engine_api::{CapabilitySet, PdfCapability};
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::{MergeExecutionOptions, MergeRequest, MergeService, MergeSource};
+use pincerpdf_split::{SplitRule, plan_split};
 use std::env;
 use std::error::Error;
 use std::path::PathBuf;
@@ -55,9 +56,43 @@ fn run(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>
             println!("{output}");
             Ok(())
         }
+        Some("split-plan") => split_plan(arguments),
         Some("merge") => merge(arguments),
         Some(command) => Err(format!("unknown command: {command}").into()),
     }
+}
+
+fn split_plan(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>> {
+    let source = PathBuf::from(
+        arguments
+            .next()
+            .ok_or("split-plan source path is required")?,
+    );
+    let total_pages = arguments
+        .next()
+        .ok_or("split-plan total page count is required")?
+        .parse::<u32>()?;
+    let rule = arguments
+        .next()
+        .ok_or("split-plan rule is required")?
+        .parse::<SplitRule>()?;
+    if arguments.next().is_some() {
+        return Err("split-plan accepts exactly three arguments".into());
+    }
+    let plan = plan_split(source, total_pages, &rule)?;
+    for part in plan.parts {
+        let pages = part
+            .pages
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(",");
+        println!(
+            "split.part={} pages={} stem={}",
+            part.ordinal, pages, part.filename_stem
+        );
+    }
+    Ok(())
 }
 
 fn merge(mut arguments: impl Iterator<Item = String>) -> Result<(), Box<dyn Error>> {
@@ -103,6 +138,9 @@ fn print_help() {
     println!("USAGE:");
     println!("  pincerpdf-cli doctor");
     println!("  pincerpdf-cli selection <EXPRESSION> <TOTAL_PAGES>");
+    println!(
+        "  pincerpdf-cli split-plan <SOURCE.pdf> <TOTAL_PAGES> <every-page|every:N|RANGE;RANGE>"
+    );
     println!("  pincerpdf-cli merge <OUTPUT.pdf> <SOURCE.pdf> <SOURCE.pdf> [SOURCE.pdf ...]");
     println!("  pincerpdf-cli --version");
 }

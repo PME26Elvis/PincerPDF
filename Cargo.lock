@@ -2692,6 +2692,7 @@ dependencies = [
  "pincerpdf-engine-api",
  "pincerpdf-engine-qpdf",
  "pincerpdf-merge",
+ "pincerpdf-split",
 ]
 
 [[package]]
@@ -2751,6 +2752,13 @@ dependencies = [
  "pincerpdf-domain",
  "pincerpdf-engine-api",
  "pincerpdf-filesystem",
+]
+
+[[package]]
+name = "pincerpdf-split"
+version = "0.1.0"
+dependencies = [
+ "pincerpdf-domain",
 ]
 
 [[package]]

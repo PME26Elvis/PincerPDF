@@ -7,7 +7,7 @@
 | P2 | PDF engine capability spike | Complete | Engine responsibility split supported by executable structural/render evidence and ADR-013. |
 | P3 | Application shell and design system | Complete | Tauri/Leptos shell, accessibility basics, five browser E2E checks, and desktop/compact visual checkpoints pass. |
 | P4 | Merge vertical slice | In progress | Merge parity and assigned legacy-test rows have passing evidence. |
-| P5 | Split family | Planned | No page loss/duplication across split corpus and edge cases. |
+| P5 | Split family | In progress | Engine-independent split planner is deterministic; QPDF output adapter and corpus gates remain. |
 | P6 | Remaining PDF tools | Planned | All eight PDF tools reach verified functional parity. |
 | P7 | Desktop completeness | Planned | Non-tool original features are implemented or explicitly replaced. |
 | P8 | Hardening | Planned | Reliability, security, accessibility, performance and corpus gates meet RC thresholds. |
@@ -25,3 +25,7 @@
 - **P4.7 — Filename footer overlay: Partial.** An explicit UI/DTO policy applies a geometry-matched source filename overlay to every non-blank output page and leaves generated blanks empty; ASCII QPDF/MuPDF contract evidence is green.
 - **P4.8 — Table of contents: Partial.** Explicit filename and document-title UI/DTO policies prepend generated contents pages (with pagination for larger source lists) and keep document bookmarks pointed at shifted source pages; both real-engine modes are covered locally.
 - Form collision handling, Unicode footer/contents fonts, normalization/compression and full legacy parity remain later P4 work. Footer placement now has a MuPDF text-aware quiet-band implementation, but still needs semantic coverage for forms, annotations, images and rotated writing.
+
+## Current P5 checkpoints
+
+- **P5.1 — Split planner: In progress.** `pincerpdf-split` plans every-page, fixed-count and explicit range outputs without engine or filesystem side effects. The CLI exposes `split-plan` for deterministic smoke checks; QPDF materialization, bookmark-aware splitting and split-by-size/bookmarks remain gated.

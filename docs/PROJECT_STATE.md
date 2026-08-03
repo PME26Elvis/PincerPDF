@@ -1,7 +1,7 @@
 # Project State
 
 - Updated: 2026-08-03
-- Phase: P4 — Merge vertical slice (P4.8 table of contents modes)
+- Phase: P5 — Split family (P5.1 engine-independent planner)
 - Repository: https://github.com/PME26Elvis/PincerPDF
 - Upstream baseline: PDFsam Basic `6.0.5-SNAPSHOT`
 - Delivery model: Windows-first local verification with atomic checkpoints to `main`; Linux milestone/release compatibility evidence
@@ -525,14 +525,18 @@ local Windows toolchain after this adjustment.
 
 ## Exact next actions
 
-1. Retain Linux compatibility evidence and integrate the validated P4.8 source
-   head through the connector workflow.
-2. Add broader inherited MediaBox/CropBox geometry corpus coverage and a
-   Unicode-font footer/contents slice; expand footer collision evidence beyond
-   text-only quiet-band placement.
-3. Keep mapping and closing the remaining MERGE-003 through MERGE-008 policy
-   gaps while all other seven tools remain visibly gated.
+1. Materialize `pincerpdf-split` plans through a process-isolated QPDF adapter
+   with page-conservation and atomic-output contract evidence.
+2. Add explicit split-by-bookmarks and split-by-size planning only after their
+   source metadata and size-estimation policies are testable.
+3. Continue closing the remaining MERGE-003 through MERGE-008 policy gaps,
+   especially Unicode typography and semantic overlay collisions.
 
 ## Completion status
 
-P0 through P3, P4.1 Merge core and P4.2 Merge desktop acceptance are complete. P4 remains in progress at the parity-corpus checkpoint. Portable/native-command tests, browser E2E, Windows visual checkpoints, production-protocol WebView2 E2E, Linux milestone evidence, atomic-replacement recovery and real system-dialog automation are green.
+P0 through P3, P4.1 Merge core and P4.2 Merge desktop acceptance are complete.
+P4 remains in progress at the parity-corpus checkpoint and P5.1 is now in
+progress at the engine-independent planner boundary. Portable/native-command
+tests, browser E2E, Windows visual checkpoints, production-protocol WebView2
+E2E, Linux milestone evidence, atomic-replacement recovery and real
+system-dialog automation are green.
