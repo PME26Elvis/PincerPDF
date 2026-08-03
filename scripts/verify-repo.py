@@ -522,6 +522,7 @@ def verify_merge_desktop_contract() -> None:
         "spawn_blocking",
         "Entry::Occupied",
         "native_command_boundary_merges_only_registered_paths",
+        "native_command_boundary_splits_only_registered_paths",
         "MergeTocPolicy::FileNames",
         "MergeTocPolicy::DocumentTitles",
     ):
@@ -609,10 +610,11 @@ def verify_merge_desktop_contract() -> None:
         if token not in tests:
             fail(f"P4.2 E2E acceptance contract missing: {token}")
 
-    if "merge-desktop-contract:" not in makefile:
-        fail("P4.2 native desktop contract is not wired into Make")
+    if "merge-desktop-contract:" not in makefile or "split-desktop-contract:" not in makefile:
+        fail("native Merge/Split desktop contracts are not wired into Make")
     if (
         "make merge-desktop-contract" not in workflow
+        or "make split-desktop-contract" not in workflow
         or "crates/pincerpdf-desktop-api/**" not in workflow
     ):
         fail("P4.2 native desktop contract is not wired into its Linux compatibility lane")

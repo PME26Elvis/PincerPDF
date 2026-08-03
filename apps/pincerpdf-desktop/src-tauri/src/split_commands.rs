@@ -218,3 +218,78 @@ fn engine_error(code: ErrorCode, message: impl Into<String>) -> CommandError {
 fn internal_error(message: impl Into<String>) -> CommandError {
     engine_error(ErrorCode::Internal, message)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn unknown_tokens_fail_before_engine_access() {
+        let error = execute_split(
+            &DesktopState::default(),
+            SplitRunRequest {
+                operation_id: "split-unknown".to_owned(),
+                source_token: "unknown-source".to_owned(),
+                output_directory_token: "unknown-output".to_owned(),
+                rule: SplitRuleKind::EveryPage,
+                fixed_page_count: None,
+                page_ranges: None,
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect_err("unknown token");
+        assert_eq!(error.code, "invalid_path_token");
+    }
+
+    #[test]
+    #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+    fn native_command_boundary_splits_only_registered_paths() {
+        let fixtures = PathBuf::from(
+            std::env::var("PINCERPDF_PDF_FIXTURES")
+                .expect("PINCERPDF_PDF_FIXTURES must point at generated fixtures"),
+        );
+        let evidence = PathBuf::from(
+            std::env::var("PINCERPDF_SPLIT_DESKTOP_EVIDENCE_DIR")
+                .expect("PINCERPDF_SPLIT_DESKTOP_EVIDENCE_DIR must be set"),
+        );
+        fs::create_dir_all(&evidence).expect("create desktop split evidence directory");
+        let output_directory = evidence.join("outputs");
+        fs::create_dir_all(&output_directory).expect("create split output directory");
+
+        let state = DesktopState::default();
+        let source = state
+            .register_path(fixtures.join("plain-three-pages.pdf"))
+            .expect("register split input");
+        let destination = state
+            .register_path(output_directory.clone())
+            .expect("register split destination");
+        let report = execute_split(
+            &state,
+            SplitRunRequest {
+                operation_id: "native-split-contract".to_owned(),
+                source_token: source,
+                output_directory_token: destination,
+                rule: SplitRuleKind::EveryPage,
+                fixed_page_count: None,
+                page_ranges: None,
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect("desktop boundary split");
+
+        assert_eq!(report.page_count, 3);
+        assert_eq!(report.part_count, 3);
+        assert_eq!(report.engine_id, "qpdf-process");
+        assert_eq!(report.outputs.len(), 3);
+        for output in report.outputs {
+            assert!(
+                Path::new(&output).is_file(),
+                "missing split output: {output}"
+            );
+        }
+    }
+}

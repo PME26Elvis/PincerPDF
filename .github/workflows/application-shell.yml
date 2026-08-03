@@ -90,6 +90,8 @@ jobs:
               cargo check --locked -p pincerpdf-desktop
               MERGE_DESKTOP_ARTIFACT_DIR="$PWD/.artifacts/application-shell" \
                 make merge-desktop-contract
+              SPLIT_DESKTOP_ARTIFACT_DIR="$PWD/.artifacts/application-shell" \
+                make split-desktop-contract
               cd apps/pincerpdf-ui
               trunk build --release --dist ../../.artifacts/application-shell/dist
               cd ../..
@@ -112,6 +114,7 @@ jobs:
             echo "- Leptos CSR release build: passed"
             echo "- Tauri 2 Linux host check: passed"
             echo "- trusted desktop Merge command contract: passed"
+            echo "- trusted desktop Split command contract: passed"
             echo "- Workspace format, Clippy and tests: passed"
             echo "- Browser E2E and keyboard checks: passed"
             echo "- Desktop and compact screenshots: captured"

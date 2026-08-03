@@ -1,8 +1,9 @@
 SHELL := /usr/bin/env bash
 .DEFAULT_GOAL := help
 MERGE_DESKTOP_ARTIFACT_DIR ?= $(CURDIR)/.artifacts/merge-desktop
+SPLIT_DESKTOP_ARTIFACT_DIR ?= $(CURDIR)/.artifacts/split-desktop
 
-.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection split-plan fixtures-pdf probe-pdf-engines merge-contract split-contract merge-desktop-contract web-build desktop-check shell-e2e clean
+.PHONY: help bootstrap-check verify-structure fmt lint test check-fast doctor selection split-plan fixtures-pdf probe-pdf-engines merge-contract split-contract merge-desktop-contract split-desktop-contract web-build desktop-check shell-e2e clean
 
 help:
 	@printf '%s\n' \
@@ -21,6 +22,7 @@ help:
 	  '  make merge-contract     Run the ignored real-QPDF Merge contract' \
 	  '  make split-contract     Run the ignored real-QPDF Split contract' \
 	  '  make merge-desktop-contract  Run the native command-boundary Merge contract' \
+	  '  make split-desktop-contract  Run the native command-boundary Split contract' \
 	  '  make web-build          Build the Leptos CSR shell with Trunk' \
 	  '  make desktop-check      Compile-check the Tauri 2 host' \
 	  '  make shell-e2e          Run browser shell verification'
@@ -84,6 +86,14 @@ merge-desktop-contract: fixtures-pdf
 	 PINCERPDF_MERGE_DESKTOP_EVIDENCE_DIR="$(MERGE_DESKTOP_ARTIFACT_DIR)/native-contract" \
 	 cargo test --locked -p pincerpdf-desktop \
 	 native_command_boundary_merges_only_registered_paths -- --ignored --nocapture
+
+split-desktop-contract: fixtures-pdf
+	@rm -rf "$(SPLIT_DESKTOP_ARTIFACT_DIR)/native-contract"
+	@mkdir -p "$(SPLIT_DESKTOP_ARTIFACT_DIR)/native-contract"
+	@PINCERPDF_PDF_FIXTURES="$(CURDIR)/.artifacts/pdf-engine-probe/fixtures" \
+	 PINCERPDF_SPLIT_DESKTOP_EVIDENCE_DIR="$(SPLIT_DESKTOP_ARTIFACT_DIR)/native-contract" \
+	 cargo test --locked -p pincerpdf-desktop \
+	 native_command_boundary_splits_only_registered_paths -- --ignored --nocapture
 
 web-build:
 	@cd apps/pincerpdf-ui && trunk build --release
