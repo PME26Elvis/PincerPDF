@@ -438,7 +438,16 @@ def verify_split_planner_contract() -> None:
     ):
         if token not in split_source:
             fail(f"P5.1 split planner contract missing: {token}")
-    for token in ("split-plan", "plan_split", "every-page"):
+    for token in (
+        'Some("split")',
+        "split-plan",
+        "plan_split",
+        "estimate_page_sizes",
+        "inspect_bookmark_boundaries",
+        "size:",
+        "bookmarks",
+        "every-page",
+    ):
         if token not in cli_source:
             fail(f"P5.1 CLI smoke contract missing: {token}")
     for token in (

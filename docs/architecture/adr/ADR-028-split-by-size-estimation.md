@@ -19,6 +19,10 @@ serialized output sizes. The resulting `SplitPlan` carries the byte limit;
 the materializer checks every temporary output before atomic finalization and
 removes all outputs if a real result exceeds the estimate.
 
+The internal CLI exposes the same path as `split <OUTPUT_DIR> <SOURCE.pdf>
+size:BYTES`; bookmark mode is available as `bookmarks`, while the existing
+page-rule syntax remains unchanged.
+
 ## Invariants
 
 - exactly one nonzero estimate exists for each one-based source page;
