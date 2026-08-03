@@ -1,6 +1,6 @@
 Exit code: 0
 Wall time: 0.8 seconds
-Total output lines: 3482
+Total output lines: 3487
 Output:
 #![forbid(unsafe_code)]
 #![allow(clippy::module_name_repetitions)]
@@ -525,7 +525,7 @@ impl QpdfAdapter {
                     EngineError::new(
                         ErrorCode::EngineFailure,
                         format!("QPDF produced an invalid split-size estimate for page {page}"),
-  …20436 tokens truncated…dText {
+  …20514 tokens truncated…dText {
     let mut retained = Vec::with_capacity(limit.min(8192));
     let mut truncated = false;
     let mut buffer = [0_u8; 8192];
