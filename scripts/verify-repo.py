@@ -606,6 +606,10 @@ def verify_merge_desktop_contract() -> None:
         "merge-retained-bookmark-policy-desktop.png",
         "merge-completed-compact.png",
         "deterministic Split workspace",
+        "split-empty-desktop.png",
+        "split-configured-desktop.png",
+        "split-completed-desktop.png",
+        "split-completed-compact.png",
     ):
         if token not in tests:
             fail(f"P4.2 E2E acceptance contract missing: {token}")

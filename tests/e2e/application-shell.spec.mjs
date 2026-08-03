@@ -282,3 +282,41 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
     animations: "disabled",
   });
 });
+
+test("captures empty, configured, completed and compact Split checkpoints", async ({
+  page,
+}) => {
+  await mkdir(screenshotDir, { recursive: true });
+  await page.getByTestId("tool-nav-split").click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({
+    path: `${screenshotDir}/split-empty-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("choose-split-source").click();
+  await page.getByTestId("choose-split-output").click();
+  await page.getByTestId("split-rule-fixed").check();
+  await page.getByTestId("split-fixed-count").fill("2");
+  await page.screenshot({
+    path: `${screenshotDir}/split-configured-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
+  await page.screenshot({
+    path: `${screenshotDir}/split-completed-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: `${screenshotDir}/split-completed-compact.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+});
