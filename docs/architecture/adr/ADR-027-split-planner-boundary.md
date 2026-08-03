@@ -24,6 +24,12 @@ The internal CLI exposes `split-plan` so the planner can be smoke-tested in a
 restricted environment before any PDF materializer is enabled in the UI. Its
 engine-backed `split` command accepts `bookmarks[:DEPTH]`; omitted depth keeps
 the top-level policy and an explicit depth exercises nested outline selection.
+The QPDF materializer now reads the source outline once, maps destinations
+through each part's exact ordered page vector, prunes leaves whose destinations
+are not present, and rebuilds the surviving hierarchy against the output page
+objects before page-count and atomic-finalization checks. This applies to every
+split rule, not only bookmark-boundary planning, so a page subset never claims
+bookmark preservation while silently emitting dangling destinations.
 
 ## Invariants
 
@@ -32,14 +38,16 @@ the top-level policy and an explicit depth exercises nested outline selection.
 - explicit ranges preserve user order and deliberate duplicates;
 - range bounds are checked against the inspected source page count;
 - output ordinals and filename stems are stable across repeated runs; and
-- no plan can cause output creation before application-level validation.
+- no plan can cause output creation before application-level validation; and
+- every surviving bookmark destination is remapped to a verified output page,
+  while a source node with no surviving destination is retained only when it
+  still contains a surviving descendant.
 
 ## Deferred behavior
 
-Bookmark destination remapping and collision policies remain gated until their
-own real-engine contract fixtures prove page conservation and output validity.
-The nested boundary selection and desktop depth control are now implemented,
-but the materializer intentionally emits destination-free page subsets until
-outline reconstruction is separately verified. Split-by-size estimation is
-defined separately by ADR-028.
-
+Named destinations, action dictionaries, outline style/color/open-state
+fidelity, and duplicate-page selections with ambiguous destination identity
+remain gated until dedicated real-engine fixtures define their safe policy.
+The nested boundary selection, desktop depth control, and page-subset outline
+reconstruction are implemented and covered by the split contract. Split-by-size
+estimation is defined separately by ADR-028.
