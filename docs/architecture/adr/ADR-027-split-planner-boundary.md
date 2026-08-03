@@ -21,7 +21,9 @@ valid destinations only for the selected nodes. Intermediate outline nodes may
 omit destinations when they contain usable descendants.
 
 The internal CLI exposes `split-plan` so the planner can be smoke-tested in a
-restricted environment before any PDF materializer is enabled in the UI.
+restricted environment before any PDF materializer is enabled in the UI. Its
+engine-backed `split` command accepts `bookmarks[:DEPTH]`; omitted depth keeps
+the top-level policy and an explicit depth exercises nested outline selection.
 
 ## Invariants
 
@@ -40,3 +42,4 @@ The nested boundary selection and desktop depth control are now implemented,
 but the materializer intentionally emits destination-free page subsets until
 outline reconstruction is separately verified. Split-by-size estimation is
 defined separately by ADR-028.
+
