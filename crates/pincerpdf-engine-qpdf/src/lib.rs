@@ -1,6 +1,6 @@
 Exit code: 0
-Wall time: 0.6 seconds
-Total output lines: 3371
+Wall time: 0.8 seconds
+Total output lines: 3482
 Output:
 #![forbid(unsafe_code)]
 #![allow(clippy::module_name_repetitions)]
@@ -303,7 +303,11 @@ impl QpdfAdapter {
             let bookmark_plan = BookmarkPlan {
                 // Bookmark page positions are one-based throughout the QPDF
                 // update and verification boundary, including one-page parts.
-                roots: parse_source_bookmarks(&outline_json, &split_input, 1)?,
+                roots: parse_source_bookmarks_rejecting_ambiguous_duplicates(
+                    &outline_json,
+                    &split_input,
+                    1,
+                )?,
             };
             if bookmark_plan.roots.is_empty() {
                 stage_split_output(raw_output.path(), &output_plan.temporary_path)?;
@@ -521,69 +525,7 @@ impl QpdfAdapter {
                     EngineError::new(
                         ErrorCode::EngineFailure,
                         format!("QPDF produced an invalid split-size estimate for page {page}"),
-                    )
-                })?;
-            estimates.push(PageSizeEstimate {
-                page: p…19473 tokens truncated…(),
-            started.elapsed(),
-        )),
-        message: format!("cannot wait for PDF engine: {error}"),
-    })?;
-    let stdout = stdout_reader.join().map_err(|_| ProcessFailure {
-        kind: ProcessFailureKind::Join,
-        evidence: Box::new(empty_evidence(
-            program,
-            display_args.clone(),
-            started.elapsed(),
-        )),
-        message: "PDF engine stdout reader panicked".to_owned(),
-    })?;
-    let stderr = stderr_reader.join().map_err(|_| ProcessFailure {
-        kind: ProcessFailureKind::Join,
-        evidence: Box::new(empty_evidence(
-            program,
-            display_args.clone(),
-            started.elapsed(),
-        )),
-        message: "PDF engine stderr reader panicked".to_owned(),
-    })?;
-    let evidence = evidence(
-        program,
-        display_args,
-        status,
-        started.elapsed(),
-        stdout,
-        stderr,
-    );
-
-    if let Some(kind) = forced_kind {
-        let message = match kind {
-            ProcessFailureKind::Cancelled => "PDF engine operation was cancelled",
-            ProcessFailureKind::TimedOut => "PDF engine operation timed out",
-            _ => "PDF engine operation was interrupted",
-        };
-        return Err(ProcessFailure {
-            kind,
-            evidence: Box::new(evidence),
-            message: message.to_owned(),
-        });
-    }
-    if status.success() {
-        Ok(ProcessCapture { evidence })
-    } else {
-        Err(ProcessFailure {
-            kind: ProcessFailureKind::Exit,
-            message: if evidence.stderr.is_empty() {
-                "PDF engine exited unsuccessfully".to_owned()
-            } else {
-                format!("PDF engine failed: {}", evidence.stderr)
-            },
-            evidence: Box::new(evidence),
-        })
-    }
-}
-
-fn read_bounded(mut reader: impl Read, limit: usize) -> BoundedText {
+  …20436 tokens truncated…dText {
     let mut retained = Vec::with_capacity(limit.min(8192));
     let mut truncated = false;
     let mut buffer = [0_u8; 8192];
@@ -968,6 +910,62 @@ mod tests {
         assert_eq!(plan[0].title, "Container");
         assert_eq!(plan[0].page_position, None);
         assert_eq!(plan[0].children[0].page_position, Some(1));
+    }
+
+    #[test]
+    fn split_bookmark_parser_rejects_ambiguous_duplicate_page_destinations() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("duplicate-pages.pdf"),
+            document_title: "duplicate-pages.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(1).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Page one",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "kids":[]
+          }]
+        }"#;
+
+        let error = parse_source_bookmarks_rejecting_ambiguous_duplicates(source, &input, 1)
+            .expect_err("duplicate page destination must be explicit");
+        assert_eq!(error.code(), ErrorCode::CapabilityUnavailable);
+        assert!(
+            error
+                .to_string()
+                .contains("destination identity is ambiguous")
+        );
+    }
+
+    #[test]
+    fn merge_bookmark_parser_retains_first_duplicate_page_occurrence() {
+        let input = MergeEngineInput {
+            source: PathBuf::from("duplicate-pages.pdf"),
+            document_title: "duplicate-pages.pdf".to_owned(),
+            metadata_title: None,
+            pages: vec![
+                PageNumber::new(1).expect("valid"),
+                PageNumber::new(1).expect("valid"),
+            ],
+            password: None,
+        };
+        let source = r#"{
+          "outlines": [{
+            "title":"Page one",
+            "dest":["3 0 R","/Fit"],
+            "destpageposfrom1":1,
+            "kids":[]
+          }]
+        }"#;
+
+        let plan = parse_source_bookmarks(source, &input, 1).expect("merge policy is stable");
+        assert_eq!(plan[0].page_position, Some(1));
     }
 
     #[test]
