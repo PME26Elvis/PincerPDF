@@ -1,10 +1,11 @@
 #![forbid(unsafe_code)]
 //! Real QPDF split materialization contract.
 
+use pincerpdf_domain::ErrorCode;
 use pincerpdf_engine_qpdf::QpdfAdapter;
 use pincerpdf_merge::ExecutionControl;
 use pincerpdf_split::{SplitRule, plan_split};
-use serde_json::Value;
+use serde_json::{Value, json};
 use std::fs;
 use std::num::NonZeroU64;
 use std::path::PathBuf;
@@ -61,6 +62,33 @@ fn qpdf_outlines(path: &std::path::Path) -> Value {
         String::from_utf8_lossy(&output.stderr)
     );
     serde_json::from_slice(&output.stdout).expect("valid qpdf outline JSON")
+}
+
+fn qpdf_outline_document(path: &std::path::Path) -> Value {
+    let output = Command::new("qpdf")
+        .args(["--json=2", "--json-key=outlines", "--json-key=qpdf"])
+        .arg(path)
+        .output()
+        .expect("qpdf starts");
+    assert!(
+        output.status.success(),
+        "qpdf stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    serde_json::from_slice(&output.stdout).expect("valid qpdf outline/object JSON")
+}
+
+fn qpdf_outline_object<'a>(document: &'a Value, outline: &Value) -> &'a Value {
+    let reference = outline["object"]
+        .as_str()
+        .expect("outline object reference");
+    let key = format!("obj:{reference}");
+    document["qpdf"][1]
+        .as_object()
+        .expect("qpdf object map")
+        .get(&key)
+        .and_then(|wrapper| wrapper.get("value"))
+        .expect("raw outline object")
 }
 
 #[test]
@@ -135,6 +163,100 @@ fn split_materialization_reconstructs_surviving_bookmarks() {
     assert_eq!(second_outline[0]["kids"][0]["title"], "Appendix");
     assert_eq!(second_outline[0]["kids"][0]["destpageposfrom1"], 2);
     fs::remove_dir_all(work).expect("clean split bookmark directory");
+}
+
+#[test]
+#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+fn split_materialization_preserves_resolved_destinations_and_presentation() {
+    let source = fixture_root().join("outline-safe-metadata.pdf");
+    let work = work_directory();
+    if work.exists() {
+        fs::remove_dir_all(&work).expect("remove stale split metadata directory");
+    }
+    fs::create_dir_all(&work).expect("create split metadata directory");
+
+    let plan = plan_split(&source, 3, &SplitRule::EveryPage).expect("valid metadata split plan");
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let report = adapter
+        .split(&plan, &work, &ExecutionControl::default())
+        .expect("split metadata materialization succeeds");
+    assert_eq!(report.outputs.len(), 3);
+
+    let first = qpdf_outline_document(&report.outputs[0]);
+    let first_outline = &first["outlines"][0];
+    assert_eq!(first_outline["title"], "第一章 — 導言 📄");
+    assert_eq!(first_outline["destpageposfrom1"], 1);
+    let first_dest = first_outline["dest"].as_array().expect("first destination");
+    assert_eq!(first_dest[1], json!("/XYZ"));
+    assert_eq!(&first_dest[2..], &[json!(72), json!(720), json!(1.5)]);
+    let first_raw = qpdf_outline_object(&first, first_outline);
+    assert_eq!(first_raw["/F"], json!(3));
+    assert_eq!(first_raw["/C"], json!([0.2, 0.4, 0.6]));
+
+    let second = qpdf_outline_document(&report.outputs[1]);
+    let second_root = &second["outlines"][0];
+    assert_eq!(second_root["title"], "第一章 — 導言 📄");
+    assert_eq!(second_root["destpageposfrom1"], Value::Null);
+    assert_eq!(second_root["open"], false);
+    let second_root_raw = qpdf_outline_object(&second, second_root);
+    assert_eq!(second_root_raw["/Count"], json!(-1));
+    assert_eq!(second_root_raw["/F"], json!(3));
+    assert_eq!(second_root_raw["/C"], json!([0.2, 0.4, 0.6]));
+
+    let named = &second_root["kids"][0];
+    assert_eq!(named["title"], "Named destination");
+    assert_eq!(named["destpageposfrom1"], 1);
+    let named_dest = named["dest"].as_array().expect("named destination");
+    assert_eq!(named_dest[1], json!("/FitH"));
+    assert_eq!(named_dest[2], json!(700));
+    let named_raw = qpdf_outline_object(&second, named);
+    let named_object = named_raw.as_object().expect("named raw object");
+    assert!(named_object.get("/A").is_none());
+    assert!(named_object.get("/Dest").is_some_and(Value::is_array));
+    assert_eq!(named_raw["/F"], json!(1));
+    assert_eq!(named_raw["/C"], json!([0, 0.5, 1]));
+
+    let third = qpdf_outline_document(&report.outputs[2]);
+    let action = &third["outlines"][0];
+    assert_eq!(action["title"], "Local GoTo action");
+    assert_eq!(action["destpageposfrom1"], 1);
+    let action_dest = action["dest"].as_array().expect("action destination");
+    assert_eq!(action_dest[1], json!("/FitV"));
+    assert_eq!(action_dest[2], json!(42));
+    let action_raw = qpdf_outline_object(&third, action)
+        .as_object()
+        .expect("action raw object");
+    assert!(action_raw.get("/A").is_none());
+    assert!(action_raw.get("/Dest").is_some_and(Value::is_array));
+
+    fs::remove_dir_all(work).expect("clean split metadata directory");
+}
+
+#[test]
+#[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+fn split_materialization_rejects_non_local_outline_actions() {
+    let source = fixture_root().join("outline-unsafe-action.pdf");
+    let work = work_directory();
+    if work.exists() {
+        fs::remove_dir_all(&work).expect("remove stale split unsafe-action directory");
+    }
+    fs::create_dir_all(&work).expect("create split unsafe-action directory");
+
+    let plan = plan_split(&source, 1, &SplitRule::EveryPage).expect("valid action split plan");
+    let adapter = QpdfAdapter::discover().expect("discover qpdf");
+    let error = adapter
+        .split(&plan, &work, &ExecutionControl::default())
+        .expect_err("non-local outline action must fail closed");
+    assert_eq!(error.code(), ErrorCode::CapabilityUnavailable);
+    assert!(error.to_string().contains("local GoTo"));
+    assert_eq!(
+        fs::read_dir(&work)
+            .expect("read split unsafe-action directory")
+            .count(),
+        0
+    );
+
+    fs::remove_dir_all(work).expect("clean split unsafe-action directory");
 }
 
 #[test]
