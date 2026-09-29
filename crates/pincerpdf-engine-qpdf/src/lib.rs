@@ -1597,6 +1597,7 @@ fn parse_source_bookmarks(
 /// uses `parse_split_source_bookmarks`, which also inspects the underlying
 /// outline dictionaries so QPDF-resolved named destinations and actions cannot
 /// be mistaken for direct `/Dest` arrays.
+#[cfg(test)]
 fn parse_source_bookmarks_rejecting_ambiguous_duplicates(
     document: &str,
     input: &MergeEngineInput,
@@ -1794,33 +1795,7 @@ fn parse_source_bookmark_node(
     let presentation = if let Some(metadata) = outline_metadata {
         split_bookmark_presentation(entry, metadata, title.as_str(), source_page)?
     } else {
-        let destination_kind = entry
-            .get("dest")
-            .map_or(OutlineDestinationKind::Absent, |dest| {
-                if dest.is_array() {
-                    OutlineDestinationKind::PageArray
-                } else if dest.is_null() {
-                    OutlineDestinationKind::Null
-                } else if dest.is_string() {
-                    OutlineDestinationKind::Named
-                } else {
-                    OutlineDestinationKind::Unsupported
-                }
-            });
-        let has_action = entry.get("action").is_some();
-        let unsupported = match destination_kind {
-            OutlineDestinationKind::Named | OutlineDestinationKind::Unsupported => true,
-            OutlineDestinationKind::Null => has_action || children.is_empty(),
-            OutlineDestinationKind::Absent | OutlineDestinationKind::PageArray => false,
-        };
-        if unsupported {
-            return Err(unsupported_outline_destination(
-                title.as_str(),
-                destination_kind,
-                has_action,
-            ));
-        }
-        BookmarkPresentation::default()
+        legacy_bookmark_presentation(entry, title.as_str(), children.is_empty())?
     };
     let is_open = entry.get("open").and_then(Value::as_bool).unwrap_or(true);
     let page_position = source_page
@@ -1867,6 +1842,40 @@ fn unsupported_duplicate_destination(
             "split cannot safely reconstruct bookmark {title:?}: source page {source_page} occurs {occurrences} times in the selected output; destination identity is ambiguous"
         ),
     )
+}
+
+fn legacy_bookmark_presentation(
+    entry: &Value,
+    title: &str,
+    has_no_children: bool,
+) -> Result<BookmarkPresentation, EngineError> {
+    let destination_kind = entry
+        .get("dest")
+        .map_or(OutlineDestinationKind::Absent, |dest| {
+            if dest.is_array() {
+                OutlineDestinationKind::PageArray
+            } else if dest.is_null() {
+                OutlineDestinationKind::Null
+            } else if dest.is_string() {
+                OutlineDestinationKind::Named
+            } else {
+                OutlineDestinationKind::Unsupported
+            }
+        });
+    let has_action = entry.get("action").is_some();
+    let unsupported = match destination_kind {
+        OutlineDestinationKind::Named | OutlineDestinationKind::Unsupported => true,
+        OutlineDestinationKind::Null => has_action || has_no_children,
+        OutlineDestinationKind::Absent | OutlineDestinationKind::PageArray => false,
+    };
+    if unsupported {
+        return Err(unsupported_outline_destination(
+            title,
+            destination_kind,
+            has_action,
+        ));
+    }
+    Ok(BookmarkPresentation::default())
 }
 
 fn collect_outline_object_references(document: &str) -> Result<Vec<String>, EngineError> {
