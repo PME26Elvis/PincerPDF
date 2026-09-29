@@ -1878,7 +1878,12 @@ fn collect_outline_object_references(document: &str) -> Result<Vec<String>, Engi
     let mut observed_nodes = 0_usize;
     for entry in outlines {
         collect_outline_object_reference(
-            entry, 0, &mut observed_nodes, MAX_OUTLINE_DEPTH, MAX_OUTLINE_NODES, &mut references,
+            entry,
+            0,
+            &mut observed_nodes,
+            MAX_OUTLINE_DEPTH,
+            MAX_OUTLINE_NODES,
+            &mut references,
         )?;
     }
     Ok(references.into_iter().collect())
@@ -1893,21 +1898,34 @@ fn collect_outline_object_reference(
     references: &mut BTreeSet<String>,
 ) -> Result<(), EngineError> {
     if depth > max_depth {
-        return Err(invalid_qpdf_json("split outline object tree exceeded the supported depth"));
+        return Err(invalid_qpdf_json(
+            "split outline object tree exceeded the supported depth",
+        ));
     }
     *observed_nodes = observed_nodes.saturating_add(1);
     if *observed_nodes > max_nodes {
-        return Err(invalid_qpdf_json("split outline object tree exceeded the supported node count"));
+        return Err(invalid_qpdf_json(
+            "split outline object tree exceeded the supported node count",
+        ));
     }
-    let reference = entry.get("object").and_then(Value::as_str)
+    let reference = entry
+        .get("object")
+        .and_then(Value::as_str)
         .ok_or_else(|| invalid_qpdf_json("split outline item omitted its object reference"))?;
     parse_indirect_reference(reference, "split outline object")?;
     references.insert(reference.to_owned());
-    let children = entry.get("kids").and_then(Value::as_array)
+    let children = entry
+        .get("kids")
+        .and_then(Value::as_array)
         .ok_or_else(|| invalid_qpdf_json("split outline item omitted its children"))?;
     for child in children {
         collect_outline_object_reference(
-            child, depth.saturating_add(1), observed_nodes, max_depth, max_nodes, references,
+            child,
+            depth.saturating_add(1),
+            observed_nodes,
+            max_depth,
+            max_nodes,
+            references,
         )?;
     }
     Ok(())
@@ -1918,15 +1936,23 @@ fn parse_outline_object_metadata(
 ) -> Result<BTreeMap<String, OutlineObjectMetadata>, EngineError> {
     let value = parse_qpdf_json(document, "split outline object metadata")?;
     let qpdf = json_array(&value, "qpdf", "split outline object metadata")?;
-    let objects = qpdf.get(1).and_then(Value::as_object)
+    let objects = qpdf
+        .get(1)
+        .and_then(Value::as_object)
         .ok_or_else(|| invalid_qpdf_json("split outline object metadata omitted object map"))?;
     let mut metadata = BTreeMap::new();
     for (key, wrapper) in objects {
-        let Some(reference) = key.strip_prefix("obj:") else { continue; };
-        let object = wrapper.get("value").and_then(Value::as_object)
-            .ok_or_else(|| invalid_qpdf_json(format!(
-                "split outline object {reference} was not a dictionary"
-            )))?;
+        let Some(reference) = key.strip_prefix("obj:") else {
+            continue;
+        };
+        let object = wrapper
+            .get("value")
+            .and_then(Value::as_object)
+            .ok_or_else(|| {
+                invalid_qpdf_json(format!(
+                    "split outline object {reference} was not a dictionary"
+                ))
+            })?;
         let has_destination = object.contains_key("/Dest");
         let has_action = object.contains_key("/A");
         let destination_kind = if has_destination && has_action {
@@ -1952,17 +1978,22 @@ fn parse_outline_object_metadata(
         } else {
             OutlineObjectDestinationKind::None
         };
-        metadata.insert(reference.to_owned(), OutlineObjectMetadata {
-            destination_kind,
-            flags: parse_outline_flags(object.get("/F"))?,
-            color: parse_outline_color(object.get("/C"))?,
-        });
+        metadata.insert(
+            reference.to_owned(),
+            OutlineObjectMetadata {
+                destination_kind,
+                flags: parse_outline_flags(object.get("/F"))?,
+                color: parse_outline_color(object.get("/C"))?,
+            },
+        );
     }
     Ok(metadata)
 }
 
 fn parse_outline_flags(value: Option<&Value>) -> Result<Option<u64>, EngineError> {
-    let Some(value) = value else { return Ok(None); };
+    let Some(value) = value else {
+        return Ok(None);
+    };
     let Some(flags) = value.as_u64() else {
         return Err(EngineError::new(
             ErrorCode::CapabilityUnavailable,
@@ -1979,7 +2010,9 @@ fn parse_outline_flags(value: Option<&Value>) -> Result<Option<u64>, EngineError
 }
 
 fn parse_outline_color(value: Option<&Value>) -> Result<Option<Vec<Value>>, EngineError> {
-    let Some(value) = value else { return Ok(None); };
+    let Some(value) = value else {
+        return Ok(None);
+    };
     let Some(color) = value.as_array() else {
         return Err(EngineError::new(
             ErrorCode::CapabilityUnavailable,
@@ -2006,11 +2039,15 @@ fn split_bookmark_presentation(
     title: &str,
     source_page: Option<u32>,
 ) -> Result<BookmarkPresentation, EngineError> {
-    let reference = entry.get("object").and_then(Value::as_str)
+    let reference = entry
+        .get("object")
+        .and_then(Value::as_str)
         .ok_or_else(|| invalid_qpdf_json("split outline item omitted its object reference"))?;
-    let object = metadata.get(reference).ok_or_else(|| invalid_qpdf_json(format!(
-        "split outline object {reference} omitted its raw metadata"
-    )))?;
+    let object = metadata.get(reference).ok_or_else(|| {
+        invalid_qpdf_json(format!(
+            "split outline object {reference} omitted its raw metadata"
+        ))
+    })?;
 
     let destination_tail = match object.destination_kind {
         OutlineObjectDestinationKind::None => {
@@ -2079,7 +2116,9 @@ fn resolved_destination_tail(entry: &Value, title: &str) -> Result<Vec<Value>, E
     let mode = destination.get(1).and_then(Value::as_str).ok_or_else(|| {
         EngineError::new(
             ErrorCode::CapabilityUnavailable,
-            format!("split cannot safely reconstruct bookmark {title:?}: destination mode is missing"),
+            format!(
+                "split cannot safely reconstruct bookmark {title:?}: destination mode is missing"
+            ),
         )
     })?;
     let expected_len = match mode {
@@ -2097,12 +2136,16 @@ fn resolved_destination_tail(entry: &Value, title: &str) -> Result<Vec<Value>, E
         }
     };
     if destination.len() != expected_len
-        || destination.iter().skip(2)
+        || destination
+            .iter()
+            .skip(2)
             .any(|operand| !operand.is_null() && !operand.is_number())
     {
         return Err(EngineError::new(
             ErrorCode::CapabilityUnavailable,
-            format!("split cannot safely reconstruct bookmark {title:?}: malformed {mode} destination"),
+            format!(
+                "split cannot safely reconstruct bookmark {title:?}: malformed {mode} destination"
+            ),
         ));
     }
     Ok(destination.iter().skip(1).cloned().collect())
