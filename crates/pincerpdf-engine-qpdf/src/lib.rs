@@ -14,6 +14,7 @@ use pincerpdf_merge::{
 };
 use pincerpdf_split::{BookmarkBoundary, PageSizeEstimate, SplitPlan};
 use serde_json::{Map, Value, json};
+use std::collections::{BTreeMap, BTreeSet};
 use std::ffi::OsString;
 use std::fmt::Write as _;
 use std::fs::{self, File, OpenOptions};
@@ -164,6 +165,59 @@ impl QpdfAdapter {
             .map_err(|failure| map_process_failure(&failure, password_supplied))
     }
 
+    fn capture_outline_object_metadata(
+        &self,
+        source: &Path,
+        outline_document: &str,
+        control: &ExecutionControl,
+        evidence: &mut Vec<CommandEvidence>,
+    ) -> Result<BTreeMap<String, OutlineObjectMetadata>, EngineError> {
+        const OBJECTS_PER_BATCH: usize = 128;
+        const MIN_JSON_CAPTURE_BYTES: usize = 32 * 1024 * 1024;
+
+        let references = collect_outline_object_references(outline_document)?;
+        if references.is_empty() {
+            return Ok(BTreeMap::new());
+        }
+
+        let json_control = ExecutionControl::new(
+            control.timeout(),
+            control.output_limit_bytes().max(MIN_JSON_CAPTURE_BYTES),
+            control.cancellation().clone(),
+        );
+        let mut metadata = BTreeMap::new();
+        for chunk in references.chunks(OBJECTS_PER_BATCH) {
+            let mut args = vec![
+                OsString::from("--json=2"),
+                OsString::from("--json-key=qpdf"),
+            ];
+            let mut display_args = vec!["--json=2".to_owned(), "--json-key=qpdf".to_owned()];
+            for reference in chunk {
+                let (object, generation) =
+                    parse_indirect_reference(reference, "split outline object")?;
+                let selector = format!("--json-object={object},{generation}");
+                args.push(OsString::from(&selector));
+                display_args.push(selector);
+            }
+            args.push(qpdf_path(source));
+            display_args.push(source.display().to_string());
+
+            let capture = self.run_qpdf(&args, display_args, &json_control, false)?;
+            ensure_complete_json(&capture.evidence, "split outline object metadata")?;
+            let batch = parse_outline_object_metadata(&capture.evidence.stdout)?;
+            for reference in chunk {
+                if !batch.contains_key(reference) {
+                    return Err(invalid_qpdf_json(format!(
+                        "split outline object {reference} was absent from selected QPDF JSON"
+                    )));
+                }
+            }
+            metadata.extend(batch);
+            evidence.push(capture.evidence);
+        }
+        Ok(metadata)
+    }
+
     /// Materializes an engine-independent split plan into atomically finalized
     /// one-output-per-part PDFs.
     ///
@@ -254,6 +308,12 @@ impl QpdfAdapter {
         ensure_complete_json(&outline_capture.evidence, "split source bookmark tree")?;
         let outline_json = outline_capture.evidence.stdout.clone();
         evidence.push(outline_capture.evidence);
+        let outline_metadata = self.capture_outline_object_metadata(
+            &plan.source,
+            &outline_json,
+            control,
+            &mut evidence,
+        )?;
 
         let document_title = plan.source.file_name().map_or_else(
             || "document.pdf".to_owned(),
@@ -299,8 +359,9 @@ impl QpdfAdapter {
             let bookmark_plan = BookmarkPlan {
                 // Bookmark page positions are one-based throughout the QPDF
                 // update and verification boundary, including one-page parts.
-                roots: parse_source_bookmarks_rejecting_ambiguous_duplicates(
+                roots: parse_split_source_bookmarks(
                     &outline_json,
+                    &outline_metadata,
                     &split_input,
                     1,
                 )?,
@@ -645,6 +706,7 @@ impl QpdfAdapter {
                     title: document_bookmark_title(&input.document_title),
                     page_position: Some(output_offset),
                     is_open: true,
+                    presentation: BookmarkPresentation::default(),
                     children: Vec::new(),
                 }),
                 BookmarkPolicy::Retain => roots.extend(source_roots),
@@ -652,6 +714,7 @@ impl QpdfAdapter {
                     title: document_bookmark_title(&input.document_title),
                     page_position: Some(output_offset),
                     is_open: true,
+                    presentation: BookmarkPresentation::default(),
                     children: source_roots,
                 }),
             }
@@ -1430,11 +1493,37 @@ fn parse_pdf_reference(document: &str, key: &str) -> Result<Option<(u64, u64)>, 
     parse_indirect_reference(&value[..3].join(" "), key).map(Some)
 }
 
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+struct BookmarkPresentation {
+    destination_tail: Option<Vec<Value>>,
+    flags: Option<u64>,
+    color: Option<Vec<Value>>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum OutlineObjectDestinationKind {
+    None,
+    Direct,
+    ResolvedReference,
+    GoToAction,
+    UnsupportedAction,
+    UnsupportedDestination,
+    Conflicting,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct OutlineObjectMetadata {
+    destination_kind: OutlineObjectDestinationKind,
+    flags: Option<u64>,
+    color: Option<Vec<Value>>,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct BookmarkPlanNode {
     title: String,
     page_position: Option<usize>,
     is_open: bool,
+    presentation: BookmarkPresentation,
     children: Vec<Self>,
 }
 
@@ -1455,6 +1544,7 @@ struct AssignedBookmarkNode {
     title: String,
     page_position: Option<usize>,
     is_open: bool,
+    presentation: BookmarkPresentation,
     children: Vec<Self>,
 }
 
@@ -1498,26 +1588,37 @@ fn parse_source_bookmarks(
     input: &MergeEngineInput,
     output_offset: usize,
 ) -> Result<Vec<BookmarkPlanNode>, EngineError> {
-    parse_source_bookmarks_with_policy(document, input, output_offset, false)
+    parse_source_bookmarks_with_policy(document, input, output_offset, None, false)
 }
 
-/// Parses Split outlines with a fail-closed destination identity policy.
+/// Parses Split outlines with the legacy high-level-only safety policy.
 ///
-/// Merge deliberately retains its first-occurrence policy for duplicate source
-/// pages; Split cannot make that choice without changing which output part a
-/// user-selected duplicate belongs to, so it rejects the ambiguous case.
+/// This remains a unit-level compatibility seam. Real Split materialization
+/// uses `parse_split_source_bookmarks`, which also inspects the underlying
+/// outline dictionaries so QPDF-resolved named destinations and actions cannot
+/// be mistaken for direct `/Dest` arrays.
 fn parse_source_bookmarks_rejecting_ambiguous_duplicates(
     document: &str,
     input: &MergeEngineInput,
     output_offset: usize,
 ) -> Result<Vec<BookmarkPlanNode>, EngineError> {
-    parse_source_bookmarks_with_policy(document, input, output_offset, true)
+    parse_source_bookmarks_with_policy(document, input, output_offset, None, true)
+}
+
+fn parse_split_source_bookmarks(
+    document: &str,
+    outline_metadata: &BTreeMap<String, OutlineObjectMetadata>,
+    input: &MergeEngineInput,
+    output_offset: usize,
+) -> Result<Vec<BookmarkPlanNode>, EngineError> {
+    parse_source_bookmarks_with_policy(document, input, output_offset, Some(outline_metadata), true)
 }
 
 fn parse_source_bookmarks_with_policy(
     document: &str,
     input: &MergeEngineInput,
     output_offset: usize,
+    outline_metadata: Option<&BTreeMap<String, OutlineObjectMetadata>>,
     reject_ambiguous_duplicate_destinations: bool,
 ) -> Result<Vec<BookmarkPlanNode>, EngineError> {
     const MAX_OUTLINE_DEPTH: usize = 128;
@@ -1532,6 +1633,7 @@ fn parse_source_bookmarks_with_policy(
                 entry,
                 input,
                 output_offset,
+                outline_metadata,
                 reject_ambiguous_duplicate_destinations,
                 0,
                 &mut observed_nodes,
@@ -1642,6 +1744,7 @@ fn parse_source_bookmark_node(
     entry: &Value,
     input: &MergeEngineInput,
     output_offset: usize,
+    outline_metadata: Option<&BTreeMap<String, OutlineObjectMetadata>>,
     reject_ambiguous_duplicate_destinations: bool,
     depth: usize,
     observed_nodes: &mut usize,
@@ -1674,6 +1777,7 @@ fn parse_source_bookmark_node(
                 child,
                 input,
                 output_offset,
+                outline_metadata,
                 reject_ambiguous_duplicate_destinations,
                 depth.saturating_add(1),
                 observed_nodes,
@@ -1683,36 +1787,41 @@ fn parse_source_bookmark_node(
         })
         .filter_map(Result::transpose)
         .collect::<Result<Vec<_>, _>>()?;
-    let destination_kind = entry
-        .get("dest")
-        .map_or(OutlineDestinationKind::Absent, |dest| {
-            if dest.is_array() {
-                OutlineDestinationKind::PageArray
-            } else if dest.is_null() {
-                OutlineDestinationKind::Null
-            } else if dest.is_string() {
-                OutlineDestinationKind::Named
-            } else {
-                OutlineDestinationKind::Unsupported
-            }
-        });
-    let has_action = entry.get("action").is_some();
-    let unsupported = match destination_kind {
-        OutlineDestinationKind::Named | OutlineDestinationKind::Unsupported => true,
-        OutlineDestinationKind::Null => has_action || children.is_empty(),
-        OutlineDestinationKind::Absent | OutlineDestinationKind::PageArray => false,
-    };
-    if unsupported {
-        return Err(unsupported_outline_destination(
-            title.as_str(),
-            destination_kind,
-            has_action,
-        ));
-    }
     let source_page = entry
         .get("destpageposfrom1")
         .and_then(Value::as_u64)
         .and_then(|page| u32::try_from(page).ok());
+    let presentation = if let Some(metadata) = outline_metadata {
+        split_bookmark_presentation(entry, metadata, title.as_str(), source_page)?
+    } else {
+        let destination_kind = entry
+            .get("dest")
+            .map_or(OutlineDestinationKind::Absent, |dest| {
+                if dest.is_array() {
+                    OutlineDestinationKind::PageArray
+                } else if dest.is_null() {
+                    OutlineDestinationKind::Null
+                } else if dest.is_string() {
+                    OutlineDestinationKind::Named
+                } else {
+                    OutlineDestinationKind::Unsupported
+                }
+            });
+        let has_action = entry.get("action").is_some();
+        let unsupported = match destination_kind {
+            OutlineDestinationKind::Named | OutlineDestinationKind::Unsupported => true,
+            OutlineDestinationKind::Null => has_action || children.is_empty(),
+            OutlineDestinationKind::Absent | OutlineDestinationKind::PageArray => false,
+        };
+        if unsupported {
+            return Err(unsupported_outline_destination(
+                title.as_str(),
+                destination_kind,
+                has_action,
+            ));
+        }
+        BookmarkPresentation::default()
+    };
     let is_open = entry.get("open").and_then(Value::as_bool).unwrap_or(true);
     let page_position = source_page
         .map(|source_page| {
@@ -1742,6 +1851,7 @@ fn parse_source_bookmark_node(
         title,
         page_position,
         is_open,
+        presentation,
         children,
     }))
 }
@@ -1757,6 +1867,245 @@ fn unsupported_duplicate_destination(
             "split cannot safely reconstruct bookmark {title:?}: source page {source_page} occurs {occurrences} times in the selected output; destination identity is ambiguous"
         ),
     )
+}
+
+fn collect_outline_object_references(document: &str) -> Result<Vec<String>, EngineError> {
+    const MAX_OUTLINE_DEPTH: usize = 128;
+    const MAX_OUTLINE_NODES: usize = 20_000;
+    let value = parse_qpdf_json(document, "split outline references")?;
+    let outlines = json_array(&value, "outlines", "split outline references")?;
+    let mut references = BTreeSet::new();
+    let mut observed_nodes = 0_usize;
+    for entry in outlines {
+        collect_outline_object_reference(
+            entry, 0, &mut observed_nodes, MAX_OUTLINE_DEPTH, MAX_OUTLINE_NODES, &mut references,
+        )?;
+    }
+    Ok(references.into_iter().collect())
+}
+
+fn collect_outline_object_reference(
+    entry: &Value,
+    depth: usize,
+    observed_nodes: &mut usize,
+    max_depth: usize,
+    max_nodes: usize,
+    references: &mut BTreeSet<String>,
+) -> Result<(), EngineError> {
+    if depth > max_depth {
+        return Err(invalid_qpdf_json("split outline object tree exceeded the supported depth"));
+    }
+    *observed_nodes = observed_nodes.saturating_add(1);
+    if *observed_nodes > max_nodes {
+        return Err(invalid_qpdf_json("split outline object tree exceeded the supported node count"));
+    }
+    let reference = entry.get("object").and_then(Value::as_str)
+        .ok_or_else(|| invalid_qpdf_json("split outline item omitted its object reference"))?;
+    parse_indirect_reference(reference, "split outline object")?;
+    references.insert(reference.to_owned());
+    let children = entry.get("kids").and_then(Value::as_array)
+        .ok_or_else(|| invalid_qpdf_json("split outline item omitted its children"))?;
+    for child in children {
+        collect_outline_object_reference(
+            child, depth.saturating_add(1), observed_nodes, max_depth, max_nodes, references,
+        )?;
+    }
+    Ok(())
+}
+
+fn parse_outline_object_metadata(
+    document: &str,
+) -> Result<BTreeMap<String, OutlineObjectMetadata>, EngineError> {
+    let value = parse_qpdf_json(document, "split outline object metadata")?;
+    let qpdf = json_array(&value, "qpdf", "split outline object metadata")?;
+    let objects = qpdf.get(1).and_then(Value::as_object)
+        .ok_or_else(|| invalid_qpdf_json("split outline object metadata omitted object map"))?;
+    let mut metadata = BTreeMap::new();
+    for (key, wrapper) in objects {
+        let Some(reference) = key.strip_prefix("obj:") else { continue; };
+        let object = wrapper.get("value").and_then(Value::as_object)
+            .ok_or_else(|| invalid_qpdf_json(format!(
+                "split outline object {reference} was not a dictionary"
+            )))?;
+        let has_destination = object.contains_key("/Dest");
+        let has_action = object.contains_key("/A");
+        let destination_kind = if has_destination && has_action {
+            OutlineObjectDestinationKind::Conflicting
+        } else if let Some(destination) = object.get("/Dest") {
+            if destination.is_array() {
+                OutlineObjectDestinationKind::Direct
+            } else if destination.is_string() {
+                OutlineObjectDestinationKind::ResolvedReference
+            } else {
+                OutlineObjectDestinationKind::UnsupportedDestination
+            }
+        } else if let Some(action) = object.get("/A") {
+            match action.as_object() {
+                Some(action)
+                    if action.get("/S").and_then(Value::as_str) == Some("/GoTo")
+                        && action.contains_key("/D") =>
+                {
+                    OutlineObjectDestinationKind::GoToAction
+                }
+                _ => OutlineObjectDestinationKind::UnsupportedAction,
+            }
+        } else {
+            OutlineObjectDestinationKind::None
+        };
+        metadata.insert(reference.to_owned(), OutlineObjectMetadata {
+            destination_kind,
+            flags: parse_outline_flags(object.get("/F"))?,
+            color: parse_outline_color(object.get("/C"))?,
+        });
+    }
+    Ok(metadata)
+}
+
+fn parse_outline_flags(value: Option<&Value>) -> Result<Option<u64>, EngineError> {
+    let Some(value) = value else { return Ok(None); };
+    let Some(flags) = value.as_u64() else {
+        return Err(EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            "split cannot safely preserve a non-integer outline /F value",
+        ));
+    };
+    if flags > 3 {
+        return Err(EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            format!("split cannot safely preserve unsupported outline /F flags {flags}"),
+        ));
+    }
+    Ok(Some(flags))
+}
+
+fn parse_outline_color(value: Option<&Value>) -> Result<Option<Vec<Value>>, EngineError> {
+    let Some(value) = value else { return Ok(None); };
+    let Some(color) = value.as_array() else {
+        return Err(EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            "split cannot safely preserve a non-array outline /C value",
+        ));
+    };
+    let valid = color.len() == 3
+        && color.iter().all(|component| match component.as_f64() {
+            Some(component) => (0.0..=1.0).contains(&component),
+            None => false,
+        });
+    if !valid {
+        return Err(EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            "split cannot safely preserve an outline /C value outside three normalized RGB components",
+        ));
+    }
+    Ok(Some(color.clone()))
+}
+
+fn split_bookmark_presentation(
+    entry: &Value,
+    metadata: &BTreeMap<String, OutlineObjectMetadata>,
+    title: &str,
+    source_page: Option<u32>,
+) -> Result<BookmarkPresentation, EngineError> {
+    let reference = entry.get("object").and_then(Value::as_str)
+        .ok_or_else(|| invalid_qpdf_json("split outline item omitted its object reference"))?;
+    let object = metadata.get(reference).ok_or_else(|| invalid_qpdf_json(format!(
+        "split outline object {reference} omitted its raw metadata"
+    )))?;
+
+    let destination_tail = match object.destination_kind {
+        OutlineObjectDestinationKind::None => {
+            if source_page.is_some() {
+                return Err(invalid_qpdf_json(format!(
+                    "split bookmark {title:?} resolved to a page without /Dest or /A"
+                )));
+            }
+            None
+        }
+        OutlineObjectDestinationKind::Direct
+        | OutlineObjectDestinationKind::ResolvedReference
+        | OutlineObjectDestinationKind::GoToAction => {
+            if source_page.is_none() {
+                return Err(EngineError::new(
+                    ErrorCode::CapabilityUnavailable,
+                    format!(
+                        "split cannot safely reconstruct bookmark {title:?}: its local destination could not be resolved to a source page"
+                    ),
+                ));
+            }
+            Some(resolved_destination_tail(entry, title)?)
+        }
+        OutlineObjectDestinationKind::UnsupportedAction => {
+            return Err(EngineError::new(
+                ErrorCode::CapabilityUnavailable,
+                format!(
+                    "split cannot safely reconstruct bookmark {title:?}: only local GoTo outline actions can be normalized"
+                ),
+            ));
+        }
+        OutlineObjectDestinationKind::UnsupportedDestination => {
+            return Err(EngineError::new(
+                ErrorCode::CapabilityUnavailable,
+                format!(
+                    "split cannot safely reconstruct bookmark {title:?}: source /Dest has an unsupported shape"
+                ),
+            ));
+        }
+        OutlineObjectDestinationKind::Conflicting => {
+            return Err(EngineError::new(
+                ErrorCode::CapabilityUnavailable,
+                format!(
+                    "split cannot safely reconstruct bookmark {title:?}: source outline contains both /Dest and /A"
+                ),
+            ));
+        }
+    };
+
+    Ok(BookmarkPresentation {
+        destination_tail,
+        flags: object.flags,
+        color: object.color.clone(),
+    })
+}
+
+fn resolved_destination_tail(entry: &Value, title: &str) -> Result<Vec<Value>, EngineError> {
+    let destination = entry.get("dest").and_then(Value::as_array).ok_or_else(|| {
+        EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            format!(
+                "split cannot safely reconstruct bookmark {title:?}: QPDF did not expose a resolved destination array"
+            ),
+        )
+    })?;
+    let mode = destination.get(1).and_then(Value::as_str).ok_or_else(|| {
+        EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            format!("split cannot safely reconstruct bookmark {title:?}: destination mode is missing"),
+        )
+    })?;
+    let expected_len = match mode {
+        "/Fit" | "/FitB" => 2,
+        "/FitH" | "/FitV" | "/FitBH" | "/FitBV" => 3,
+        "/XYZ" => 5,
+        "/FitR" => 6,
+        _ => {
+            return Err(EngineError::new(
+                ErrorCode::CapabilityUnavailable,
+                format!(
+                    "split cannot safely reconstruct bookmark {title:?}: unsupported destination mode {mode}"
+                ),
+            ));
+        }
+    };
+    if destination.len() != expected_len
+        || destination.iter().skip(2)
+            .any(|operand| !operand.is_null() && !operand.is_number())
+    {
+        return Err(EngineError::new(
+            ErrorCode::CapabilityUnavailable,
+            format!("split cannot safely reconstruct bookmark {title:?}: malformed {mode} destination"),
+        ));
+    }
+    Ok(destination.iter().skip(1).cloned().collect())
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1961,6 +2310,7 @@ fn assign_bookmark_nodes(
                 title: node.title.clone(),
                 page_position: node.page_position,
                 is_open: node.is_open,
+                presentation: node.presentation.clone(),
                 children,
             })
         })
@@ -1984,7 +2334,7 @@ fn render_bookmark_nodes(
             Value::String(format!("u:{}", node.title)),
         );
         if let Some(page_position) = node.page_position {
-            let destination = layout
+            let page_reference = layout
                 .page_objects
                 .get(page_position.saturating_sub(1))
                 .ok_or_else(|| {
@@ -1992,7 +2342,20 @@ fn render_bookmark_nodes(
                         "bookmark destination page {page_position} was absent from QPDF JSON"
                     ))
                 })?;
-            item.insert("/Dest".to_owned(), json!([destination, "/Fit"]));
+            let mut destination = vec![Value::String(page_reference.clone())];
+            destination.extend(
+                node.presentation
+                    .destination_tail
+                    .clone()
+                    .unwrap_or_else(|| vec![Value::String("/Fit".to_owned())]),
+            );
+            item.insert("/Dest".to_owned(), Value::Array(destination));
+        }
+        if let Some(flags) = node.presentation.flags {
+            item.insert("/F".to_owned(), Value::from(flags));
+        }
+        if let Some(color) = &node.presentation.color {
+            item.insert("/C".to_owned(), Value::Array(color.clone()));
         }
         if index > 0 {
             item.insert(
@@ -2063,6 +2426,10 @@ fn verify_bookmark_nodes(
         let title = entry.get("title").and_then(Value::as_str);
         let page_position = entry.get("destpageposfrom1").and_then(Value::as_u64);
         let is_open = entry.get("open").and_then(Value::as_bool);
+        let destination_tail = entry
+            .get("dest")
+            .and_then(Value::as_array)
+            .map(|destination| destination.iter().skip(1).cloned().collect::<Vec<_>>());
         let children = entry
             .get("kids")
             .and_then(Value::as_array)
@@ -2072,7 +2439,14 @@ fn verify_bookmark_nodes(
                 != expectation
                     .page_position
                     .and_then(|page| u64::try_from(page).ok())
-            || is_open.is_some_and(|open| open != expectation.is_open)
+            || (!expectation.children.is_empty()
+                && is_open.is_some_and(|open| open != expectation.is_open))
+            || (expectation.page_position.is_some()
+                && expectation
+                    .presentation
+                    .destination_tail
+                    .as_ref()
+                    .is_some_and(|expected| destination_tail.as_ref() != Some(expected)))
         {
             return Err(invalid_qpdf_json(format!(
                 "generated bookmark did not match title {:?} at its planned destination",
@@ -3216,10 +3590,12 @@ mod tests {
                 title: "Chapter 2".to_owned(),
                 page_position: Some(4),
                 is_open: true,
+                presentation: BookmarkPresentation::default(),
                 children: vec![BookmarkPlanNode {
                     title: "Appendix".to_owned(),
                     page_position: Some(5),
                     is_open: true,
+                    presentation: BookmarkPresentation::default(),
                     children: Vec::new(),
                 }],
             }]
@@ -3507,10 +3883,12 @@ mod tests {
                 title: "one".to_owned(),
                 page_position: Some(1),
                 is_open: true,
+                presentation: BookmarkPresentation::default(),
                 children: vec![BookmarkPlanNode {
                     title: "child".to_owned(),
                     page_position: Some(3),
                     is_open: true,
+                    presentation: BookmarkPresentation::default(),
                     children: Vec::new(),
                 }],
             },
@@ -3518,6 +3896,7 @@ mod tests {
                 title: "two".to_owned(),
                 page_position: Some(2),
                 is_open: true,
+                presentation: BookmarkPresentation::default(),
                 children: Vec::new(),
             },
         ];
@@ -3571,14 +3950,17 @@ mod tests {
             title: "Root".to_owned(),
             page_position: Some(1),
             is_open: true,
+            presentation: BookmarkPresentation::default(),
             children: vec![BookmarkPlanNode {
                 title: "Closed".to_owned(),
                 page_position: None,
                 is_open: false,
+                presentation: BookmarkPresentation::default(),
                 children: vec![BookmarkPlanNode {
                     title: "Leaf".to_owned(),
                     page_position: Some(1),
                     is_open: true,
+                    presentation: BookmarkPresentation::default(),
                     children: Vec::new(),
                 }],
             }],
