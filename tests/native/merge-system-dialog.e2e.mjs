@@ -241,8 +241,8 @@ describeSystemDialog("PincerPDF Windows system-dialog Merge acceptance", () => {
         page: destpageposfrom1,
       })),
       [
-        { title: "plain-three-pages.pdf", page: 1 },
-        { title: "bookmarks.pdf", page: 4 },
+        { title: "plain-three-pages", page: 1 },
+        { title: "bookmarks", page: 4 },
       ],
     );
     const firstBytes = await readFile(output);

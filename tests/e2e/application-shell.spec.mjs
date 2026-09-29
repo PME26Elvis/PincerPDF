@@ -13,18 +13,45 @@ test.beforeEach(async ({ page }) => {
   await expect(page.getByTestId("merge-workspace")).toBeVisible();
 });
 
-test("exposes one available Merge tool and keeps seven independent gates", async ({ page }) => {
+test("exposes Merge and Split while keeping six independent gates", async ({ page }) => {
   const tools = page.locator('[data-testid^="tool-nav-"]');
   await expect(tools).toHaveCount(8);
-  await expect(page.locator(".tool-state.is-ready")).toHaveText("Available");
-  await expect(page.locator(".tool-state:not(.is-ready)")).toHaveCount(7);
+  await expect(page.locator(".tool-state.is-ready")).toHaveCount(2);
+  await expect(page.locator(".tool-state.is-ready")).toHaveText(["Available", "Available"]);
+  await expect(page.locator(".tool-state:not(.is-ready)")).toHaveCount(6);
   await expect(page.locator(".tool-state:not(.is-ready)")).toHaveText(
-    Array(7).fill("Not implemented"),
+    Array(6).fill("Not implemented"),
   );
   await expect(page.getByTestId("add-merge-sources")).toBeEnabled();
   await expect(page.getByTestId("merge-engine-status")).toContainText(
     "Browser verification mode",
   );
+});
+
+test("runs the deterministic Split workspace across its core rule controls", async ({ page }) => {
+  await page.getByTestId("tool-nav-split").click();
+  await expect(page.getByTestId("split-workspace")).toBeVisible();
+  await page.getByTestId("choose-split-source").click();
+  await page.getByTestId("choose-split-output").click();
+  await expect(page.getByTestId("run-split")).toBeEnabled();
+
+  await page.getByTestId("split-rule-fixed").check();
+  await page.getByTestId("split-fixed-count").fill("2");
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-task-status")).toContainText("Verifying and splitting");
+  await expect(page.getByTestId("split-result-summary")).toContainText("6 pages");
+  await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
+
+  await page.getByTestId("split-rule-bookmarks").check();
+  await expect(page.getByTestId("split-bookmark-depth")).toHaveValue("0");
+  await page.getByTestId("split-bookmark-depth").fill("1");
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("2 parts");
+
+  await page.getByTestId("split-rule-size").check();
+  await page.getByTestId("split-max-bytes").fill("100000");
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("100000");
 });
 
 test("changes to a gated workspace without implying parity", async ({ page }) => {
@@ -91,12 +118,43 @@ test("reveals explicit advanced safety policies", async ({ page }) => {
   );
   const discardBookmarks = page.getByTestId("bookmark-policy-discard");
   const oneEntryBookmarks = page.getByTestId("bookmark-policy-one-entry");
+  const retainBookmarks = page.getByTestId("bookmark-policy-retain");
+  const retainAsOneEntry = page.getByTestId(
+    "bookmark-policy-retain-as-one-entry",
+  );
   await expect(discardBookmarks).toBeChecked();
   await expect(oneEntryBookmarks).not.toBeChecked();
+  await expect(retainBookmarks).not.toBeChecked();
+  await expect(retainAsOneEntry).not.toBeChecked();
+  const blankPageIfOdd = page.getByTestId("blank-page-if-odd");
+  await expect(blankPageIfOdd).not.toBeChecked();
+  await blankPageIfOdd.check();
+  await expect(blankPageIfOdd).toBeChecked();
+  const filenameFooter = page.getByTestId("filename-footer");
+  await expect(filenameFooter).not.toBeChecked();
+  await filenameFooter.check();
+  await expect(filenameFooter).toBeChecked();
+  const tocNone = page.getByTestId("toc-policy-none");
+  const tocFileNames = page.getByTestId("toc-policy-file-names");
+  await expect(tocNone).toBeChecked();
+  await expect(tocFileNames).not.toBeChecked();
+  await tocFileNames.check();
+  await expect(tocFileNames).toBeChecked();
   await oneEntryBookmarks.check();
+  await expect(blankPageIfOdd).toBeChecked();
+  await expect(filenameFooter).toBeChecked();
+  await expect(tocFileNames).toBeChecked();
   await expect(oneEntryBookmarks).toBeChecked();
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "One entry per document",
+  );
+  await retainBookmarks.check();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "Retain relevant source hierarchy",
+  );
+  await retainAsOneEntry.check();
+  await expect(page.getByTestId("merge-advanced-panel")).toContainText(
+    "Retain under one entry per document",
   );
   await expect(page.getByTestId("merge-advanced-panel")).toContainText(
     "Reject before processing",
@@ -122,6 +180,44 @@ test("reports the deterministic one-entry-per-document bookmark policy", async (
   await page.getByTestId("run-merge").click();
 
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+});
+
+test("reports deterministic retained-bookmark policy states", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await page.getByTestId("bookmark-policy-retain").check();
+  await page.getByTestId("run-merge").click();
+  await expect(page.getByTestId("merge-result-summary")).toContainText("1 bookmarks");
+
+  await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
+  await page.getByTestId("run-merge").click();
+  await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+});
+
+test("reports the deterministic filename table-of-contents policy", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await expect(page.getByTestId("merge-source-row")).toHaveCount(2);
+  await page.getByTestId("choose-merge-output").click();
+  await expect(page.getByTestId("merge-output-path")).toHaveText("merged-document.pdf");
+  await page.getByTestId("merge-advanced-toggle").click();
+  await expect(page.getByTestId("merge-advanced-panel")).toBeVisible();
+  await page.getByTestId("toc-policy-file-names").check();
+  await page.getByTestId("run-merge").click();
+
+  await expect(page.getByTestId("merge-result-summary")).toContainText("10 pages");
+});
+
+test("reports the deterministic document-title table-of-contents policy", async ({ page }) => {
+  await page.getByTestId("add-merge-sources").click();
+  await expect(page.getByTestId("merge-source-row")).toHaveCount(2);
+  await page.getByTestId("choose-merge-output").click();
+  await page.getByTestId("merge-advanced-toggle").click();
+  await expect(page.getByTestId("merge-advanced-panel")).toBeVisible();
+  await page.getByTestId("toc-policy-document-titles").check();
+  await page.getByTestId("run-merge").click();
+
+  await expect(page.getByTestId("merge-result-summary")).toContainText("10 pages");
 });
 
 test("supports a manual reduced-motion override", async ({ page }) => {
@@ -157,6 +253,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   await page.getByTestId("add-merge-sources").click();
   await page.getByTestId("choose-merge-output").click();
   await page.getByTestId("merge-advanced-toggle").click();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-configured-desktop.png`,
     fullPage: true,
@@ -164,8 +261,17 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   });
 
   await page.getByTestId("bookmark-policy-one-entry").check();
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-bookmark-policy-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("bookmark-policy-retain-as-one-entry").check();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: `${screenshotDir}/merge-retained-bookmark-policy-desktop.png`,
     fullPage: true,
     animations: "disabled",
   });
@@ -173,6 +279,7 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   await page.getByTestId("run-merge").click();
   await expect(page.getByTestId("merge-result-summary")).toContainText("9 pages");
   await expect(page.getByTestId("merge-result-summary")).toContainText("2 bookmarks");
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-completed-desktop.png`,
     fullPage: true,
@@ -180,8 +287,50 @@ test("captures empty, configured, completed and compact Merge checkpoints", asyn
   });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({
     path: `${screenshotDir}/merge-completed-compact.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+});
+
+test("captures empty, configured, completed and compact Split checkpoints", async ({
+  page,
+}) => {
+  await mkdir(screenshotDir, { recursive: true });
+  await page.getByTestId("tool-nav-split").click();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.screenshot({
+    path: `${screenshotDir}/split-empty-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("choose-split-source").click();
+  await page.getByTestId("choose-split-output").click();
+  await page.getByTestId("split-rule-fixed").check();
+  await page.getByTestId("split-fixed-count").fill("2");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: `${screenshotDir}/split-configured-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.getByTestId("run-split").click();
+  await expect(page.getByTestId("split-result-summary")).toContainText("3 parts");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: `${screenshotDir}/split-completed-desktop.png`,
+    fullPage: true,
+    animations: "disabled",
+  });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.screenshot({
+    path: `${screenshotDir}/split-completed-compact.png`,
     fullPage: true,
     animations: "disabled",
   });

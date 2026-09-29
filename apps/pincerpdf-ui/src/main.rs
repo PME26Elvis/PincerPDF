@@ -4,11 +4,13 @@
 
 mod merge_workspace;
 mod native_bridge;
+mod split_workspace;
 
 use leptos::prelude::*;
 use merge_workspace::MergeWorkspace;
 use native_bridge::{call_without_args, is_tauri};
 use pincerpdf_desktop_api::MergeEngineStatus;
+use split_workspace::SplitWorkspace;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct ToolDefinition {
@@ -26,8 +28,12 @@ impl ToolDefinition {
         self.slug == "merge"
     }
 
+    fn is_split(self) -> bool {
+        self.slug == "split"
+    }
+
     fn state_label(self) -> &'static str {
-        if self.is_merge() {
+        if self.is_merge() || self.is_split() {
             "Available"
         } else {
             "Not implemented"
@@ -132,7 +138,7 @@ fn tool_button(
             <span class="tool-icon" aria-hidden="true">{tool.icon}</span>
             <span class="tool-copy">
                 <span class="tool-name">{tool.short_label}</span>
-                <span class=if tool.is_merge() { "tool-state is-ready" } else { "tool-state" }>
+                <span class=if tool.is_merge() || tool.is_split() { "tool-state is-ready" } else { "tool-state" }>
                     {tool.state_label()}
                 </span>
             </span>
@@ -172,7 +178,7 @@ fn sidebar(
             <nav class="tool-list" aria-label="PDF tools">
                 <div class="nav-heading">
                     <p class="nav-label">"PDF tools"</p>
-                    <span>"1 available · 7 planned"</span>
+                    <span>"2 available · 6 planned"</span>
                 </div>
                 {TOOLS
                     .into_iter()
@@ -243,7 +249,7 @@ fn selected_tool_panel(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView
                 <button type="button" class="primary-action" disabled data-testid="open-files">
                     "Open PDF files"
                 </button>
-                <span>"Merge is available now; the remaining tools retain independent gates."</span>
+                <span>"Merge and Split are available now; the remaining tools retain independent gates."</span>
             </div>
         </section>
     }
@@ -277,7 +283,7 @@ fn gated_workspace(active_tool: ReadSignal<ToolDefinition>) -> impl IntoView {
                 <h1 id="page-title">"Planned with evidence, not placeholders."</h1>
                 <p>"Each PDF operation unlocks only after its domain, engine, E2E and visual gates pass."</p>
             </div>
-            <div class="hero-metric"><strong>"1 / 8"</strong><span>"tools available"</span></div>
+            <div class="hero-metric"><strong>"2 / 8"</strong><span>"tools available"</span></div>
         </section>
         <div class="dashboard-grid">
             {selected_tool_panel(active_tool)}
@@ -308,7 +314,14 @@ fn workspace(
             <main id="main-content" tabindex="-1">
                 <Show
                     when=move || active_tool.get().is_merge()
-                    fallback=move || gated_workspace(active_tool)
+                    fallback=move || view! {
+                        <Show
+                            when=move || active_tool.get().is_split()
+                            fallback=move || gated_workspace(active_tool)
+                        >
+                            <SplitWorkspace engine_status=engine_status />
+                        </Show>
+                    }
                 >
                     <MergeWorkspace engine_status=engine_status />
                 </Show>

@@ -2692,6 +2692,7 @@ dependencies = [
  "pincerpdf-engine-api",
  "pincerpdf-engine-qpdf",
  "pincerpdf-merge",
+ "pincerpdf-split",
 ]
 
 [[package]]
@@ -2704,6 +2705,7 @@ dependencies = [
  "pincerpdf-engine-qpdf",
  "pincerpdf-filesystem",
  "pincerpdf-merge",
+ "pincerpdf-split",
  "serde",
  "tauri",
  "tauri-build",
@@ -2736,6 +2738,7 @@ dependencies = [
  "pincerpdf-engine-api",
  "pincerpdf-filesystem",
  "pincerpdf-merge",
+ "pincerpdf-split",
  "serde_json",
 ]
 
@@ -2751,6 +2754,13 @@ dependencies = [
  "pincerpdf-domain",
  "pincerpdf-engine-api",
  "pincerpdf-filesystem",
+]
+
+[[package]]
+name = "pincerpdf-split"
+version = "0.1.0"
+dependencies = [
+ "pincerpdf-domain",
 ]
 
 [[package]]

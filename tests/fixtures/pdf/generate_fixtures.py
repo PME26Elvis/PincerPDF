@@ -19,6 +19,11 @@ def literal(value: str) -> bytes:
     return f'({escaped})'.encode('ascii')
 
 
+def utf16_hex_string(value: str) -> bytes:
+    data = b'\xfe\xff' + value.encode('utf-16-be')
+    return b'<' + data.hex().upper().encode('ascii') + b'>'
+
+
 def stream(data: bytes, extra: bytes = b'') -> bytes:
     dictionary = b'<< /Length ' + str(len(data)).encode('ascii')
     if extra:
@@ -124,6 +129,78 @@ def make_bookmarks(path: Path) -> dict[str, object]:
     return write_pdf(path, objects, root=1)
 
 
+def make_outline_safe_metadata(path: Path) -> dict[str, object]:
+    """Exercise resolved destinations, Unicode titles, expansion and presentation metadata."""
+    objects = [
+        PdfObject(
+            1,
+            b'<< /Type /Catalog /Pages 2 0 R /Outlines 9 0 R /PageMode /UseOutlines '
+            b'/Names << /Dests 13 0 R >> >>',
+        ),
+        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R] /Count 3 >>'),
+        common_page(3, 2, 4),
+        PdfObject(4, stream(content('Safe outline page 1'))),
+        common_page(5, 2, 6),
+        PdfObject(6, stream(content('Safe outline page 2'))),
+        common_page(7, 2, 8),
+        PdfObject(8, stream(content('Safe outline page 3'))),
+        PdfObject(9, b'<< /Type /Outlines /First 10 0 R /Last 12 0 R /Count 3 >>'),
+        PdfObject(
+            10,
+            b'<< /Title '
+            + utf16_hex_string('第一章 — 導言 📄')
+            + b' /Parent 9 0 R /Next 12 0 R /First 11 0 R /Last 11 0 R /Count -1 '
+            b'/Dest [3 0 R /XYZ 72 720 1.5] /F 3 /C [0.2 0.4 0.6] >>',
+        ),
+        PdfObject(
+            11,
+            b'<< /Title '
+            + literal('Named destination')
+            + b' /Parent 10 0 R /Dest '
+            + literal('named-two')
+            + b' /F 1 /C [0 0.5 1] >>',
+        ),
+        PdfObject(
+            12,
+            b'<< /Title '
+            + literal('Local GoTo action')
+            + b' /Parent 9 0 R /Prev 10 0 R '
+            b'/A << /S /GoTo /D [7 0 R /FitV 42] >> >>',
+        ),
+        PdfObject(
+            13,
+            b'<< /Names ['
+            + literal('named-two')
+            + b' [5 0 R /FitH 700]] >>',
+        ),
+    ]
+    objects.extend(PdfObject(number, b'<< >>') for number in range(14, 20))
+    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
+    return write_pdf(path, objects, root=1)
+
+
+def make_outline_unsafe_action(path: Path) -> dict[str, object]:
+    """Exercise a non-local outline action that Split must not silently rewrite."""
+    objects = [
+        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R /Outlines 5 0 R /PageMode /UseOutlines >>'),
+        PdfObject(2, b'<< /Type /Pages /Kids [3 0 R] /Count 1 >>'),
+        common_page(3, 2, 4),
+        PdfObject(4, stream(content('Unsafe outline action'))),
+        PdfObject(5, b'<< /Type /Outlines /First 6 0 R /Last 6 0 R /Count 1 >>'),
+        PdfObject(
+            6,
+            b'<< /Title '
+            + literal('External resource')
+            + b' /Parent 5 0 R /A << /S /URI /URI '
+            + literal('https://example.invalid/')
+            + b' >> >>',
+        ),
+    ]
+    objects.extend(PdfObject(number, b'<< >>') for number in range(7, 20))
+    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
+    return write_pdf(path, objects, root=1)
+
+
 def make_form(path: Path) -> dict[str, object]:
     objects = [
         PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R /AcroForm 6 0 R >>'),
@@ -184,14 +261,44 @@ def make_geometry_metadata(path: Path) -> dict[str, object]:
     return write_pdf(path, objects, root=1, info=9)
 
 
+def make_inherited_geometry(path: Path) -> dict[str, object]:
+    """Exercise page geometry inherited from a /Pages node."""
+    objects = [
+        PdfObject(1, b'<< /Type /Catalog /Pages 2 0 R >>'),
+        PdfObject(
+            2,
+            b'<< /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 /MediaBox [0 0 420 620] '
+            b'/CropBox [20 30 400 580] /Rotate 180 >>',
+        ),
+        PdfObject(
+            3,
+            b'<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 20 0 R >> >> '
+            b'/Contents 4 0 R >>',
+        ),
+        PdfObject(4, stream(content('Inherited geometry first', x=36, y=540))),
+        PdfObject(
+            5,
+            b'<< /Type /Page /Parent 2 0 R /Rotate 90 /Resources << /Font << /F1 20 0 R >> >> '
+            b'/Contents 6 0 R >>',
+        ),
+        PdfObject(6, stream(content('Inherited geometry rotated child', x=36, y=520))),
+    ]
+    objects.extend(PdfObject(number, b'<< >>') for number in range(7, 20))
+    objects.append(PdfObject(20, b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'))
+    return write_pdf(path, objects, root=1)
+
+
 def main() -> int:
     output = Path(sys.argv[1] if len(sys.argv) > 1 else 'tests/fixtures/pdf/generated')
     output.mkdir(parents=True, exist_ok=True)
     fixtures = [
         make_plain(output / 'plain-three-pages.pdf'),
         make_bookmarks(output / 'bookmarks.pdf'),
+        make_outline_safe_metadata(output / 'outline-safe-metadata.pdf'),
+        make_outline_unsafe_action(output / 'outline-unsafe-action.pdf'),
         make_form(output / 'acroform.pdf'),
         make_geometry_metadata(output / 'geometry-metadata.pdf'),
+        make_inherited_geometry(output / 'geometry-inherited.pdf'),
     ]
     manifest = {'schema': 1, 'fixtures': fixtures}
     (output / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')

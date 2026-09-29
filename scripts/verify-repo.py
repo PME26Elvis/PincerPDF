@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 import tomllib
 from pathlib import Path
@@ -28,9 +29,11 @@ REQUIRED_FILES = (
     ".github/workflows/merge-core.yml",
     "apps/pincerpdf-ui/index.html",
     "apps/pincerpdf-ui/src/merge_workspace.rs",
+    "apps/pincerpdf-ui/src/split_workspace.rs",
     "apps/pincerpdf-ui/src/native_bridge.rs",
     "apps/pincerpdf-ui/styles.css",
     "apps/pincerpdf-desktop/src-tauri/src/merge_commands.rs",
+    "apps/pincerpdf-desktop/src-tauri/src/split_commands.rs",
     "apps/pincerpdf-desktop/src-tauri/tauri.conf.json",
     "apps/pincerpdf-desktop/src-tauri/capabilities/default.json",
     "apps/pincerpdf-desktop/src-tauri/icons/icon.ico",
@@ -38,11 +41,14 @@ REQUIRED_FILES = (
     "apps/pincerpdf-desktop/src-tauri/icons/icon.svg",
     "crates/pincerpdf-merge/Cargo.toml",
     "crates/pincerpdf-merge/src/lib.rs",
+    "crates/pincerpdf-split/Cargo.toml",
+    "crates/pincerpdf-split/src/lib.rs",
     "crates/pincerpdf-desktop-api/Cargo.toml",
     "crates/pincerpdf-desktop-api/src/lib.rs",
     "crates/pincerpdf-engine-qpdf/Cargo.toml",
     "crates/pincerpdf-engine-qpdf/src/lib.rs",
     "crates/pincerpdf-engine-qpdf/tests/merge_contract.rs",
+    "crates/pincerpdf-engine-qpdf/tests/split_contract.rs",
     "docs/PROJECT_STATE.md",
     "docs/ROADMAP.md",
     "docs/architecture/adr/ADR-015-merge-core-boundary.md",
@@ -52,6 +58,13 @@ REQUIRED_FILES = (
     "docs/architecture/adr/ADR-019-windows-atomic-replacement.md",
     "docs/architecture/adr/ADR-020-semantic-windows-dialog-e2e.md",
     "docs/architecture/adr/ADR-021-document-level-bookmark-reconstruction.md",
+    "docs/architecture/adr/ADR-022-source-outline-reconstruction.md",
+    "docs/architecture/adr/ADR-023-filename-footer-overlay.md",
+    "docs/architecture/adr/ADR-024-filename-table-of-contents.md",
+    "docs/architecture/adr/ADR-025-document-title-table-of-contents.md",
+    "docs/architecture/adr/ADR-026-text-aware-footer-placement.md",
+    "docs/architecture/adr/ADR-027-split-planner-boundary.md",
+    "docs/architecture/adr/ADR-028-split-by-size-estimation.md",
     "docs/compatibility/MERGE_TRACEABILITY.md",
     "package.json",
     "package-lock.json",
@@ -82,6 +95,7 @@ REQUIRED_MEMBERS = {
     "crates/pincerpdf-engine-qpdf",
     "crates/pincerpdf-filesystem",
     "crates/pincerpdf-merge",
+    "crates/pincerpdf-split",
 }
 
 BANNED_TRACKED_PARTS = {
@@ -89,6 +103,7 @@ BANNED_TRACKED_PARTS = {
     ".fixtures-private",
     "node_modules",
     "target",
+    "target-local",
     "test-results",
     "playwright-report",
 }
@@ -131,6 +146,7 @@ def verify_dependency_locks() -> None:
         "pincerpdf-desktop-api",
         "pincerpdf-merge",
         "pincerpdf-engine-qpdf",
+        "pincerpdf-split",
         "tauri",
         "tauri-plugin-dialog",
         "leptos",
@@ -233,12 +249,12 @@ def verify_shell_contract() -> None:
         fail("both system and manual reduced-motion policies are required")
     if "Skip to main content" not in source or 'id="main-content"' not in source:
         fail("skip-link accessibility contract is incomplete")
-    if 'Array(7).fill("Not implemented")' not in tests:
-        fail("E2E must keep all seven post-Merge tools explicitly gated")
+    if 'Array(6).fill("Not implemented")' not in tests:
+        fail("E2E must keep all six post-Split tools explicitly gated")
     if 'data-wasm-opt="0"' not in index:
         fail("P3 must disable the measured-incompatible Trunk wasm-opt post-link pass")
-    if '"1 available · 7 planned"' not in source or '"Available"' not in source:
-        fail("P4.2 Merge availability and remaining independent gates are not visible")
+    if '"2 available · 6 planned"' not in source or '"Available"' not in source:
+        fail("P5 Split availability and remaining independent gates are not visible")
 
     windows = config.get("app", {}).get("windows", [])
     if len(windows) != 1 or windows[0].get("label") != "main":
@@ -296,9 +312,31 @@ def verify_merge_core_contract() -> None:
         "builder.mode(0o700)",
         "child.kill()",
         "qdf_catalog_has_key",
-        "add_document_bookmarks",
+        "add_bookmark_plan",
         "--update-from-json=<private-bookmark-plan>",
-        "verify_document_bookmarks",
+        "verify_bookmark_plan",
+        "parse_source_bookmarks",
+        "write_footer_overlay",
+        "text_executable",
+        "page_text_bounds",
+        "parse_stext_bounds",
+        "footer_position_with_text",
+        "--overlay",
+        "add_filename_footer",
+        "GeneratedBlankPage",
+        "write_toc_pdf",
+        "toc_entries",
+        "MergeTocPolicy",
+        "DocumentTitles",
+        "qdf_document_title",
+        "pub fn split",
+        "inspect_bookmark_boundaries",
+        "parse_bookmark_boundaries",
+        "SplitMaterializationReport",
+        "SplitSizeEstimateReport",
+        "estimate_page_sizes",
+        "SplitOutputGuard",
+        "parse_qpdf_page_count",
     ):
         if token not in qpdf_source:
             fail(f"QPDF adapter safety contract missing: {token}")
@@ -314,7 +352,11 @@ def verify_merge_core_contract() -> None:
         '"pages/5/Rotate"',
         '"trailer/Info"',
         "merge_one_entry_per_document",
-        '"plain-three-pages.pdf"',
+        "merge_retained_source_bookmarks",
+        "merge_retained_bookmarks_under_document_entries",
+        "inherited_blank_output",
+        "pages/2/CropBox",
+        '"plain-three-pages"',
         '"destpageposfrom1"',
     ):
         if token not in contract:
@@ -325,6 +367,9 @@ def verify_merge_core_contract() -> None:
         "geometry-metadata.pdf",
         "Geometry landscape rotated",
         "Source metadata must not leak implicitly",
+        "make_inherited_geometry",
+        "geometry-inherited.pdf",
+        "Inherited geometry first",
     ):
         if token not in fixtures:
             fail(f"P4.3 parity fixture contract missing: {token}")
@@ -343,16 +388,100 @@ def verify_merge_core_contract() -> None:
         if feature_id not in traceability:
             fail(f"Merge traceability row missing: {feature_id}")
 
-    if "merge-contract:" not in makefile or "make merge-contract" not in workflow:
+    if (
+        "merge-contract:" not in makefile
+        or "split-contract:" not in makefile
+        or "make merge-contract" not in workflow
+        or "make split-contract" not in workflow
+    ):
         fail("P4.1 real-engine contract is not wired into Make/Actions")
     if "python3 -m unittest discover -s scripts/tests" not in workflow:
         fail("P4.1 evidence summarizer regression tests are not wired into Actions")
     summarizer = (ROOT / "scripts/summarize-merge-evidence.py").read_text(
         encoding="utf-8"
     )
-    for token in ("one-entry-bookmarks.pdf", "one_entry_per_document", "outline_summary"):
+    for token in (
+        "one-entry-bookmarks.pdf",
+        "retained-source-bookmarks.pdf",
+        "retained-under-document-bookmarks.pdf",
+        "retain_as_one_entry_per_document",
+        "outline_summary",
+    ):
         if token not in summarizer:
             fail(f"document-level bookmark evidence summary missing: {token}")
+
+
+def verify_split_planner_contract() -> None:
+    """Verify the engine-independent P5.1 split planning boundary."""
+
+    split_source = (ROOT / "crates/pincerpdf-split/src/lib.rs").read_text(
+        encoding="utf-8"
+    )
+    split_contract = (
+        ROOT / "crates/pincerpdf-engine-qpdf/tests/split_contract.rs"
+    ).read_text(encoding="utf-8")
+    qpdf_source = (
+        ROOT / "crates/pincerpdf-engine-qpdf/src/lib.rs"
+    ).read_text(encoding="utf-8")
+    cli_source = (ROOT / "apps/pincerpdf-cli/src/main.rs").read_text(encoding="utf-8")
+    roadmap = (ROOT / "docs/ROADMAP.md").read_text(encoding="utf-8")
+    for token in (
+        "pub enum SplitRule",
+        "EveryPage",
+        "FixedPageCount",
+        "Ranges(Vec<PageSelection>)",
+        "Bookmarks(Vec<BookmarkBoundary>)",
+        "pub struct BookmarkBoundary",
+        "BySize",
+        "pub struct PageSizeEstimate",
+        "pub struct SplitPlan",
+        "size_limit_bytes",
+        "pub fn plan_split",
+        "plan_by_size",
+        "numbered_range",
+        "source_stem",
+    ):
+        if token not in split_source:
+            fail(f"P5.1 split planner contract missing: {token}")
+    for token in (
+        'Some("split")',
+        "split-plan",
+        "plan_split",
+        "estimate_page_sizes",
+        "inspect_bookmark_boundaries",
+        "size:",
+        "bookmarks",
+        "every-page",
+    ):
+        if token not in cli_source:
+            fail(f"P5.1 CLI smoke contract missing: {token}")
+    for token in (
+        "split_materialization_conserves_pages_and_finalizes_outputs",
+        "qpdf_outline_boundaries_feed_bookmark_split_planner",
+        "qpdf_page_size_estimates_feed_size_split_and_bound_outputs",
+        "split_materialization_reconstructs_surviving_bookmarks",
+    ):
+        if token not in split_contract:
+            fail(f"P5.1 real-engine split contract is missing: {token}")
+    for token in (
+        "parse_source_bookmarks_rejecting_ambiguous_duplicates",
+        "ErrorCode::CapabilityUnavailable",
+        "destination identity is ambiguous",
+        "source_bookmark_parser_preserves_unicode_titles_and_hierarchy",
+        "bookmark_update_preserves_closed_nested_outline_state",
+        "count_assigned_bookmark_nodes",
+    ):
+        if token not in qpdf_source:
+            fail(f"P5.2 split metadata safety contract missing: {token}")
+    if not any(
+        marker in roadmap
+        for marker in (
+            "P5.1 — Split planner: In progress",
+            "P5.1 — Split planner/materializer: In progress",
+            "P5.1 — Split planner/materializer: Complete",
+        )
+    ):
+        fail("P5.1 roadmap status is missing")
 
 
 def verify_merge_desktop_contract() -> None:
@@ -362,7 +491,13 @@ def verify_merge_desktop_contract() -> None:
     commands = (
         ROOT / "apps/pincerpdf-desktop/src-tauri/src/merge_commands.rs"
     ).read_text(encoding="utf-8")
+    split_commands = (ROOT / "apps/pincerpdf-desktop/src-tauri/src/split_commands.rs").read_text(
+        encoding="utf-8"
+    )
     host = (ROOT / "apps/pincerpdf-desktop/src-tauri/src/main.rs").read_text(
+        encoding="utf-8"
+    )
+    split_ui = (ROOT / "apps/pincerpdf-ui/src/split_workspace.rs").read_text(
         encoding="utf-8"
     )
     ui = (ROOT / "apps/pincerpdf-ui/src/merge_workspace.rs").read_text(
@@ -402,9 +537,24 @@ def verify_merge_desktop_contract() -> None:
         "spawn_blocking",
         "Entry::Occupied",
         "native_command_boundary_merges_only_registered_paths",
+        "MergeTocPolicy::FileNames",
+        "MergeTocPolicy::DocumentTitles",
     ):
         if token not in commands:
             fail(f"P4.2 trusted desktop command contract missing: {token}")
+
+    for token in (
+        "pub async fn pick_split_source",
+        "pub async fn pick_split_destination",
+        "pub async fn run_split",
+        "pub fn cancel_split",
+        "inspect_bookmark_boundaries",
+        "estimate_page_sizes",
+        "plan_split",
+        "native_command_boundary_splits_only_registered_paths",
+    ):
+        if token not in split_commands:
+            fail(f"P5 Split trusted desktop command contract missing: {token}")
 
     for token in (
         "tauri_plugin_dialog::init()",
@@ -413,6 +563,10 @@ def verify_merge_desktop_contract() -> None:
         "pick_merge_destination",
         "run_merge",
         "cancel_merge",
+        "pick_split_source",
+        "pick_split_destination",
+        "run_split",
+        "cancel_split",
     ):
         if token not in host:
             fail(f"P4.2 Tauri composition missing: {token}")
@@ -426,31 +580,60 @@ def verify_merge_desktop_contract() -> None:
         "Discard and report",
         'data-testid="bookmark-policy-discard"',
         'data-testid="bookmark-policy-one-entry"',
+        'data-testid="bookmark-policy-retain"',
+        'data-testid="bookmark-policy-retain-as-one-entry"',
+        'data-testid="toc-policy-none"',
+        'data-testid="toc-policy-file-names"',
+        'data-testid="toc-policy-document-titles"',
         "One entry per document",
+        "List source filenames",
+        "List document titles",
+        "Retain relevant source hierarchy",
         "Reject before processing",
     ):
         if token not in ui:
             fail(f"P4.2 Merge UI contract missing: {token}")
 
+    for token in (
+        'data-testid="split-workspace"',
+        'data-testid="choose-split-source"',
+        'data-testid="split-rule-bookmarks"',
+        'data-testid="split-rule-size"',
+        'data-testid="run-split"',
+        "complete_browser_split_after_delay",
+    ):
+        if token not in split_ui:
+            fail(f"P5 Split UI contract missing: {token}")
+
     if '__TAURI__", "core"' not in bridge or "serde_json" not in bridge:
         fail("P4.2 Rust/WASM bridge is not wired to typed Tauri command messages")
 
     for token in (
-        "one available Merge tool",
+        "Merge and Split",
         "ordered Merge plan",
         "running and completed Merge states",
         "advanced safety policies",
         "one-entry-per-document bookmark policy",
+        "filename table-of-contents policy",
+        "document-title table-of-contents policy",
+        "retained-bookmark policy states",
         "merge-bookmark-policy-desktop.png",
+        "merge-retained-bookmark-policy-desktop.png",
         "merge-completed-compact.png",
+        "deterministic Split workspace",
+        "split-empty-desktop.png",
+        "split-configured-desktop.png",
+        "split-completed-desktop.png",
+        "split-completed-compact.png",
     ):
         if token not in tests:
             fail(f"P4.2 E2E acceptance contract missing: {token}")
 
-    if "merge-desktop-contract:" not in makefile:
-        fail("P4.2 native desktop contract is not wired into Make")
+    if "merge-desktop-contract:" not in makefile or "split-desktop-contract:" not in makefile:
+        fail("native Merge/Split desktop contracts are not wired into Make")
     if (
         "make merge-desktop-contract" not in workflow
+        or "make split-desktop-contract" not in workflow
         or "crates/pincerpdf-desktop-api/**" not in workflow
     ):
         fail("P4.2 native desktop contract is not wired into its Linux compatibility lane")
@@ -500,8 +683,11 @@ def verify_native_webview_contract() -> None:
         "window.__TAURI__.core",
         '"merge_engine_status"',
         '"cancel_merge"',
+        '"run_split"',
         '"bookmark-policy-one-entry"',
-        "both explicit bookmark policies",
+        '"bookmark-policy-retain"',
+        '"bookmark-policy-retain-as-one-entry"',
+        "all four explicit bookmark policies",
         '"native-startup.json"',
         '"native-startup.html"',
         '"native-merge-empty-windows.png"',
@@ -632,17 +818,36 @@ def main() -> None:
         if manifest.get("lints", {}).get("workspace") is not True:
             fail(f"workspace lints not inherited: {member}")
 
-    for path in ROOT.rglob("*"):
-        if any(part in BANNED_TRACKED_PARTS for part in path.relative_to(ROOT).parts):
+    try:
+        tracked_rust = subprocess.run(
+            ["git", "ls-files", "-z", "--", "*.rs"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+        ).stdout.split(b"\0")
+    except (OSError, subprocess.CalledProcessError) as error:
+        fail(f"cannot enumerate tracked Rust sources: {error}")
+
+    for relative_bytes in tracked_rust:
+        if not relative_bytes:
             continue
-        if path.is_file() and path.suffix == ".rs":
+        relative = Path(relative_bytes.decode("utf-8"))
+        if any(part in BANNED_TRACKED_PARTS for part in relative.parts):
+            continue
+        path = ROOT / relative
+        if not path.is_file():
+            fail(f"tracked Rust source is missing: {relative}")
+        try:
             text = path.read_text(encoding="utf-8")
-            if "#![forbid(unsafe_code)]" not in text:
-                fail(f"Rust source does not explicitly forbid unsafe code: {path.relative_to(ROOT)}")
+        except (OSError, UnicodeError) as error:
+            fail(f"cannot read tracked Rust source {relative}: {error}")
+        if "#![forbid(unsafe_code)]" not in text:
+            fail(f"Rust source does not explicitly forbid unsafe code: {relative}")
 
     verify_dependency_locks()
     verify_shell_contract()
     verify_merge_core_contract()
+    verify_split_planner_contract()
     verify_merge_desktop_contract()
     verify_native_webview_contract()
     verify_windows_dialog_contract()
@@ -653,6 +858,7 @@ def main() -> None:
     print("dependency_locks=verified")
     print("application_shell=verified")
     print("merge_core=verified")
+    print("split_planner=verified")
     print("merge_desktop=verified")
     print("native_webview=verified")
     print("windows_system_dialog=verified")
@@ -661,3 +867,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

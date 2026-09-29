@@ -11,6 +11,7 @@ members = [
   "crates/pincerpdf-engine-qpdf",
   "crates/pincerpdf-filesystem",
   "crates/pincerpdf-merge",
+  "crates/pincerpdf-split",
 ]
 default-members = [
   "apps/pincerpdf-cli",
@@ -23,6 +24,7 @@ default-members = [
   "crates/pincerpdf-engine-qpdf",
   "crates/pincerpdf-filesystem",
   "crates/pincerpdf-merge",
+  "crates/pincerpdf-split",
 ]
 
 [workspace.package]

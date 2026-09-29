@@ -10,6 +10,7 @@ on:
       - ".devcontainer/**"
       - "scripts/probe-pdf-engines.py"
       - "tests/fixtures/pdf/**"
+      - "crates/pincerpdf-engine-qpdf/**"
       - "Makefile"
   pull_request:
     branches:
@@ -19,6 +20,7 @@ on:
       - ".devcontainer/**"
       - "scripts/probe-pdf-engines.py"
       - "tests/fixtures/pdf/**"
+      - "crates/pincerpdf-engine-qpdf/**"
       - "Makefile"
 
 permissions:
@@ -52,13 +54,13 @@ jobs:
             --tag pincerpdf-devcontainer:probe \
             .
 
-      - name: Run deterministic capability probe
+      - name: Run deterministic capability and Split contract probes
         run: |
           docker run --rm \
             --volume "$GITHUB_WORKSPACE:/workspace/PincerPDF" \
             --workdir /workspace/PincerPDF \
             pincerpdf-devcontainer:probe \
-            bash -c 'make probe-pdf-engines'
+            bash -c 'make probe-pdf-engines && make split-contract'
 
       - name: Validate and summarize report
         run: |
@@ -78,13 +80,16 @@ jobs:
           print(f"- Merge retained outlines: {structure['merged']['has_outlines']}")
           print(f"- Source AcroForm fields/widgets: {structure['form_source']['field_arrays']}/{structure['form_source']['widget_annotations']}")
           print(f"- Subset AcroForm fields/widgets: {structure['form_subset']['field_arrays']}/{structure['form_subset']['widget_annotations']}")
+          print("- Real-QPDF Split contract: passed")
           PY
 
       - name: Upload capability report
         uses: actions/upload-artifact@v4
         with:
           name: pdf-engine-capability-report
-          path: .artifacts/pdf-engine-probe/
+          path: |
+            .artifacts/pdf-engine-probe/
+            .artifacts/split-core/
           if-no-files-found: error
           retention-days: 14
 

@@ -13,6 +13,7 @@ pincerpdf-domain = { path = "../../crates/pincerpdf-domain" }
 pincerpdf-engine-api = { path = "../../crates/pincerpdf-engine-api" }
 pincerpdf-engine-qpdf = { path = "../../crates/pincerpdf-engine-qpdf" }
 pincerpdf-merge = { path = "../../crates/pincerpdf-merge" }
+pincerpdf-split = { path = "../../crates/pincerpdf-split" }
 
 [lints]
 workspace = true

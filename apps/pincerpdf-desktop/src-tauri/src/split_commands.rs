@@ -1,0 +1,328 @@
+#![forbid(unsafe_code)]
+//! Trusted desktop boundary for the P5 Split workspace.
+
+use crate::merge_commands::DesktopState;
+use pincerpdf_desktop_api::{
+    CommandError, PickedSplitDestination, PickedSplitSource, SplitRuleKind, SplitRunRequest,
+    SplitRunResult,
+};
+use pincerpdf_domain::ErrorCode;
+use pincerpdf_engine_api::{InspectOptions, PdfEnginePort};
+use pincerpdf_engine_qpdf::QpdfAdapter;
+use pincerpdf_merge::{CancellationToken, ExecutionControl};
+use pincerpdf_split::{SplitRule, plan_split};
+use std::num::{NonZeroU32, NonZeroU64};
+use std::path::Path;
+use std::sync::Arc;
+use std::time::Duration;
+use tauri::{AppHandle, Manager};
+use tauri_plugin_dialog::DialogExt;
+
+/// Opens the trusted native single-file picker and inspects the Split source.
+#[tauri::command]
+pub async fn pick_split_source(app: AppHandle) -> Result<Option<PickedSplitSource>, CommandError> {
+    let state = app.state::<Arc<DesktopState>>().inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        let Some(path) = app
+            .dialog()
+            .file()
+            .add_filter("PDF document", &["pdf"])
+            .blocking_pick_file()
+        else {
+            return Ok(None);
+        };
+        let path = path.into_path().map_err(|error| {
+            CommandError::new(
+                "unsupported_file_path",
+                format!("The selected file path is unsupported: {error}"),
+            )
+        })?;
+        let engine = QpdfAdapter::discover().map_err(|error| {
+            engine_error(error.code(), format!("PDF engine unavailable: {error}"))
+        })?;
+        Ok(Some(inspect_split_source(&state, &engine, &path)?))
+    })
+    .await
+    .map_err(|error| internal_error(format!("The Split source picker failed: {error}")))?
+}
+
+/// Opens the trusted native directory picker for Split outputs.
+#[tauri::command]
+pub async fn pick_split_destination(
+    app: AppHandle,
+) -> Result<Option<PickedSplitDestination>, CommandError> {
+    let state = app.state::<Arc<DesktopState>>().inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        app.dialog()
+            .file()
+            .blocking_pick_folder()
+            .map(|path| {
+                let path = path.into_path().map_err(|error| {
+                    CommandError::new(
+                        "unsupported_file_path",
+                        format!("The selected folder path is unsupported: {error}"),
+                    )
+                })?;
+                let path_token = state.register_path(path.clone())?;
+                Ok(PickedSplitDestination {
+                    path_token,
+                    display_path: path.display().to_string(),
+                })
+            })
+            .transpose()
+    })
+    .await
+    .map_err(|error| internal_error(format!("The Split destination picker failed: {error}")))?
+}
+
+/// Runs the verified Split service away from the `WebView` event loop.
+#[tauri::command]
+pub async fn run_split(
+    app: AppHandle,
+    request: SplitRunRequest,
+) -> Result<SplitRunResult, CommandError> {
+    let state = app.state::<Arc<DesktopState>>().inner().clone();
+    let operation_id = request.operation_id.clone();
+    let cancellation = CancellationToken::default();
+    state.begin_task(&operation_id, cancellation.clone())?;
+    let task_state = state.clone();
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        execute_split(&task_state, request, cancellation)
+    })
+    .await
+    .map_err(|error| internal_error(format!("The Split worker failed: {error}")))
+    .and_then(|result| result);
+    state.finish_task(&operation_id);
+    result
+}
+
+/// Requests cooperative cancellation for an active Split operation.
+#[tauri::command]
+#[allow(
+    clippy::needless_pass_by_value,
+    reason = "Tauri command injection and deserialization require owned handler parameters"
+)]
+pub fn cancel_split(app: AppHandle, operation_id: String) -> Result<bool, CommandError> {
+    app.state::<Arc<DesktopState>>().cancel_task(&operation_id)
+}
+
+fn inspect_split_source(
+    state: &DesktopState,
+    engine: &QpdfAdapter,
+    path: &Path,
+) -> Result<PickedSplitSource, CommandError> {
+    let path_token = state.register_path(path.to_path_buf())?;
+    let file_name = path.file_name().map_or_else(
+        || path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    let display_path = path.display().to_string();
+    match engine.inspect(path, InspectOptions::default()) {
+        Ok(metadata) => Ok(PickedSplitSource {
+            path_token,
+            file_name,
+            display_path,
+            page_count: Some(metadata.page_count),
+            has_bookmarks: metadata.has_bookmarks,
+            issue: None,
+        }),
+        Err(error) => Ok(PickedSplitSource {
+            path_token,
+            file_name,
+            display_path,
+            page_count: None,
+            has_bookmarks: false,
+            issue: Some(engine_error(error.code(), error.to_string())),
+        }),
+    }
+}
+
+fn execute_split(
+    state: &DesktopState,
+    request: SplitRunRequest,
+    cancellation: CancellationToken,
+) -> Result<SplitRunResult, CommandError> {
+    let source = state.resolve_path(&request.source_token)?;
+    let output_directory = state.resolve_path(&request.output_directory_token)?;
+    let engine = QpdfAdapter::discover()
+        .map_err(|error| engine_error(error.code(), format!("PDF engine unavailable: {error}")))?;
+    let metadata = engine
+        .inspect(&source, InspectOptions::default())
+        .map_err(|error| engine_error(error.code(), error.to_string()))?;
+    let control = ExecutionControl::new(Duration::from_mins(10), 64 * 1024, cancellation);
+    let rule =
+        match request.rule {
+            SplitRuleKind::EveryPage => SplitRule::EveryPage,
+            SplitRuleKind::FixedPageCount => {
+                let count = request.fixed_page_count.ok_or_else(|| {
+                    invalid_input("A fixed page count is required for this Split mode.")
+                })?;
+                SplitRule::FixedPageCount(NonZeroU32::new(count).ok_or_else(|| {
+                    invalid_input("The fixed page count must be greater than zero.")
+                })?)
+            }
+            SplitRuleKind::Ranges => request
+                .page_ranges
+                .ok_or_else(|| invalid_input("At least one page range is required."))?
+                .parse::<SplitRule>()
+                .map_err(|error| invalid_input(error.to_string()))?,
+            SplitRuleKind::Bookmarks => {
+                let depth = request.bookmark_depth.unwrap_or(0);
+                SplitRule::Bookmarks(
+                    engine
+                        .inspect_bookmark_boundaries_at_depth(&source, depth, &control)
+                        .map_err(|error| engine_error(error.code(), error.to_string()))?,
+                )
+            }
+            SplitRuleKind::BySize => {
+                let max_bytes = request
+                    .max_output_bytes
+                    .and_then(NonZeroU64::new)
+                    .ok_or_else(|| invalid_input("The output-size limit must be positive."))?;
+                let estimates = engine
+                    .estimate_page_sizes(&source, metadata.page_count, &control)
+                    .map_err(|error| engine_error(error.code(), error.to_string()))?
+                    .estimates;
+                SplitRule::BySize {
+                    max_bytes,
+                    page_estimates: estimates,
+                }
+            }
+        };
+    let plan = plan_split(&source, metadata.page_count, &rule)
+        .map_err(|error| invalid_input(error.to_string()))?;
+    let size_limit_bytes = plan.size_limit_bytes.map(NonZeroU64::get);
+    let report = engine
+        .split(&plan, &output_directory, &control)
+        .map_err(|error| engine_error(error.code(), error.to_string()))?;
+    let identity = engine.identity();
+    Ok(SplitRunResult {
+        outputs: report
+            .outputs
+            .into_iter()
+            .map(|path| path.display().to_string())
+            .collect(),
+        part_count: plan.parts.len(),
+        page_count: metadata.page_count,
+        size_limit_bytes,
+        engine_id: identity.id,
+        engine_version: identity.version,
+    })
+}
+
+fn invalid_input(message: impl Into<String>) -> CommandError {
+    engine_error(ErrorCode::InvalidInput, message)
+}
+
+fn engine_error(code: ErrorCode, message: impl Into<String>) -> CommandError {
+    CommandError::new(code.as_str(), message)
+}
+
+fn internal_error(message: impl Into<String>) -> CommandError {
+    engine_error(ErrorCode::Internal, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs;
+    use std::path::PathBuf;
+
+    #[test]
+    fn unknown_tokens_fail_before_engine_access() {
+        let error = execute_split(
+            &DesktopState::default(),
+            SplitRunRequest {
+                operation_id: "split-unknown".to_owned(),
+                source_token: "unknown-source".to_owned(),
+                output_directory_token: "unknown-output".to_owned(),
+                rule: SplitRuleKind::EveryPage,
+                fixed_page_count: None,
+                page_ranges: None,
+                bookmark_depth: None,
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect_err("unknown token");
+        assert_eq!(error.code, "invalid_path_token");
+    }
+
+    #[test]
+    #[ignore = "requires pinned qpdf/mutool and generated PDF fixtures"]
+    fn native_command_boundary_splits_only_registered_paths() {
+        let fixtures = PathBuf::from(
+            std::env::var("PINCERPDF_PDF_FIXTURES")
+                .expect("PINCERPDF_PDF_FIXTURES must point at generated fixtures"),
+        );
+        let evidence = PathBuf::from(
+            std::env::var("PINCERPDF_SPLIT_DESKTOP_EVIDENCE_DIR")
+                .expect("PINCERPDF_SPLIT_DESKTOP_EVIDENCE_DIR must be set"),
+        );
+        fs::create_dir_all(&evidence).expect("create desktop split evidence directory");
+        let output_directory = evidence.join("outputs");
+        fs::create_dir_all(&output_directory).expect("create split output directory");
+
+        let state = DesktopState::default();
+        let source = state
+            .register_path(fixtures.join("plain-three-pages.pdf"))
+            .expect("register split input");
+        let destination = state
+            .register_path(output_directory.clone())
+            .expect("register split destination");
+        let report = execute_split(
+            &state,
+            SplitRunRequest {
+                operation_id: "native-split-contract".to_owned(),
+                source_token: source,
+                output_directory_token: destination,
+                rule: SplitRuleKind::EveryPage,
+                fixed_page_count: None,
+                page_ranges: None,
+                bookmark_depth: None,
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect("desktop boundary split");
+
+        assert_eq!(report.page_count, 3);
+        assert_eq!(report.part_count, 3);
+        assert_eq!(report.engine_id, "qpdf-process");
+        assert_eq!(report.outputs.len(), 3);
+        for output in report.outputs {
+            assert!(
+                Path::new(&output).is_file(),
+                "missing split output: {output}"
+            );
+        }
+
+        let bookmark_source = state
+            .register_path(fixtures.join("bookmarks.pdf"))
+            .expect("register bookmark split input");
+        let bookmark_output_directory = evidence.join("bookmark-outputs");
+        fs::create_dir_all(&bookmark_output_directory).expect("create bookmark output directory");
+        let bookmark_destination = state
+            .register_path(bookmark_output_directory.clone())
+            .expect("register bookmark split destination");
+        let nested_report = execute_split(
+            &state,
+            SplitRunRequest {
+                operation_id: "native-nested-bookmark-contract".to_owned(),
+                source_token: bookmark_source,
+                output_directory_token: bookmark_destination,
+                rule: SplitRuleKind::Bookmarks,
+                fixed_page_count: None,
+                page_ranges: None,
+                bookmark_depth: Some(1),
+                max_output_bytes: None,
+            },
+            CancellationToken::default(),
+        )
+        .expect("nested bookmark desktop boundary split");
+        assert_eq!(nested_report.page_count, 3);
+        assert_eq!(nested_report.part_count, 1);
+        assert_eq!(nested_report.outputs.len(), 1);
+        assert!(Path::new(&nested_report.outputs[0]).is_file());
+    }
+}

@@ -79,7 +79,39 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.match(engineStatus, /11\.3\.0/);
   });
 
-  it("keeps seven tool gates independent from available Merge", async () => {
+  it("exposes the Split command boundary without accepting unregistered paths", async () => {
+    const result = await browser.executeAsync((done) => {
+      window.__TAURI__.core
+        .invoke("run_split", {
+          request: {
+            operationId: "native-split-contract",
+            sourceToken: "not-registered",
+            outputDirectoryToken: "not-registered",
+            rule: "everyPage",
+            fixedPageCount: null,
+            pageRanges: null,
+            maxOutputBytes: null,
+          },
+        })
+        .then((value) => done({ ok: true, value }))
+        .catch((error) => done({ ok: false, error }));
+    });
+
+    assert.equal(result.ok, false);
+    assert.match(JSON.stringify(result.error), /invalid_path_token/);
+    await browser.execute(() =>
+      document
+        .querySelector('[data-testid="tool-nav-split"]')
+        ?.dispatchEvent(new MouseEvent("click", { bubbles: true })),
+    );
+    await browser.pause(250);
+    const splitWorkspace = await browser.execute(
+      () => document.querySelector('[data-testid="split-workspace"]') !== null,
+    );
+    assert.equal(splitWorkspace, true);
+  });
+
+  it("keeps six tool gates independent from available Merge and Split", async () => {
     const navigation = await browser.executeAsync((done) => {
       const buttons = [
         ...document.querySelectorAll('[data-testid^="tool-nav-"]'),
@@ -115,7 +147,8 @@ describe("PincerPDF native WebView2 Merge shell", () => {
 
     assert.equal(navigation.labels.length, 8);
     assert.match(navigation.labels[0], /Merge[\s\S]*Available/);
-    for (const label of navigation.labels.slice(1)) {
+    assert.match(navigation.labels[1], /Split[\s\S]*Available/);
+    for (const label of navigation.labels.slice(2)) {
       assert.match(label, /Not implemented/);
     }
     assert.equal(navigation.rotated.title.trim(), "Rotate PDF");
@@ -123,7 +156,7 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     assert.equal(navigation.mergeWorkspace, true);
   });
 
-  it("exposes both explicit bookmark policies in the production WebView", async () => {
+  it("exposes all four explicit bookmark policies in the production WebView", async () => {
     const policies = await browser.executeAsync((done) => {
       document
         .querySelector('[data-testid="merge-advanced-toggle"]')
@@ -135,9 +168,17 @@ describe("PincerPDF native WebView2 Merge shell", () => {
         const oneEntry = document.querySelector(
           '[data-testid="bookmark-policy-one-entry"]',
         );
+        const retain = document.querySelector(
+          '[data-testid="bookmark-policy-retain"]',
+        );
+        const retainAsOneEntry = document.querySelector(
+          '[data-testid="bookmark-policy-retain-as-one-entry"]',
+        );
         if (
           !(discard instanceof HTMLInputElement) ||
-          !(oneEntry instanceof HTMLInputElement)
+          !(oneEntry instanceof HTMLInputElement) ||
+          !(retain instanceof HTMLInputElement) ||
+          !(retainAsOneEntry instanceof HTMLInputElement)
         ) {
           done({ controlsPresent: false });
           return;
@@ -149,6 +190,8 @@ describe("PincerPDF native WebView2 Merge shell", () => {
             controlsPresent: true,
             discardChecked: discard.checked,
             oneEntryChecked: oneEntry.checked,
+            retainPresent: retain instanceof HTMLInputElement,
+            retainAsOneEntryPresent: retainAsOneEntry instanceof HTMLInputElement,
             summary:
               document.querySelector(
                 '[data-testid="merge-advanced-panel"]',
@@ -159,8 +202,10 @@ describe("PincerPDF native WebView2 Merge shell", () => {
     });
 
     assert.equal(policies.controlsPresent, true);
-    assert.equal(policies.discardChecked, false);
-    assert.equal(policies.oneEntryChecked, true);
+  assert.equal(policies.discardChecked, false);
+  assert.equal(policies.oneEntryChecked, true);
+  assert.equal(policies.retainPresent, true);
+  assert.equal(policies.retainAsOneEntryPresent, true);
     assert.match(policies.summary, /One entry per document/);
   });
 
